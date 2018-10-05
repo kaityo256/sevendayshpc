@@ -19,6 +19,39 @@
 
 * MPIとは
 
+* はじめてのMPI
+
+こんなコードを書いて、[hello.cpp](day1/hello.cpp)という名前で保存してみよう。
+
+```c++
+#include <cstdio>
+#include <mpi.h>
+
+int main(int argc, char **argv) {
+  MPI_Init(&argc, &argv);
+  printf("Hello MPI World!\n");
+  MPI_Finalize();
+}
+```
+
+以下のようにしてコンパイル、実行してみる。
+
+```
+$ mpic++ hello.cpp
+$ ./a.out
+Hello MPI World!
+```
+
+並列実行してみよう。並列実行には`mpirun`の引数に実行プログラムと並列数を指定する。
+
+```
+$ mpirun -np 2 ./a.out
+Hello MPI World!
+Hello MPI World!
+```
+
+メッセージが二行表示された。これは立派な並列プログラムである。
+
 ## Day 2 : ジョブの投げ方
 
 * スパコンとは
