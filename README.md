@@ -150,10 +150,128 @@ Hello MPI World!
 
 ## Day 3 : 自明並列
 
-* 自明並列とは
-* 並列化効率
-* 自明並列の例1: 円周率
+### 自明並列、またの名を馬鹿パラとは
+
+例えば、100個の画像データがあるが、それらを全部リサイズしたい、といったタスクを考える。
+それぞれのタスクには依存関係が全くないので、全部同時に実行してもなんの問題もない。
+したがって、100並列で実行すれば100倍早くなる。
+このように、並列タスク間で依存関係や情報のやりとりが発生しない並列化のことを自明並列と呼ぶ。
+英語では、Trivial Parallelization(自明並列)とか、Embarrassingly parallel(馬鹿パラ)などと表現される。
+「馬鹿パラ」とは「馬鹿でもできる並列化」の略で(諸説あり)、その名の通り簡単に並列化できるため、
+文字通り馬鹿にされることも多いのだが、並列化効率が100%であり、最も効率的に計算資源を利用していることになるため、
+その意義は大きい。
+なにはなくとも、まず馬鹿パラができないことには非自明並列もできないわけだし、馬鹿パラができるだけでも、できない人に比べて
+圧倒的な攻撃力を持つことになる。
+ここでは、まず馬鹿パラのやり方を見てみよう。
+
+
+### 自明並列の例1: 円周率
+
+まず、自明並列でよく出てくる例として、サンプリング数を並列化で稼ぐ方法を見てみよう。とりあえず定番の、
+モンテカルロ法で円周率を計算してみる。
+
+こんなコードを書いて、[calc_pi.cpp](day3/calc_pi.cpp)という名前で保存してみよう。
+
+```cpp
+#include <cstdio>
+#include <random>
+#include <algorithm>
+
+double calc_pi(std::mt19937 &mt, const int trial) {
+  std::uniform_real_distribution<double> ud(0.0, 1.0);
+  int n = 0;
+  for (int i = 0; i < trial; i++) {
+    double x = ud(mt);
+    double y = ud(mt);
+    if (x * x + y * y < 1.0) n++;
+  }
+  return 4.0 * static_cast<double>(n) / static_cast<double>(trial);
+}
+
+int main(void) {
+  std::mt19937 mt(0);
+  double pi = calc_pi(mt, 100000);
+  printf("%f\n", pi);
+}
+```
+
+普通にコンパイル、実行してみる。
+
+```
+$ g++ calc_pi.cpp
+$ ./a.out
+3.145000
+```
+
+100000回の試行の結果として、円周率の推定値「3.145000」が得られた。これを並列化してみよう。
+並列化手順は簡単である。
+
+1. `mpi.h`をインクルードする
+2. main関数の最初と最後に`MPI_Init`と、`MPI_Finalize`をつける。ただし`MPI_Init`が引数に`argc`と`argv`を要求するので、`main`関数の引数をちゃんと書く。
+3. `MPI_Comm_rank`関数で、ランク番号を得る。
+4. ランク番号を乱数の種に使う
+5. そのまま`calc_pi`を呼ぶ。
+
+以上の修正をしたコードを[calc_pi_mpi.cpp](day3/calc_pi_mpi.cpp)という名前で作成する。
+
+```cpp
+#include <cstdio>
+#include <random>
+#include <algorithm>
+#include <mpi.h>
+
+double calc_pi(std::mt19937 &mt, const int trial) {
+  std::uniform_real_distribution<double> ud(0.0, 1.0);
+  int n = 0;
+  for (int i = 0; i < trial; i++) {
+    double x = ud(mt);
+    double y = ud(mt);
+    if (x * x + y * y < 1.0) n++;
+  }
+  return 4.0 * static_cast<double>(n) / static_cast<double>(trial);
+}
+
+int main(int argc, char **argv) {
+  MPI_Init(&argc, &argv);
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  std::mt19937 mt(rank);
+  double pi = calc_pi(mt, 100000);
+  printf("%d: %f\n", rank, pi);
+  MPI_Finalize();
+}
+```
+
+ついでに、円周率の推定値を表示するときに自分のランク番号も表示するようにしてみた。
+実行結果はこの通り。
+
+```
+$ mpirun -np 4 --oversubscribe ./a.out
+0: 3.145000
+1: 3.142160
+3: 3.144200
+2: 3.146720
+
+$ mpirun -np 4 --oversubscribe ./a.out
+0: 3.145000
+2: 3.146720
+3: 3.144200
+1: 3.142160
+```
+
+ただし、`--oversubscribe`は、論理コア以上の並列実行を許可するオプションである。
+この実行結果から、
+
+1. 実行するたびに出力順序が異なる
+2. しかし、同じランクに対応する推定値は変わらない
+
+ことがわかる。
+
+TODO: timeコマンドでCPU%を見る
+
+
 * 自明並列の例2: 多数のファイル処理
+* 並列化効率
 
 ## Day 4 : 領域分割による非自明並列
 
