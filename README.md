@@ -29,8 +29,6 @@
 
 ## Day 1 : 環境構築
 
-### はじめに
-
 スパコン上で実行されるプログラムは並列プログラムである。したがって「スパコンを使う」ということは、
 狭義には「並列化されたプログラムを実行する」ということを意味する。したがって、誰かが作った並列プログラムをスパコン上で実行すれば、スパコンは使えることになる。
 それはそれでOKなのだが、本稿のタイトルは「一週間でなれる！スパコンプログラマ」であるから、スパコン上で動くコードを開発できるようになることを目的とする。
@@ -46,7 +44,6 @@ TODO: 三種類の並列モデルの説明
 
 ここでは、MPIを用いた分散メモリ並列を主にを取り上げる。複数のノードを同時に使うためには、なんらかの分散メモリ並列プログラミングが必須となる。
 
-
 ### MPIのインストール
 
 MPIの開発環境としては、Mac OSX、もしくはLinuxを強く推奨する。Linuxはなんでも良いが、とりあえずCentOSを想定する。
@@ -54,15 +51,15 @@ MPIの開発環境としては、Mac OSX、もしくはLinuxを強く推奨す�
 
 MacでHomebrewを使っているなら、
 
-```
-$ brew install openmpi
+```sh
+brew install openmpi
 ```
 
 で一発、CentOSなら、
 
-```
-$ sudo yum install openmpi-devel 
-$ export PATH=$PATH:/usr/lib64/openmpi/bin/ 
+```sh
+sudo yum install openmpi-devel 
+export PATH=$PATH:/usr/lib64/openmpi/bin/ 
 ```
 
 でおしまいである。
@@ -71,8 +68,8 @@ TODO: CentOS7でmpirunが実行できないのであとで原因を確認。
 
 ここで
 
-```
-$ sudo yum install openmpi
+```sh
+sudo yum install openmpi
 ```
 
 とすると、開発環境がインストールされないので注意。
@@ -81,7 +78,7 @@ $ sudo yum install openmpi
 
 Macの場合は
 
-```
+```sh
 $ mpic++ --version 
 Apple LLVM version 10.0.0 (clang-1000.11.45.2)
 Target: x86_64-apple-darwin17.7.0
@@ -91,7 +88,7 @@ InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault
 
 と、clang++にパスが通っていることがわかる。Linuxの場合はg++である。
 
-```
+```sh
 $ mpic++ --version
 g++ (GCC) 4.8.5 20150623 (Red Hat 4.8.5-28)
 Copyright (C) 2015 Free Software Foundation, Inc.
@@ -128,7 +125,7 @@ Hello MPI World!
 
 並列実行してみよう。並列実行には`mpirun`の引数に実行プログラムと並列数を指定する。
 
-```
+```sh
 $ mpirun -np 2 ./a.out
 Hello MPI World!
 Hello MPI World!
@@ -198,7 +195,6 @@ TODO: スパコンの構成要素(ログインノード、計算ノード、フ�
 圧倒的な攻撃力を持つことになる。
 ここでは、まず馬鹿パラのやり方を見てみよう。
 
-
 ### 自明並列の例1: 円周率
 
 まず、自明並列でよく出てくる例として、サンプリング数を並列化で稼ぐ方法を見てみよう。とりあえず定番の、
@@ -211,27 +207,31 @@ TODO: スパコンの構成要素(ログインノード、計算ノード、フ�
 #include <random>
 #include <algorithm>
 
-double calc_pi(std::mt19937 &mt, const int trial) {
+const int TRIAL = 100000;
+
+double calc_pi(const int seed) {
+  std::mt19937 mt(seed);
   std::uniform_real_distribution<double> ud(0.0, 1.0);
   int n = 0;
-  for (int i = 0; i < trial; i++) {
+  for (int i = 0; i < TRIAL; i++) {
     double x = ud(mt);
     double y = ud(mt);
     if (x * x + y * y < 1.0) n++;
   }
-  return 4.0 * static_cast<double>(n) / static_cast<double>(trial);
+  return 4.0 * static_cast<double>(n) / static_cast<double>(TRIAL);
 }
 
 int main(void) {
-  std::mt19937 mt(0);
-  double pi = calc_pi(mt, 100000);
+  double pi = calc_pi(0);
   printf("%f\n", pi);
 }
 ```
 
+ここで、`main`関数から呼ばれる関数`calc_pi(const int seed)`が、わざとらしく乱数の種だけ受け取る形になっていることに注意。
+
 普通にコンパイル、実行してみる。
 
-```
+```sh
 $ g++ calc_pi.cpp
 $ ./a.out
 3.145000
@@ -254,23 +254,25 @@ $ ./a.out
 #include <algorithm>
 #include <mpi.h>
 
-double calc_pi(std::mt19937 &mt, const int trial) {
+const int TRIAL = 100000;
+
+double calc_pi(const int seed) {
+  std::mt19937 mt(seed);
   std::uniform_real_distribution<double> ud(0.0, 1.0);
   int n = 0;
-  for (int i = 0; i < trial; i++) {
+  for (int i = 0; i < TRIAL; i++) {
     double x = ud(mt);
     double y = ud(mt);
     if (x * x + y * y < 1.0) n++;
   }
-  return 4.0 * static_cast<double>(n) / static_cast<double>(trial);
+  return 4.0 * static_cast<double>(n) / static_cast<double>(TRIAL);
 }
 
 int main(int argc, char **argv) {
   MPI_Init(&argc, &argv);
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  std::mt19937 mt(rank);
-  double pi = calc_pi(mt, 100000);
+  double pi = calc_pi(rank);
   printf("%d: %f\n", rank, pi);
   MPI_Finalize();
 }
@@ -279,7 +281,7 @@ int main(int argc, char **argv) {
 ついでに、円周率の推定値を表示するときに自分のランク番号も表示するようにしてみた。
 実行結果はこの通り。
 
-```
+```sh
 $ mpirun -np 4 --oversubscribe ./a.out
 0: 3.145000
 1: 3.142160
@@ -301,8 +303,59 @@ $ mpirun -np 4 --oversubscribe ./a.out
 
 ことがわかる。
 
-TODO: timeコマンドでCPU%を見る
+ちゃんと並列計算されているか、timeコマンドで調べてみよう。
 
+```sh
+$ ./a.out
+0: 3.145000
+./a.out  0.04s user 0.01s system 57% cpu 0.086 total
+
+$ time mpirun -np 4 --oversubscribe ./a.out
+2: 3.146720
+3: 3.144200
+1: 3.142160
+0: 3.145000
+mpirun -np 4 --oversubscribe ./a.out  0.24s user 0.08s system 240% cpu 0.135 total
+```
+
+シリアル実行の場合はCPUの利用率が57%だったのが、4並列の場合には240%と、100%を超えたのがわかるだろう。
+この例では実行が早く終わりすぎて分かりづらいが、`TRIAL`の値を大きくして実行に時間がかかるようにして、
+実行中にtopしてみると、ちゃんと並列実行されていることがわかる。
+
+```sh
+PID    COMMAND      %CPU TIME     #TH   #WQ  #PORT MEM    PURG   CMPRS  PGRP
+45163  a.out        92.1 00:12.44 3/1   0    15    2612K  0B     0B     45163
+45165  a.out        91.8 00:12.48 3/1   0    15    2620K  0B     0B     45165
+45164  a.out        91.5 00:12.42 3/1   0    15    2608K  0B     0B     45164
+45162  a.out        89.1 00:12.47 3/1   0    15    2620K  0B     0B     45162
+```
+
+4並列実行したので、45162から45165まで4つのプロセスが起動され、実行していることがわかる。
+
+### 自明並列テンプレート
+
+先程の並列プログラム[calc_pi_mpi.cpp](day3/calc_pi_mpi.cpp)のmain関数はこうなっていた。
+
+```cpp
+int main(int argc, char **argv) {
+  MPI_Init(&argc, &argv);
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  double pi = calc_pi(rank);
+  printf("%d: %f\n", rank, pi);
+  MPI_Finalize();
+}
+```
+
+実際のプログラムは`calc_pi(rank)`という関数だけで、これはランク(MPIプロセスの通し番号)を受け取って、その番号によって動作を変える関数である。
+後はこの中身を書き換えるだけで、なんでも並列化できる。ファイル処理でもレンダリングでも機械学習でもなんでも。
+「これくらい、MPI使わなくてもスレッドでもできる」とか言う人がいるかもしれない。
+しかし、OpenMPや`std::thread`を使ったマルチスレッドプログラミングと、MPIを用いたマルチプロセスプログラミングには、
+「ノードをまたげるかまたげないか」という大きな違いが存在する。マルチスレッドプログラミングはノードをまたぐことができない。
+したがって、一つのプログラムが専有できる計算資源は1ノードまでである。しかし、MPIを使った場合は何ノードでも使える。
+先程の円周率のコードは、あなたが望むなら数万ノードで実行することだってできる。
+つまり、このコードがかけた時点で、誰がなんと言おうとあなたはスパコンプログラマだ。
+「一週間でなれる！スパコンプログラマ」と題した本稿だが、三日目にしてもうスパコンプログラマになることができた。
 
 * 自明並列の例2: 多数のファイル処理
 * 並列化効率
