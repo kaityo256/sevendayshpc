@@ -164,6 +164,10 @@ Hello MPI World!
 
 複数のプロセスが立ち上がり、なにか処理をしているのだから、これは立派な並列プログラムである。しかし、このままでは、全てのプロセスが同じ処理しかできない。そこで、MPIは立ち上げたプロセスに **ランク(rank)** という通し番号を振り、それを使って並列処理をする。
 
+### ランク
+
+`MPI_Comm_rank`の説明。
+
 ## Day 2 : ジョブの投げ方
 
 ### スパコンとは
@@ -422,11 +426,181 @@ int main(int argc, char **argv) {
 つまり、このコードがかけた時点で、誰がなんと言おうとあなたはスパコンプログラマだ。
 「一週間でなれる！スパコンプログラマ」と題した本稿だが、三日目にしてもうスパコンプログラマになることができた。
 
-* 自明並列の例2: 多数のファイル処理
-  * MPI_Comm_sizeも使う
+### 自明並列の例2: 多数のファイル処理
+
+自明並列の例として、大量のファイル処理を考えよう。たとえば一つあたり5分で終わるファイルが1000個あったとする。
+普通にやれば5000分かかる。手元に8コアのマシンがあり、うまく並列化できたとしても625分。10時間以上かかってしまう
+こういう時、手元にMPI並列ができるスパコンなりクラスタがあれば、あっという間に処理ができる。
+例えば8コアのCPUが2ソケット載ったノードが10ノード使えるとしよう。うまく並列化できれば30分ちょっとで終わってしまう。
+こういう「大量のファイル処理」は、スパコン使いでなくてもよく出てくるシチュエーションなので、自明並列で対応できるようにしたい。
+
+さて、簡単のため、ファイルが連番で`file000.dat`...`file999.dat`となっているとしよう。
+これをN並列する時には、とりあえずNで割ってあまりが自分のランク番号と同じやつを処理すればよい。
+例えば100個のファイルを16並列で処理する場合にはこんな感じになるだろう。
+
+```cpp
+#include <cstdio>
+#include <mpi.h>
+
+void process_file(const int index, const int rank) {
+  printf("Rank=%03d File=%03d\n", rank, index);
+}
+
+int main(int argc, char **argv) {
+  MPI_Init(&argc, &argv);
+  int rank;
+  const int procs = 16;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  const int max_file = 100;
+  for (int i = rank; i < max_file; i += procs) {
+    process_file(i, rank);
+  }
+  MPI_Finalize();
+}
+```
+
+さて、ファイル数はともかく、プロセス数がハードコーディングされているのが気になる。
+MPIのプログラムは、実行時にプロセス数を自由に指定することができる。
+実行するプロセス数を変えるたびにコンパイルし直すのは面倒だ。
+というわけで、実行時に総プロセス数を取得する関数`MPI_Comm_size`が用意されている。
+使い方は`MPI_Comm_rank`と同じで、
+
+```cpp
+int procs;
+MPI_Comm_size(MPI_COMM_WORLD, &procs)
+```
+
+とすれば、`procs`にプロセス数が入る。これを使うと、先程のコードは
+こんな感じにかける。
+
+[day3/processfiles.cpp](day3/processfiles.cpp)
+
+```cpp
+#include <cstdio>
+#include <mpi.h>
+
+void process_file(const int index, const int rank) {
+  printf("Rank=%03d File=%03d\n", rank, index);
+}
+
+int main(int argc, char **argv) {
+  MPI_Init(&argc, &argv);
+  int rank;
+  int procs;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &procs);
+  const int max_file = 100;
+  for (int i = rank; i < max_file; i += procs) {
+    process_file(i, rank);
+  }
+  MPI_Finalize();
+}
+```
+
+あとは`process_file`の中身を適当に書けばファイル処理が**ノードをまたいで**並列化される。
+ノードをまたがなくて良い、つまり共有メモリの範囲内で良いのなら、
+MPIでプログラムを書かなくても例えば[makefileの並列処理機能](https://qiita.com/kaityo256/items/c147679157d9d3fe036e)を使って処理することもできる。
+しつこいが、MPIを使うメリットは並列プログラムがノードをまたぐことができることにある。
 
 * 自明並列の例3: 統計処理
-  * MPI_Allreduceの例
+
+最初に、馬鹿パラで円周率を求めた。N並列ならN個の円周率の推定値が出てくるので、後でそれを統計処理すれば良い。
+しかし、せっかくなので統計処理もMPIでやってしまおう。各プロセスで円周率の推定値$x_i$が求まったとする。平均値は
+
+$$
+\bar{x} = \frac{1}{N} \sum x_i
+$$
+
+と求まる。また、不偏分散$\sigma^2$は
+
+$$
+\sigma^2 = \frac{1}{n-1} \sum (x_i)^2
+- \frac{n}{n-1} \bar{x}^2
+$$
+
+である。以上から、円周率の推定値$x_i$の総和と、$x_i^2$の総和が求められれば、期待値と標準偏差が求められる。
+
+MPIにおける総和演算は`MPI_Allreduce`関数で実行できる。
+
+```cpp
+double pi =  calc_pi(rank);
+double pi_sum = 0.0;
+MPI_Allreduce(&pi, &pi_sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+```
+
+第一引数から、「和を取りたい変数」「和を受け取りたい変数」「変数の数」「変数の型」「やりたい演算」「コミュニケータ」の順番で指定する。ここでは一つの変数のみ総和演算を行っているが、配列を渡して一気に複数のデータについて総和を取ることもできる。また、総和だけでなく積や論理演算も実行できる。
+
+円周率の推定値`pi`と、その自乗`pi2 = pi*pi`について総和を取り、定義通りに期待値と標準偏差を求めるコードが[day3/calc_pi_reduce.cpp](day3/calc_pi_reduce.cpp)である。
+
+```cpp
+#include <cstdio>
+#include <random>
+#include <algorithm>
+#include <cmath>
+#include <mpi.h>
+
+const int TRIAL = 100000;
+
+double calc_pi(const int seed) {
+  std::mt19937 mt(seed);
+  std::uniform_real_distribution<double> ud(0.0, 1.0);
+  int n = 0;
+  for (int i = 0; i < TRIAL; i++) {
+    double x = ud(mt);
+    double y = ud(mt);
+    if (x * x + y * y < 1.0) n++;
+  }
+  return 4.0 * static_cast<double>(n) / static_cast<double>(TRIAL);
+}
+
+int main(int argc, char **argv) {
+  MPI_Init(&argc, &argv);
+  int rank;
+  int procs;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &procs);
+  double pi = calc_pi(rank);
+  double pi2 = pi * pi;
+  double pi_sum = 0.0;
+  double pi2_sum = 0.0;
+  printf("%f\n", pi);
+  MPI_Allreduce(&pi, &pi_sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(&pi2, &pi2_sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  double pi_ave = pi_sum / procs;
+  double pi_var = pi2_sum / (procs - 1) - pi_sum * pi_sum / procs / (procs - 1);
+  double pi_stdev = sqrt(pi_var);
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (rank == 0) {
+    printf("pi = %f +- %f\n", pi_ave, pi_stdev);
+  }
+  MPI_Finalize();
+}
+```
+
+最後に呼んでいる`MPI_Barrier`は、「ここで全プロセス待ち合わせをしなさい」という命令である。`MPI_Allreduce`は全プロセスで情報を共有するが、一番最後にランク0番が代表して統計情報を表示している。以下が実行例である。
+
+```sh
+$ mpic++ calc_pi_reduce.cpp
+$ mpirun --oversubscribe -np 4  ./a.out
+3.144200
+3.142160
+3.146720
+3.145000
+pi = 3.144520 +- 0.001892
+
+$ mpirun --oversubscribe -np 8  ./a.out
+3.145000
+3.142160
+3.144200
+3.144080
+3.139560
+3.146720
+3.139320
+3.136040
+pi = 3.142135 +- 0.003565
+```
+
+4並列では4つの推定値、8並列では8つの推定値が出てきて、最後に平均と標準偏差が表示されている。各自、エクセルかGoogle Spreadsheetに値を突っ込んでみて、平均と標準偏差が正しく計算できていることを確かめられたい。ちなみに、並列数が多いほうが標準偏差が小さくなることが期待されるが、乱数の初期値の与え方が悪かったのか、データが偏ってしまった。そのあたりが気になる方は、適当に修正してほしい。
 
 * 並列化効率
   * サンプル並列とパラメタ並列の違い
