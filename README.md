@@ -215,7 +215,101 @@ Hello MPI World!
 
 ### ランク
 
-`MPI_Comm_rank`の説明。
+MPIでは、起動したプロセスに通し番号が振られる。その通し番号のことを **ランク(rank)** と呼ぶ。
+ランクの取得には`MPI_Comm_rank`関数を使う。
+
+```cpp
+int rank;
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+```
+
+これを実行すると変数`rank`にランク番号が入る。N並列している場合、ランクは0からN-1までである。
+試してみよう。
+
+[day1/rank.cpp](day1/rank.cpp)
+
+```cpp
+#include <cstdio>
+#include <mpi.h>
+
+int main(int argc, char **argv) {
+  MPI_Init(&argc, &argv);
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  printf("Hello! My rank is %d\n", rank);
+  MPI_Finalize();
+}
+```
+
+実行するとこうなる。
+
+```sh
+$ mpic++ rank.cpp  
+$ mpirun -np 4 ./a.out
+--------------------------------------------------------------------------
+There are not enough slots available in the system to satisfy the 4 slots
+that were requested by the application:
+  ./a.out
+
+Either request fewer slots for your application, or make more slots available
+for use.
+--------------------------------------------------------------------------
+```
+
+おっと、エラーが出た。このエラーは「予め定義されたスロット数よりプロセス数が多いよ」というもので、
+筆者の環境ではMacでは出るが、Linuxではでない。このエラーが出た場合は`mpirun`に
+`--oversubscribe`オプションをつける。
+
+```sh
+$ mpirun --oversubscribe -np 4 ./a.out
+Hello! My rank is 0
+Hello! My rank is 2
+Hello! My rank is 1
+Hello! My rank is 3
+```
+
+無事にそれぞれのプロセスで異なるランク番号が表示された。
+
+MPIプログラムでは、全く同じソースコードのレプリカが作成される。違いはこのランクだけである。
+したがって、プログラマはこのランク番号によって処理を変えることで、並列処理を書く。
+どんな書き方をしても自由である。例えば4並列実行する場合、
+
+```cpp
+#include <cstdio>
+#include <mpi.h>
+
+int main(int argc, char **argv) {
+  MPI_Init(&argc, &argv);
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if (rank == 0) {
+    // Rank 0の処理
+  } else if (rank == 1) {
+    // Rank 1の処理
+  } else if (rank == 2) {
+    // Rank 2の処理
+  } else if (rank == 3) {
+    // Rank 3の処理
+  }
+  MPI_Finalize();
+}
+```
+
+みたいな書き方をしても良い。この場合、ランク0から3まで全く関係のない仕事をさせることができる。
+まぁ、普通はこういう書き方をせずに、後で説明する「サンプル並列」「パラメタ並列」や、「領域分割」をすることが多いが、
+「そうすることが多い」というだけで、「そうしなければならない」ということではない。
+まとめると、
+
+* MPIは、複数のプロセスを起動する
+* それぞれのプロセスには、「ランク」という一意な通し番号が振られる。
+* MPIプログラムは、ランクの値のよって処理を変えることで、プロセスごとに異なる処理をする
+
+こんな感じになる。これがMPIプログラムのすべてである。なお、複数のノードにまたがってMPIプロセスを
+立ち上げた場合でも、ランク番号は一意に振られる。例えば、ノードあたり4プロセス、10ノードで実行した場合、
+全体で40プロセスが起動されるが、それぞれに0から39までのランク番号が振られる。
+その番号が、各ノードにどのように割当られるかは設定に依るので注意。
+
+TODO: なぜstd::coutではなくprintfを使っているかの説明を書く？
 
 ### GDBによるMPIプログラムのデバッグ
 
