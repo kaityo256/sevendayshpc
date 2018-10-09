@@ -72,7 +72,7 @@ for (int i=0; i < SIZE; i++) {
 
 ```cpp
 const int SIZE = 10000;
-# pragma omp parallel for  // ← OpenMPによる並列化の指示
+#pragma omp parallel for  // ← OpenMPによる並列化の指示
 void func(double a[SIZE], double b[SIZE])
 for (int i=0; i < SIZE; i++) {
   a[i] += b[i];
