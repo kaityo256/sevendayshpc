@@ -363,6 +363,122 @@ puts("Hello! My rank is 3");
 
 こんな感じになると思う。
 
+[day1/rank_stream.cpp](day1/rank_stream.cpp)
+
+```cpp
+#include <iostream>
+#include <mpi.h>
+
+int main(int argc, char **argv) {
+  MPI_Init(&argc, &argv);
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  std::cout << "Hello! My rank is " << rank << std::endl;
+  MPI_Finalize();
+}
+```
+
+さて、この場合は、プロセスの切り替わりタイミング(標準出力の占有期限)が`<<`で切り替わる可能性がある。
+
+イメージとしては、
+
+```cpp
+std::cout << "Hello! My rank is ";
+std::cout << "0";
+std::cout << std::endl;
+std::cout << "Hello! My rank is ";
+std::cout << "1";
+std::cout << std::endl;
+std::cout << "Hello! My rank is ";
+std::cout << "2";
+std::cout << std::endl;
+std::cout << "Hello! My rank is ";
+std::cout << "3";
+std::cout << std::endl;
+```
+
+という命令が「ランダムな順番で」に実行される可能性がある。
+
+すると、例えば
+
+```
+Hello! My rank isHello! My rank is
+0
+1
+Hello! My rank is 3
+
+Hello! My rank is 2
+```
+
+のように表示が乱れる可能性がある。
+
+なぜ「可能性がある」と書いているかというと、いま試してみたら再現せず、普通に
+
+```sh
+$ mpirun -np 4 ./a.out
+Hello! My rank is 0
+Hello! My rank is 2
+Hello! My rank is 3
+Hello! My rank is 1
+```
+
+と乱れずに表示されるからだ。昔はもっと乱れた気がしたのだが・・・
+
+いずれにせよ、高並列で試してみたらたまには表示が乱れるので、もし標準出力を使いたいなら、一度`std::stringstream`にまとめてから一度に書き出すか、素直に`printf`を使うほうが良いと思う。
+
+なお、MPIのデバッグ目的に標準出力を使うのは良いが、例えば結果の出力や計算の進捗の出力に使うのはあまりおすすめできない。そのあたりはジョブスケジューラを用いたジョブの実行のあたりで説明すると思う。
+
+ちなみに、Open MPIには「各ランクごとの標準出力を、別々のファイルに吐き出す」というオプションがある。
+
+参考：[MPIプログラムのデバッグ](https://qiita.com/nariba/items/2277c2eb428886eae80d)
+
+例えば、先程の例では、
+
+```sh
+$ mpirun --output-filename hoge -np 4 ./a.out
+```
+
+とすると、Linuxでは標準出力の代わりに`hoge.1.X`というファイルがプロセスの数だけ作成され、そこに保存される。中身はこんな感じ。
+
+```sh
+$ ls hoge.*  
+hoge.1.0  hoge.1.1  hoge.1.2  hoge.1.3
+
+$ cat hoge.1.0
+Hello! My rank is 0
+
+$ cat hoge.1.1
+Hello! My rank is 1
+```
+
+Macで同様なことをすると、以下のようにディレクトリが掘られる。
+
+```sh
+$ mpiexec --output-filename hoge -np 4 --oversubscribe ./a.out
+Hello! My rank is 0
+Hello! My rank is 1
+Hello! My rank is 2
+Hello! My rank is 3
+
+$ tree hoge
+hoge
+└── 1
+    ├── rank.0
+    │   ├── stderr
+    │   └── stdout
+    ├── rank.1
+    │   ├── stderr
+    │   └── stdout
+    ├── rank.2
+    │   ├── stderr
+    │   └── stdout
+    └── rank.3
+        ├── stderr
+        └── stdout
+```
+
+標準出力にも出力した上で、各ディレクトリに、各プロセスの標準出力と標準エラー出力が保存される。覚えておくと便利な時があるかもしれない。
+
 ### GDBによるMPIプログラムのデバッグ
 
 本稿の読者の中には普段からgdbを使ってプログラムのデバッグを行っている人がいるだろう。
