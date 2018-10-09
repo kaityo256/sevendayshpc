@@ -168,6 +168,191 @@ Hello MPI World!
 
 `MPI_Comm_rank`の説明。
 
+### GDBによるMPIプログラムのデバッグ
+
+本稿の読者の中には普段からgdbを使ってプログラムのデバッグを行っている人がいるだろう。
+並列プログラムのデバッグは一般に極めて面倒だが、とりあえずgdbを使ったMPIプログラムのデバッグ方法をしてておくと将来何かの役に立つかもしれない。
+あと、これは筆者だけかもしれないが、ソース読んだりするより、gdb経由でプログラムの振る舞いを解析したほうがなんかいろいろ理解しやすかったりする。
+というわけで、gdbでMPIプロセスにアタッチする方法を紹介する。普段からgdbを使っていなければこの節は読み飛ばしてかまわない。
+
+gdbでデバッグできるのは一度に一つのプロセスのみである。しかし、MPIプログラムは複数のプロセスを起動する。
+したがって、
+
+* 起動されたすべてのプロセスについてgdbをアタッチする
+* 特定のプロセス一つだけにgdbをアタッチする
+
+の二通りの方法が考えられる。ここでは後者の方法を採用する。なお、両方の方法が[Open MPIのFAQ: Debugging applications in parallel](https://www.open-mpi.org/faq/?category=debugging)に記載されているので興味のある方は参照されたい。
+
+gdbは、プロセスIDを使って起動中のプロセスにアタッチする機能がある。そこで、まずMPIプログラムを実行し、その後で
+gdbで特定のプロセスにアタッチする。しかし、gdbでアタッチするまで、MPIプログラムには特定の場所で待っていてほしい。
+というわけで、
+
+* 故意に無限ループに陥るコードを書いておく
+* MPIプログラムを実行する
+* gdbで特定のプロセスにアタッチする
+* gdbで変数をいじって無限ループを脱出させる
+* あとは好きなようにデバッグする
+
+という方針でいく。なお、なぜかMac OSではMPIプロセスへのgdbのアタッチがうまくいかなかったので、以下はCentOSで実行している。
+
+こんなコードを書く。
+
+[gdb_mpi.cpp](day1/gdb_mpi.cpp)
+
+```cpp
+#include <cstdio>
+#include <sys/types.h>
+#include <unistd.h>
+#include <mpi.h>
+
+int main(int argc, char **argv) {
+  MPI_Init(&argc, &argv);
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  printf("Rank %d: PID %d\n", rank, getpid());
+  fflush(stdout);
+  int i = 0;
+  int sum = 0;
+  while (i == rank) {
+    sleep(1);
+  }
+  MPI_Allreduce(&rank, &sum, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  printf("%d\n", sum);
+  MPI_Finalize();
+}
+```
+
+`MPI_Allreduce`はまだ説明していないが、全プロセスで変数の総和を取る関数である。
+このコードは、自分のPIDを出力してから、ランク0番のプロセスだけ無限ループに陥る。
+このコードを`-g`つきでコンパイルし、とりあえず4プロセスで実行してみよう。
+
+```sh
+$ mpic++ -g gdb_mpi.cpp
+$ mpirun -np 4 ./a.out
+Rank 2: PID 3646
+Rank 0: PID 3644
+Rank 1: PID 3645
+Rank 3: PID 3647
+```
+
+4プロセス起動して、そこでランク0番だけ無限ループしているので、他のプロセスが待ちの状態になる。
+この状態でランク0番にアタッチしよう。もう一枚端末を開いてgdbを起動、ランク0のPID(実行の度に異なるが、今回は3644)にアタッチする。
+
+```sh
+$ gdb
+(gdb) attach 3644
+Attaching to process 3644
+Reading symbols from /path/to/a.out...done.
+(snip)
+(gdb)
+```
+
+この状態で、バックトレースを表示してみる。
+
+```sh
+(gdb) bt
+#0  0x00007fc229e2156d in nanosleep () from /lib64/libc.so.6
+#1  0x00007fc229e21404 in sleep () from /lib64/libc.so.6
+#2  0x0000000000400a04 in main (argc=1, argv=0x7ffe6cfd0d88) at gdb_mpi.cpp:15
+```
+sleep状態にあるので、`main`関数から`sleep`が、`sleep`から`nanosleep`が呼ばれていることがわかる。
+ここから`main`に戻ろう。`finish`を二回入力する。
+
+```sh
+(gdb) finish
+Run till exit from #0  0x00007fc229e2156d in nanosleep () from /lib64/libc.so.6
+0x00007fc229e21404 in sleep () from /lib64/libc.so.6
+(gdb) finish
+Run till exit from #0  0x00007fc229e21404 in sleep () from /lib64/libc.so.6
+main (argc=1, argv=0x7ffe6cfd0d88) at gdb_mpi.cpp:14
+14	  while (i == rank) {
+```
+
+`main`関数まで戻ってきた。この後、各ランク番号`rank`の総和を、変数`sum`に入力するので、
+`sum`にウォッチポイントを設定しよう。
+
+```sh
+(gdb) watch sum
+Hardware watchpoint 1: sum
+```
+
+現在は変数`i`の値が`0`で、このままでは無限ループするので、変数の値を書き換えてから続行(continue)してやる。
+
+```sh
+(gdb) set var i = 1
+(gdb) c
+Continuing.
+Hardware watchpoint 1: sum
+
+Old value = 0
+New value = 1
+0x00007fc229eaa676 in __memcpy_ssse3 () from /lib64/libc.so.6
+```
+
+ウォッチポイントにひっかかった。この状態でバックトレースを表示してみよう。
+
+```sh
+(gdb) bt
+#0  0x00007fc229eaa676 in __memcpy_ssse3 () from /lib64/libc.so.6
+#1  0x00007fc229820185 in opal_convertor_unpack ()
+   from /opt/openmpi-2.1.1_gcc-4.8.5/lib/libopen-pal.so.20
+#2  0x00007fc21e9afbdf in mca_pml_ob1_recv_frag_callback_match ()
+   from /opt/openmpi-2.1.1_gcc-4.8.5/lib/openmpi/mca_pml_ob1.so
+#3  0x00007fc21edca942 in mca_btl_vader_poll_handle_frag ()
+   from /opt/openmpi-2.1.1_gcc-4.8.5/lib/openmpi/mca_btl_vader.so
+#4  0x00007fc21edcaba7 in mca_btl_vader_component_progress ()
+   from /opt/openmpi-2.1.1_gcc-4.8.5/lib/openmpi/mca_btl_vader.so
+#5  0x00007fc229810b6c in opal_progress ()
+   from /opt/openmpi-2.1.1_gcc-4.8.5/lib/libopen-pal.so.20
+#6  0x00007fc22ac244b5 in ompi_request_default_wait_all ()
+   from /opt/openmpi-2.1.1_gcc-4.8.5/lib/libmpi.so.20
+#7  0x00007fc22ac68955 in ompi_coll_base_allreduce_intra_recursivedoubling ()
+   from /opt/openmpi-2.1.1_gcc-4.8.5/lib/libmpi.so.20
+#8  0x00007fc22ac34633 in PMPI_Allreduce ()
+   from /opt/openmpi-2.1.1_gcc-4.8.5/lib/libmpi.so.20
+#9  0x0000000000400a2c in main (argc=1, argv=0x7ffe6cfd0d88) at gdb_mpi.cpp:17
+```
+
+ごちゃごちゃっと関数呼び出しが連なってくる。MPIは規格であり、様々な実装があるが、今表示されているのはOpen MPIの実装である。内部で`ompi_coll_base_allreduce_intra_recursivedoubling`とか、それっぽい関数が呼ばれていることがわかるであろう。興味のある人は、[OpenMPIのソース](https://www.open-mpi.org/source/)をダウンロードして、上記と突き合わせてみると楽しいかもしれない。
+
+さて、続行してみよう。二回continueするとプログラムが終了する。
+
+```sh
+(gdb) c
+Continuing.
+Hardware watchpoint 1: sum
+
+Old value = 1
+New value = 6
+0x00007fc229eaa676 in __memcpy_ssse3 () from /lib64/libc.so.6
+(gdb) c
+Continuing.
+[Thread 0x7fc227481700 (LWP 3648) exited]
+[Thread 0x7fc226c80700 (LWP 3649) exited]
+
+Watchpoint 1 deleted because the program has left the block in
+which its expression is valid.
+0x00007fc229d7e445 in __libc_start_main () from /lib64/libc.so.6
+```
+
+`mpirun`を実行していた端末も、以下のような表示をして終了するはずである。
+
+```sh
+$ mpic++ -g gdb_mpi.cpp
+$ mpirun -np 4 ./a.out
+Rank 2: PID 3646
+Rank 0: PID 3644
+Rank 1: PID 3645
+Rank 3: PID 3647
+6
+6
+6
+6
+```
+
+ここではgdbでMPIプロセスにアタッチするやり方だけを説明した。ここを読むような人はgdbを使いこなしているであろうから、アタッチの仕方さえわかれば、後は好きなようにデバッグできるであろう。
+ただし、私の経験では、並列プログラミングにおいてgdbを使ったデバッグは最終手段であり、できるだけ細かくきちんとテストを書いて、そもそもバグが入らないようにしていくことが望ましい。
+
 ## Day 2 : ジョブの投げ方
 
 ### スパコンとは
