@@ -22,12 +22,6 @@ void onestep(const double h) {
   lattice[L - 1] += (orig[L - 2] - 2.0 * lattice[L - 1] + orig[0]) * 0.5 * h;
 }
 
-void fixed_temperature_sub(void) {
-  lattice[L / 4] = 10.0;
-  lattice[3 * L / 4] = -10.0;
-}
-
-
 void dump(void) {
   static int index = 0;
   char filename[256];
