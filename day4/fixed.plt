@@ -1,4 +1,4 @@
-set term pngcairo
+set term png
 set xla "x"
 set yla "T"
 set out "fixed.png"
