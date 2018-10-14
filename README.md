@@ -1740,27 +1740,119 @@ mpirun -np 8 --oversubscribe ./a.out  3.28s user 2.89s system 311% cpu 1.980 tot
 
 まぁ、サイズが小さいし、一次元だから計算もとても軽いので、通信のために余計なことをする分遅くなることは実は予想できていた。しかし、領域分割の基本的なテクニックはこのコードにすべて含まれているし、これができれば原理的には差分法で陽解法なコードは全部並列化できてしまうので、応用範囲は広い。
 
-### 二次元反応拡散方程式 (え？書くの？)
+## Day 5 : 二次元反応拡散方程式
 
-### 並列化で大事なこと
+Day 4で一次元拡散方程式を領域分割により並列化した。後はこの応用で相互作用距離が短いモデルはなんでも領域分割できるのだが、
+二次元、三次元だと、一次元よりちょっと面倒くさい。後、熱伝導方程式は、「最終的になにかに落ち着く」方程式なので、シミュレーションしてて
+あまりおもしろいものではない。そこで、二次元で、差分法で簡単に解けて、かつ結果がそこそこ面白い題材として反応拡散方程式を取り上げる。
+
+TODO: 反応拡散方程式の説明
+
+### シリアル版
+
+TODO: u, vを二つ用意して交互に使うことの説明
+
+[day5/gs.cpp](day5/gs.cpp)
+
+```sh
+$ g++ -O3 gs.cpp
+$ ./a.out
+conf000.dat
+conf001.dat
+conf002.dat
+(snip)
+conf097.dat
+conf098.dat
+conf099.dat
+```
+
+出てきたデータ(`*.dat`)は、倍精度実数が`L*L`個入っている。これをRubyで読み込んでPNG形式で吐く
+スクリプトを作っておこう。
+
+[day5/image.rb](day5/image.rb)
+
+```rb
+require "cairo"
+require "pathname"
+
+def convert(datfile)
+  puts datfile
+  buf = File.binread(datfile).unpack("d*")
+  l = Math.sqrt(buf.size).to_i
+  m = 4
+  size = l * m
+
+  surface = Cairo::ImageSurface.new(Cairo::FORMAT_RGB24, size, size)
+  context = Cairo::Context.new(surface)
+  context.set_source_rgb(1, 1, 1)
+  context.rectangle(0, 0, size, size)
+  context.fill
+
+  l.times do |x|
+    l.times do |y|
+      u = buf[x + y * l]
+      context.set_source_rgb(0, u, 0)
+      context.rectangle(x * m, y * m, m, m)
+      context.fill
+    end
+  end
+  pngfile = Pathname(datfile).sub_ext(".png").to_s
+  surface.write_to_png(pngfile)
+end
+
+`ls *.dat`.split(/\n/).each do |f|
+  convert(f)
+end
+```
+
+TODO:特に難しいことは何もしていないけど説明いる？
+
+これで一括で処理する。
+
+```sh
+$ ruby image.rb
+conf000.dat
+conf001.dat
+conf002.dat
+(snip)
+conf097.dat
+conf098.dat
+conf099.dat
+```
+
+するとこんな感じの画像が得られる。
+
+![day5/conf010.png](day5/conf010.png)
+![day5/conf030.png](day5/conf030.png)
+![day5/conf050.png](day5/conf050.png)
+![day5/conf090.png](day5/conf090.png)
+
+### 並列化ステップ1: データの保存
+
+* Allreduceしてから並び替え
+* 簡単な例(整数)で確認
+
+### 並列化ステップ2: のりしろの通信
+
+* 斜め方向の通信
+
+### 余談：並列化で大事なこと
 
 * 並列化とは「既存のコードを改造する」ことではなく、「既存のコードを書き直す」こと
 * 並列化のデバッグは神経質に
-
-### モンテカルロ(乱数の状態保存) 多分書かないが・・・
-
-## Day 5 : チェックポイントリスタート
-
-スパコンにジョブを投げるとき、投げるキューを選ぶ。このとき、キューごとに「実行時間の上限」が決まっていることがほとんである。実行時間制限はサイトやキューごとに違うが、短いと一日、長くても一週間程度であることが多い。一般に長時間実行できるキューは待ち時間も長くなる傾向にあるため、可能であれば長いジョブを短く分割して実行したほうが良い。このときに必要となるのがチェックポイントリスタートである。
 
 ## Day 6 : ハイブリッド並列
 
 * ハイブリッド並列とは
 * なぜハイブリッド並列が必要か
 
+できればハイブリッド並列したくないから、あまり真面目に書く気がしない・・・。
+
 ## Day 7 : より実践的な並列プログラミング
 
-* なにを書くか全く決めてない
+### チェックポイントリスタート
+
+スパコンにジョブを投げるとき、投げるキューを選ぶ。このとき、キューごとに「実行時間の上限」が決まっていることがほとんである。実行時間制限はサイトやキューごとに違うが、短いと一日、長くても一週間程度であることが多い。一般に長時間実行できるキューは待ち時間も長くなる傾向にあるため、可能であれば長いジョブを短く分割して実行したほうが良い。このときに必要となるのがチェックポイントリスタートである。
 
 ## おわりに
 
