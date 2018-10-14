@@ -732,7 +732,7 @@ BlueGene/LのL1には、1ビットのエラー検出機能のみがあり、訂�
 
 そもそもなぜL1にエラー訂正をつけなかったのか、つけられなかったのかはわからないのだが、後継機であるBlueGene/PにはどうやらL1にもエラー訂正がついたところを見ると、ユーザからは不評だったのかもしれない。BlueGeneシリーズはHPC業界ではかなり売れたようで、
 [2007年6月のTop500リスト](https://www.top500.org/lists/2007/06/)のトップ10に、BlueGeneが4つ入っている。
-BlueGeneは、第一世代のBlueGene/L、第二世代のBlueGene/P、第三世代のBlueGene/Pと開発が進められたが、そこでBlueGeneプロジェクトは終了した。
+BlueGeneは、第一世代のBlueGene/L、第二世代のBlueGene/P、第三世代のBlueGene/Qと開発が進められたが、そこでBlueGeneプロジェクトは終了した。
 
 ### スパコンのアカウントの取得方法
 
