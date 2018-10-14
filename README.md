@@ -1819,10 +1819,10 @@ conf099.dat
 
 するとこんな感じの画像が得られる。
 
-![day5/conf010.png](day5/conf010.png)
-![day5/conf030.png](day5/conf030.png)
-![day5/conf050.png](day5/conf050.png)
-![day5/conf090.png](day5/conf090.png)
+![day5/fig/conf010.png](day5/fig/conf010.png)
+![day5/fig/conf030.png](day5/fig/conf030.png)
+![day5/fig/conf050.png](day5/fig/conf050.png)
+![day5/fig/conf090.png](day5/fig/conf090.png)
 
 ### 並列化ステップ1: データの保存
 
