@@ -145,6 +145,7 @@ int main(int argc, char **argv) {
   // x方向に通信
   sendrecv_x(local_data, mi);
   dump_local(local_data, mi);
+  // y方向に通信
   sendrecv_y(local_data, mi);
   dump_local(local_data, mi);
   MPI_Finalize();
