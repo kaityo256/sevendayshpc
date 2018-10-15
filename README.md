@@ -1824,25 +1824,17 @@ conf099.dat
 ![day5/fig/conf050.png](day5/fig/conf050.png)
 ![day5/fig/conf090.png](day5/fig/conf090.png)
 
-### 並列化ステップ1: データの保存
+### 並列化ステップ1: ローカルデータの保持
 
-さて、反応拡散方程式を二次元領域分割により並列化する。
-例えば8x8の系を4プロセスで並列化する際、一つのプロセスは4x4の領域を担当するのが自然であろう。
-しかし、一次元の時と同様に「のりしろ」の領域が必要になる。したがって、上下左右に1列余分に必要になるから、
-6x6のデータを保持することになる。
-
-計算を実行するにあたり、必要な通信は、
-
-* 時間発展のための「のりしろ」の通信
-* 計算の途中経過のデータの保存のための集団通信
-
-の二種類である。一次元分割の時と同様に、まずは後者、データの保存のための通信を考えよう。
-
+さて、さっそく反応拡散方程式を二次元領域分割により並列化していくわけだが、
 並列化で重要なのは、 **いきなり本番コードで通信アルゴリズムを試さない** ということである。
 まずは、今やろうとしている通信と同じアルゴリズムだけを抜き出したコードを書き、ちゃんと想定通りに通信できていることを確かめる。
-実際のデータは倍精度実数だが、整数でためそう。
+実際のデータは倍精度実数だが、とりあえず整数データでいろいろためそう。
 
-いま、LxLのグリッドがあるとしよう。これをNプロセスで分割する。
+まず、通信関連のコードを書く前に、領域分割により、全体をどうやって分割するか、
+各プロセスはどこを担当するかといった基本的なセットアップを確認しよう。
+
+いま、LxLのグリッドがあるとしよう。これをprocsプロセスで分割する。
 この時、なるべく「のりしろ」が小さくなるように分割したい。
 例えば4プロセスなら2x2に、24プロセスなら6x4という具合である。
 このためには、与えられたプロセス数を、なるべく似たような数字になるように
@@ -1868,9 +1860,55 @@ MPIにはそのための関数、`MPI_Dims_create`が用意されている。
 Intel MPIやSGI MPTはちゃんと3x3を返してくるので、このあたりは実装依存のようだ。
 気になる場合は自分で因数分解コードを書いて欲しい。
 
+さて、procsプロセスを、GX*GYと分割することにしよう。
+すると、各プロセスは、横がL/GX、縦がL/GY個のサイトを保持すれば良い。
+例えば8x8の系を4プロセスで並列化する際、一つのプロセスが担当するのは4x4となるが、
+上下左右に1列余分に必要になるので、合わせて6x6のデータを保持することになる。
+また、各プロセスは自分がどの場所を担当しているかも知っておきたいし、担当する領域のサイズも保持しておきたい。
+これらに加えてランクや総プロセス数といった並列化情報を、`MPIinfo`という構造体にまとめて突っ込んで置こう。
+とりあえず必要な情報はこんな感じだろうか。
 
-まず、8x8のグリッドのデータを、4プロセスで分割し、まわりに「のりしろ」を用意する。
-あとの通信がうまくいっているか確認するため、「のりしろ」以外に通し番号を降っておこう。
+```cpp
+struct MPIinfo {
+  int rank;  //ランク番号
+  int procs; //総プロセス数
+  int GX, GY; // プロセスをどう分割したか (GX*GY=procs)
+  int local_grid_x, local_grid_y; // 自分が担当する位置 
+  int local_size_x, local_size_y; // 自分が担当する領域のサイズ(のりしろ含まず)
+};
+```
+
+`MPIinfo`の各値をセットする関数、`setup_info`を作っておこう。こんな感じかな。
+
+```cpp
+void setup_info(MPIinfo &mi) {
+  int rank = 0;
+  int procs = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &procs);
+  int d2[2] = {};
+  MPI_Dims_create(procs, 2, d2);
+  mi.rank = rank;
+  mi.procs = procs;
+  mi.GX = d2[0];
+  mi.GY = d2[1];
+  mi.local_grid_x = rank % mi.GX;
+  mi.local_grid_y = rank / mi.GX;
+  mi.local_size_x = L / mi.GX;
+  mi.local_size_y = L / mi.GY;
+}
+```
+
+自分が保持するデータを`std::vector<int> local_data`として宣言しよう。のりしろの部分も考慮するとこんな感じになる。
+
+```cpp
+  MPIinfo mi;
+  setup_info(mi);
+  std::vector<int> local_data((mi.local_size_x + 2) * (mi.local_size_y + 2), 0);
+```
+
+あとの通信がうまくいっているか確認するため、ローカルデータに「のりしろ」以外に通し番号を降っておこう。
+例えばL=8で、procs = 4の場合に、各プロセスにこういうデータを保持させたい。
 
 ```sh
 rank = 0
@@ -1905,6 +1943,79 @@ rank = 3
 000 060 061 062 063 000 
 000 000 000 000 000 000 
 ```
+
+このような初期化をする関数`init`を用意する。
+
+```cpp
+void init(std::vector<int> &local_data, MPIinfo &mi) {
+  const int offset = mi.local_size_x * mi.local_size_y * mi.rank;
+  for (int iy = 0; iy < mi.local_size_y; iy++) {
+    for (int ix = 0; ix < mi.local_size_x; ix++) {
+      int index = (ix + 1) + (iy + 1) * (mi.local_size_x + 2);
+      int value = ix + iy * mi.local_size_x + offset;
+      local_data[index] = value;
+    }
+  }
+}
+```
+
+自分が担当する領域の左上に来る番号を`offset`として計算し、そこから通し番号を降っているだけである。
+このローカルなデータをダンプする関数も作っておく。
+
+```cpp
+void dump_local_sub(std::vector<int> &local_data, MPIinfo &mi) {
+  printf("rank = %d\n", mi.rank);
+  for (int iy = 0; iy < mi.local_size_y + 2; iy++) {
+    for (int ix = 0; ix < mi.local_size_x + 2; ix++) {
+      unsigned int index = ix + iy * (mi.local_size_x + 2);
+      printf("%03d ", local_data[index]);
+    }
+    printf("\n");
+  }
+  printf("\n");
+}
+```
+
+`dump_local_sub`に自分が保持する`std::vector`を渡せば表示されるのだが、
+複数のプロセスから一気に標準出力に吐くと表示が乱れる可能性がある。
+各プロセスからファイルに吐いてしまっても良いが、こういう時は、プロセスの数だけループをまわし、ループカウンタが自分のランク番号と同じになった時に書き込む、
+というコードが便利である。全プロセスが順番待ちをするので速度は遅いが、主にデバッグに使うので問題ない。
+こんな感じである。
+
+```cpp
+void dump_local(std::vector<int> &local_data, MPIinfo &mi) {
+  for (int i = 0; i < mi.procs; i++) {
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (i == mi.rank) {
+      dump_local_sub(local_data, mi);
+    }
+  }
+}
+```
+
+毎回バリア同期が必要なことに注意。この、
+
+```cpp
+  for (int i = 0; i < procs; i++) {
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (i == rank) {
+      do_something();
+    }
+  }
+```
+
+というイディオムは、MPIで頻出するので覚えておくと良いかもしれない。
+
+### 並列化ステップ1: データの保存
+
+
+計算を実行するにあたり、必要な通信は、
+
+* 時間発展のための「のりしろ」の通信
+* 計算の途中経過のデータの保存のための集団通信
+
+の二種類である。一次元分割の時と同様に、まずは後者、データの保存のための通信を考えよう。
+
 
 
 ### 並列化ステップ2: のりしろの通信
