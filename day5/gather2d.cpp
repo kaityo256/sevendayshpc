@@ -29,7 +29,7 @@ void dump_local_sub(std::vector<int> &local_data, MPIinfo &mi) {
   for (int iy = 0; iy < mi.local_size_y + 2; iy++) {
     for (int ix = 0; ix < mi.local_size_x + 2; ix++) {
       unsigned int index = ix + iy * (mi.local_size_x + 2);
-      printf("%03d ", local_data[index]);
+      printf(" %03d", local_data[index]);
     }
     printf("\n");
   }
@@ -48,7 +48,7 @@ void dump_local(std::vector<int> &local_data, MPIinfo &mi) {
 void dump_global(std::vector<int> &global_data) {
   for (int iy = 0; iy < L; iy++) {
     for (int ix = 0; ix < L; ix++) {
-      printf("%03d ", global_data[ix + iy * L]);
+      printf(" %03d", global_data[ix + iy * L]);
     }
     printf("\n");
   }
@@ -80,6 +80,7 @@ void gather(std::vector<int> &local_data, MPIinfo &mi) {
   const int lx = mi.local_size_x;
   const int ly = mi.local_size_y;
   std::vector<int> sendbuf(lx * ly);
+  // 「のりしろ」を除いたデータのコピー
   for (int iy = 0; iy < ly; iy++) {
     for (int ix = 0; ix < lx; ix++) {
       int index_from = (ix + 1) + (iy + 1) * (lx + 2);
@@ -122,9 +123,13 @@ int main(int argc, char **argv) {
   MPI_Init(&argc, &argv);
   MPIinfo mi;
   setup_info(mi);
+  // ローカルデータの確保
   std::vector<int> local_data((mi.local_size_x + 2) * (mi.local_size_y + 2), 0);
+  // ローカルデータの初期化
   init(local_data, mi);
+  // ローカルデータの表示
   dump_local(local_data, mi);
+  // ローカルデータを集約してグローバルデータに
   gather(local_data, mi);
   MPI_Finalize();
 }
