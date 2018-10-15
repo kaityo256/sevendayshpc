@@ -62,6 +62,76 @@ void setup_info(MPIinfo &mi) {
   mi.local_size_y = L / mi.GY;
 }
 
+// 自分から見て +dx, +dyだけずれたプロセスのランクを返す
+int get_rank(int dx, int dy, MPIinfo &mi) {
+  int rx = (mi.local_grid_x + dx + mi.GX) % mi.GX;
+  int ry = (mi.local_grid_y + dy + mi.GY) % mi.GY;
+  return rx + ry * mi.GX;
+}
+
+void sendrecv_x(std::vector<int> &local_data, MPIinfo &mi) {
+  const int lx = mi.local_size_x;
+  const int ly = mi.local_size_y;
+  std::vector<int> sendbuf(ly);
+  std::vector<int> recvbuf(ly);
+  int left = get_rank(-1, 0, mi);
+  int right = get_rank(1, 0, mi);
+  for (int i = 0; i < ly; i++) {
+    int index = lx + (i + 1) * (lx + 2);
+    sendbuf[i] = local_data[index];
+  }
+  MPI_Status st;
+  MPI_Sendrecv(sendbuf.data(), ly, MPI_INT, right, 0,
+               recvbuf.data(), ly, MPI_INT, left, 0, MPI_COMM_WORLD, &st);
+  for (int i = 0; i < ly; i++) {
+    int index = (i + 1) * (lx + 2);
+    local_data[index] = recvbuf[i];
+  }
+
+  for (int i = 0; i < ly; i++) {
+    int index = 1 + (i + 1) * (lx + 2);
+    sendbuf[i] = local_data[index];
+  }
+  MPI_Sendrecv(sendbuf.data(), ly, MPI_INT, left, 0,
+               recvbuf.data(), ly, MPI_INT, right, 0, MPI_COMM_WORLD, &st);
+  for (int i = 0; i < ly; i++) {
+    int index = lx + 1 + (i + 1) * (lx + 2);
+    local_data[index] = recvbuf[i];
+  }
+}
+
+void sendrecv_y(std::vector<int> &local_data, MPIinfo &mi) {
+  const int lx = mi.local_size_x;
+  const int ly = mi.local_size_y;
+  std::vector<int> sendbuf(lx + 2);
+  std::vector<int> recvbuf(lx + 2);
+  int up = get_rank(0, -1, mi);
+  int down = get_rank(0, 1, mi);
+  MPI_Status st;
+  // 上に投げて下から受け取る
+  for (int i = 0; i < lx + 2; i++) {
+    int index = i + 1 * (lx + 2);
+    sendbuf[i] = local_data[index];
+  }
+  MPI_Sendrecv(sendbuf.data(), lx + 2, MPI_INT, up, 0,
+               recvbuf.data(), lx + 2, MPI_INT, down, 0, MPI_COMM_WORLD, &st);
+  for (int i = 0; i < lx + 2; i++) {
+    int index = i + (ly + 1) * (lx + 2);
+    local_data[index] = recvbuf[i];
+  }
+  // 下に投げて上から受け取る
+  for (int i = 0; i < lx + 2; i++) {
+    int index = i + (ly) * (lx + 2);
+    sendbuf[i] = local_data[index];
+  }
+  MPI_Sendrecv(sendbuf.data(), lx + 2, MPI_INT, down, 0,
+               recvbuf.data(), lx + 2, MPI_INT, up, 0, MPI_COMM_WORLD, &st);
+  for (int i = 0; i < lx + 2; i++) {
+    int index = i + 0 * (lx + 2);
+    local_data[index] = recvbuf[i];
+  }
+}
+
 int main(int argc, char **argv) {
   MPI_Init(&argc, &argv);
   MPIinfo mi;
@@ -72,6 +142,10 @@ int main(int argc, char **argv) {
   init(local_data, mi);
   // ローカルデータの表示
   dump_local(local_data, mi);
-  // ローカルデータを集約してグローバルデータに
+  // x方向に通信
+  sendrecv_x(local_data, mi);
+  dump_local(local_data, mi);
+  sendrecv_y(local_data, mi);
+  dump_local(local_data, mi);
   MPI_Finalize();
 }
