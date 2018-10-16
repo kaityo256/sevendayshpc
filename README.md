@@ -113,8 +113,7 @@ brew install openmpi
 で一発、CentOSなら、
 
 ```sh
-sudo yum install openmpi-devel 
-export PATH=$PATH:/usr/lib64/openmpi/bin/ 
+export PATH=$PATH:/usr/lib64/openmpi/bin/
 ```
 
 でおしまいである。ここで
@@ -131,7 +130,7 @@ sudo yum install openmpi
 例えばMacでは
 
 ```sh
-$ mpic++ --version 
+$ mpic++ --version
 Apple LLVM version 10.0.0 (clang-1000.11.45.2)
 Target: x86_64-apple-darwin17.7.0
 Thread model: posix
@@ -168,7 +167,7 @@ int main(int argc, char **argv) {
 
 以下のようにしてコンパイル、実行してみる。
 
-```
+```sh
 $ mpic++ hello.cpp
 $ ./a.out
 Hello MPI World!
@@ -319,13 +318,12 @@ int main(int argc, char **argv) {
 mpirun -np 4 ./a.out
 ```
 
-などとしてMPIプログラムを実行したとする。この場合は4プロセス立ち上がり、それぞれにPIDが与えられ、
-固有のメモリ空間を持つ。しかし、これらのプロセスは標準出力は共有している。
+などとしてMPIプログラムを実行したとする。この場合は4プロセス立ち上がり、それぞれにPIDが与えられ、固有のメモリ空間を持つ。しかし、これらのプロセスは標準出力は共有している。
 したがって、「せーの」で標準出力に出力しようとしたら競合することになる。
 この時、例えば他のプロセスが出力している時に他のプロセスが書き込んだり、出力が混ざったりしないように、
 後ろで交通整理が行われる。そもそも画面になにかを表示する、というのはわりと奥が深いのだが、
-そのあたりの話は[tanakamura](https://github.com/tanakamura)さんの
-[実践的低レベルプログラミング ](https://tanakamura.github.io/pllp/docs/)とかを読んでほしい。
+そのあたりの話は [tanakamura](https://github.com/tanakamura) さんの
+[実践的低レベルプログラミング](https://tanakamura.github.io/pllp/docs/) とかを読んでほしい。
 
 さて、とにかく今は標準出力というリソースは一つしかないのに、4つのプロセスがそこを使う。
 この時、「あるひとかたまりの処理については、一つのプロセスが独占して使う」ようにすることで
@@ -572,7 +570,7 @@ Run till exit from #0  0x00007fc229e2156d in nanosleep () from /lib64/libc.so.6
 (gdb) finish
 Run till exit from #0  0x00007fc229e21404 in sleep () from /lib64/libc.so.6
 main (argc=1, argv=0x7ffe6cfd0d88) at gdb_mpi.cpp:14
-14	  while (i == rank) {
+14    while (i == rank) {
 ```
 
 `main`関数まで戻ってきた。この後、各ランク番号`rank`の総和を、変数`sum`に入力するので、
@@ -1844,14 +1842,14 @@ MPIにはそのための関数、`MPI_Dims_create`が用意されている。
 ```cpp
   int d2[2] = {};
   MPI_Dims_create(procs, 2, d2);
-``
+```
 
 のように呼ぶと、`d2[0]`と`d2[1]`に分割数が入ってくる。三次元分割をしたければ、
 
 ```cpp
   int d3[3] = {};
   MPI_Dims_create(procs, 3, d3);
-``
+```
 
 などと、分割数3を指定し、3要素の配列を食わせてやれば良い。
 ただし、OpenMPIの`MPI_Dims_create`は若干動作が怪しいので注意すること。
@@ -1872,7 +1870,7 @@ struct MPIinfo {
   int rank;  //ランク番号
   int procs; //総プロセス数
   int GX, GY; // プロセスをどう分割したか (GX*GY=procs)
-  int local_grid_x, local_grid_y; // 自分が担当する位置 
+  int local_grid_x, local_grid_y; // 自分が担当する位置
   int local_size_x, local_size_y; // 自分が担当する領域のサイズ(のりしろ含まず)
 };
 ```
@@ -2332,7 +2330,7 @@ rank = 3
 
 ## ライセンス
 
-(C) Hiroshi Watanabe 
+(C) Hiroshi Watanabe
 
 Creative Commons License
 
