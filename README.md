@@ -2471,7 +2471,7 @@ g++ -O1 -mavx2 -S func_simd.cpp
 LBB0_1:  
   vmovupd (%rax,%rcx), %ymm0         # (a[i],a[i+1],a[i+2],a[i+3]) -> ymm0
   vaddpd  (%rax,%rdx), %ymm0, %ymm0  # ymm0 + (b[i],b[i+1],b[i+2],b[i+3]) -> ymm 0
-  vmovupd %ymm0, (%rax,%rsi)         # ymm0 -> (c[i],c[i+1],c[i+2],c[i+3]) 
+  vmovupd %ymm0, (%rax,%rsi)         # ymm0 -> (c[i],c[i+1],c[i+2],c[i+3])
   addq  $4, %rdi    # i += 4
   addq  $32, %rax
   cmpq  $10000, %rdi
@@ -2523,6 +2523,10 @@ void check(void(*pfunc)(), const char *type) {
 }
 ```
 
+全部まとめたコードはこちら。
+
+[day7/simdcheck.cpp](day7/simdcheck.cpp)
+
 実際に実行してテストしてみよう。
 
 ```sh
@@ -2564,12 +2568,12 @@ LOOP BEGIN at func.cpp(5,3)
    remark #15305: vectorization support: vector length 4
    remark #15399: vectorization support: unroll factor set to 4
    remark #15300: LOOP WAS VECTORIZED
-   remark #15448: unmasked aligned unit stride loads: 2 
-   remark #15449: unmasked aligned unit stride stores: 1 
+   remark #15448: unmasked aligned unit stride loads: 2
+   remark #15449: unmasked aligned unit stride stores: 1
    remark #15475: --- begin vector loop cost summary ---
-   remark #15476: scalar loop cost: 6 
-   remark #15477: vector loop cost: 1.250 
-   remark #15478: estimated potential speedup: 4.800 
+   remark #15476: scalar loop cost: 6
+   remark #15477: vector loop cost: 1.250
+   remark #15478: estimated potential speedup: 4.800
    remark #15488: --- end vector loop cost summary ---
    remark #25015: Estimate of max trip count of loop=625
 LOOP END
@@ -2586,7 +2590,7 @@ LOOP END
 でも、こういう時にはアセンブリ見ちゃった方が早い。
 
 ```sh
-$ icpc -march=core-avx2 -O2 -S func.cpp
+icpc -march=core-avx2 -O2 -S func.cpp
 ```
 
 コンパイラが吐いたアセンブリを、少し手で並び替えたものがこちら。
