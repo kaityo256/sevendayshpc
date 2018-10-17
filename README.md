@@ -2380,11 +2380,249 @@ Day 7は何かを系統的に話すというよりは、私のスパコンプロ
 残る方式は **プログラマにがんばらせる方法論** だけである。それがSIMDである。
 
 異なる命令をまとめてパックするのは難しい。というわけで、命令ではなく、データをパックすることを考える。
-たとえば「C=A+B」という足し算を考える。これは「AとBというデータを取ってきて、加算し、Cとしてメモリに書き戻す」という動作をする。ここで、「C1 = A1+B1」「C2 = A2+B2」という独立な演算があったとしよう。予め「A1:A2」「B1:B2」とデータを一つのレジスタにパックしておき、それぞれの和を取ると「C1:C2」という、2つの演算結果がパックしたレジスタが得られる。このように複数のデータをパックするレジスタをSIMDレジスタと呼ぶ。例えばAVX-2なら256ビットのSIMDレジスタがあるため、64ビットの倍精度実数を4つパックできる。そしてパックされた4つのデータ間に独立な演算を実行することができる。
+たとえば「C=A+B」という足し算を考える。これは「AとBというデータを取ってきて、加算し、Cとしてメモリに書き戻す」という動作をする。ここで、「C1 = A1+B1」「C2 = A2+B2」という独立な演算があったとしよう。予め「A1:A2」「B1:B2」とデータを一つのレジスタにパックしておき、それぞれの和を取ると「C1:C2」という、2つの演算結果がパックしたレジスタが得られる。このように複数のデータをパックするレジスタをSIMDレジスタと呼ぶ。例えばAVX2なら256ビットのSIMDレジスタがあるため、64ビットの倍精度実数を4つパックできる。そしてパックされた4つのデータ間に独立な演算を実行することができる。
 ここで、ハードウェアはパックされたデータの演算には依存関係が無いことを仮定する。つまり依存関係の責任はプログラマ側にある。ハードウェアから見れば、レジスタや演算器の「ビット幅」が増えただけのように見えるため、ハードウェアはさほど複雑にならない。しかし、性能向上のためには、SIMDレジスタを活用したプログラミングを行わなければならない。
 SIMDレジスタを活用して性能を向上させることを俗に「SIMD化 (SIMD-vectorization)」などと呼ぶ。
 原理的には、コンパイラによってSIMD化は可能であり、最近のコンパイラのSIMD最適化能力の向上には目を見張るものがある。
 しかし、効果的なSIMD化のためにはデータ構造の変更を伴うことが多く、コンパイラにはそういったグローバルな変更を伴う最適化が困難であることから、基本的には「SIMD化はプログラマが手で行う必要がある」のが現状である。
+
+とりあえず簡単なSIMD化の例を見てみよう。こんなコードを考える。
+一次元の配列の単純な和のループである。
+
+[day7/func.cpp](day7/func.cpp)
+
+```cpp
+const int N = 10000;
+double a[N], b[N], c[N];
+
+void func() {
+  for (int i = 0; i < N; i++) {
+    c[i] = a[i] + b[i];
+  }
+}
+```
+
+これを普通にコンパイルすると、こんなアセンブリになる。
+
+```sh
+g++ -O1 -S func.cpp  
+```
+
+```asm
+  xorl  %eax, %eax
+  leaq  _a(%rip), %rcx
+  leaq  _b(%rip), %rdx
+  leaq  _c(%rip), %rsi
+  movsd (%rax,%rcx), %xmm0
+  addsd (%rax,%rdx), %xmm0
+  movsd %xmm0, (%rax,%rsi)
+  addq  $8, %rax
+  cmpq  $80000, %rax
+  jne LBB0_1
+```
+
+配列`a`,`b`,`c`のアドレスを`%rcx`, `%rdx`, `%rsi`に取得し、
+`movsd`で`a[i]`のデータを`%xmm0`に持ってきて、`addsd`で`a[i]+b[i]`を計算して`%xmm0`に保存し、
+それを`c[i]`の指すアドレスに`movsd`で書き戻す、ということをやっている。
+これはスカラーコードなのだが、`xmm`は128ビットSIMDレジスタである。
+x86は歴史的経緯からスカラーコードでも浮動小数点演算にSIMDレジスタである`xmm`を使うのだが、ここでは深く立ち入らない。
+興味のある人は、適当な文献でx86における浮動小数点演算の歴史を調べられたい。
+
+さて、このループをAVX2を使ってSIMD化することを考える。
+AVX2のSIMDレジスタはymmで表記される。ymmレジスタは256ビットで、倍精度実数(64ビット)が4つ保持できるので、
+
+* ループを4倍展開する
+* 配列aから4つデータを持ってきてymmレジスタに乗せる
+* 配列bから4つデータを持ってきてymmレジスタに乗せる
+* 二つのレジスタを足す
+* 結果のレジスタを配列cのしかるべき場所に保存する
+
+ということをすればSIMD化完了である。SIMD化には組み込み関数を使う。コードを見たほうが早いと思う。
+
+[day7/func_simd.cpp](day7/func_simd.cpp)
+
+```cpp
+#include <x86intrin.h>
+void func_simd() {
+  for (int i = 0; i < N; i += 4) {
+    __m256d va = _mm256_load_pd(&(a[i]));
+    __m256d vb = _mm256_load_pd(&(b[i]));
+    __m256d vc = va + vb;
+    _mm256_store_pd(&(c[i]), vc);
+  }
+}
+```
+
+`__m256d`というのが256ビットのSIMDレジスタを表す変数だと思えば良い。
+そこに4つ連続したデータを持ってくる命令が`_mm256_load_pd`であり、
+SIMDレジスタの内容をメモリに保存する命令が`_mm256_load_pd`である。
+これをコンパイルしてアセンブリを見てみよう。
+
+```sh
+g++ -O1 -mavx2 -S func_simd.cpp
+```
+
+```asm
+  xorl  %eax, %eax
+  leaq  _a(%rip), %rcx
+  leaq  _b(%rip), %rdx
+  leaq  _c(%rip), %rsi
+  xorl  %edi, %edi
+LBB0_1:  
+  vmovupd (%rax,%rcx), %ymm0         # (a[i],a[i+1],a[i+2],a[i+3]) -> ymm0
+  vaddpd  (%rax,%rdx), %ymm0, %ymm0  # ymm0 + (b[i],b[i+1],b[i+2],b[i+3]) -> ymm 0
+  vmovupd %ymm0, (%rax,%rsi)         # ymm0 -> (c[i],c[i+1],c[i+2],c[i+3]) 
+  addq  $4, %rdi    # i += 4
+  addq  $32, %rax
+  cmpq  $10000, %rdi
+  jb  LBB0_1
+```
+
+ほとんどそのままなので、アセンブリ詳しくない人でも理解は難しくないと思う。
+配列のアドレスを`%rcx`, `%rdx`, `%rsi`に取得するところまでは同じ。
+元のコードでは`movsd`で`xmm`レジスタにデータをコピーしていたのが、
+`vmovupd`で`ymm`レジスタにデータをコピーしているのがわかる。
+
+念の為、このコードが正しく計算できてるかチェックしよう。
+適当に乱数を生成して配列`a[N]`と`b[N]`に保存し、ついでに答えも`ans[N]`に保存しておく。
+
+```cpp
+int main() {
+  std::mt19937 mt;
+  std::uniform_real_distribution<double> ud(0.0, 1.0);
+  for (int i = 0; i < N; i++) {
+    a[i] = ud(mt);
+    b[i] = ud(mt);
+    ans[i] = a[i] + b[i];
+  }
+  check(func, "scalar");
+  check(func_simd, "vector");
+}
+```
+
+倍精度実数同士の比較はいろいろ微妙なので、バイト単位で比較しよう。
+ここでは配列`c[N]`と`ans[N]`を`unsigned char`にキャストして比較している。
+
+```cpp
+void check(void(*pfunc)(), const char *type) {
+  pfunc();
+  unsigned char *x = (unsigned char *)c;
+  unsigned char *y = (unsigned char *)ans;
+  bool valid = true;
+  for (int i = 0; i < 8 * N; i++) {
+    if (x[i] != y[i]) {
+      valid = false;
+      break;
+    }
+  }
+  if (valid) {
+    printf("%s is OK\n", type);
+  } else {
+    printf("%s is NG\n", type);
+  }
+}
+```
+
+実際に実行してテストしてみよう。
+
+```sh
+$ g++ -mavx2 -O3 simdcheck.cpp
+$ ./a.out
+scalar is OK
+vector is OK
+```
+
+正しく計算できているようだ。
+
+さて、これくらいのコードならコンパイラもSIMD化してくれる。で、問題はコンパイラがSIMD化したかどうかをどうやって判断するかである。
+一つの方法は、コンパイラの吐く最適化レポートを見ることだ。インテルコンパイラなら`-qopt-report`で最適化レポートを見ることができる。
+
+```sh
+$ icpc -march=core-avx2 -O2 -c -qopt-report -qopt-report-file=report.txt func.cpp
+$ cat report.txt
+Intel(R) Advisor can now assist with vectorization and show optimization
+  report messages with your source code.
+(snip)
+LOOP BEGIN at func.cpp(5,3)
+   remark #15300: LOOP WAS VECTORIZED
+LOOP END
+```
+
+実際にはもっとごちゃごちゃ出てくるのだが、とりあえず最後に「LOOP WAS VECTORIZED」とあり、SIMD化できたことがわかる。
+しかし、どうSIMD化したのかはさっぱりわからない。`-qopt-report=5`として最適レポートのレベルを上げてみよう。
+
+```sh
+$ icpc -march=core-avx2 -O2 -c -qopt-report=5 -qopt-report-file=report5.txt func.cpp
+$ cat report5.txt
+Intel(R) Advisor can now assist with vectorization and show optimization
+  report messages with your source code.
+(snip)
+LOOP BEGIN at func.cpp(5,3)
+   remark #15388: vectorization support: reference c has aligned access   [ func.cpp(6,5) ]
+   remark #15388: vectorization support: reference a has aligned access   [ func.cpp(6,5) ]
+   remark #15388: vectorization support: reference b has aligned access   [ func.cpp(6,5) ]
+   remark #15305: vectorization support: vector length 4
+   remark #15399: vectorization support: unroll factor set to 4
+   remark #15300: LOOP WAS VECTORIZED
+   remark #15448: unmasked aligned unit stride loads: 2 
+   remark #15449: unmasked aligned unit stride stores: 1 
+   remark #15475: --- begin vector loop cost summary ---
+   remark #15476: scalar loop cost: 6 
+   remark #15477: vector loop cost: 1.250 
+   remark #15478: estimated potential speedup: 4.800 
+   remark #15488: --- end vector loop cost summary ---
+   remark #25015: Estimate of max trip count of loop=625
+LOOP END
+```
+
+このレポートから以下のようなことがわかる。
+
+* ymmレジスタを使ったSIMD化であり (vector length 4)
+* ループを4倍展開しており(unroll factor set to 4)
+* スカラーループのコストが6と予想され (scalar loop cost: 6)
+* ベクトルループのコストが1.250と予想され (vector loop cost: 1.250)
+* ベクトル化による速度向上率は4.8倍であると見積もられた (estimated potential speedup: 4.800)
+
+でも、こういう時にはアセンブリ見ちゃった方が早い。
+
+```sh
+$ icpc -march=core-avx2 -O2 -S func.cpp
+```
+
+コンパイラが吐いたアセンブリを、少し手で並び替えたものがこちら。
+
+```asm
+        xorl      %eax, %eax
+..B1.2:
+        lea       (,%rax,8), %rdx
+        vmovupd   a(,%rax,8), %ymm0
+        vmovupd   32+a(,%rax,8), %ymm2
+        vmovupd   64+a(,%rax,8), %ymm4
+        vmovupd   96+a(,%rax,8), %ymm6
+        vaddpd    b(,%rax,8), %ymm0, %ymm1
+        vaddpd    32+b(,%rax,8), %ymm2, %ymm3
+        vaddpd    64+b(,%rax,8), %ymm4, %ymm5
+        vaddpd    96+b(,%rax,8), %ymm6, %ymm7
+        vmovupd   %ymm1, c(%rdx)
+        vmovupd   %ymm3, 32+c(%rdx)
+        vmovupd   %ymm5, 64+c(%rdx)
+        vmovupd   %ymm7, 96+c(%rdx)
+        addq      $16, %rax
+        cmpq      $10000, %rax
+        jb        ..B1.2
+```
+
+先程、手でループを4倍展開してSIMD化したが、さらにそれを4倍展開していることがわかる。
+
+これ、断言しても良いが、こういうコンパイラの最適化について調べる時、コンパイラの最適化レポートとにらめっこするよりアセンブリ読んじゃった方が絶対早いと思う。
+「アセンブリを読む」というと身構える人が多いのだが、どうせSIMD化で使われる命令ってそんなにないし、
+最低でも「どんな種類のレジスタが使われているか」を見るだけでも「うまくSIMD化できてるか」がわかる。
+ループアンロールとかそういうアルゴリズムがわからなくても、
+アセンブリ見てxmmだらけだったらSIMD化は(あまり)されてないし、ymmレジスタが使われていればAVX/AVX2を使ったSIMD化で、
+zmmレジスタが使われていればAVX-512を使ったSIMD化で、`vmovupd`が出てればメモリからスムーズにデータがコピーされてそうだし、
+`vaddpd`とか出てればちゃんとSIMDで足し算しているなとか、そのくらいわかれば実用的にはわりと十分だったりする。
+そうやっていつもアセンブリを読んでいると、そのうち「アセンブリ食わず嫌い」が治って、コンパイラが何を考えたか
+だんだんわかるようになる……かもしれない。
 
 ### チェックポイントリスタート
 
