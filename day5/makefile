@@ -1,10 +1,13 @@
 all: a.out b.out
 
-a.out: gather2d.cpp
-	mpic++ -std=c++11 $< -o $@
+a.out: gs.cpp
+	g++ -O3 $< -o $@
 
-b.out: sendrecv.cpp
-	mpic++ -std=c++11 $< -o $@
+b.out: gs_mpi.cpp
+	mpic++ -O3 $< -o $@
 
 clean:
 	rm -f a.out b.out
+
+clear: clean
+	rm -f *.png *.dat

@@ -1,11 +1,11 @@
+#include <cstdio>
 #include <iostream>
-#include <iomanip>
 #include <vector>
 #include <fstream>
-#include <algorithm>
 
 const int L = 128;
-const int V = L * L;
+const int TOTAL_STEP = 20000;
+const int INTERVAL = 200;
 const double F = 0.04;
 const double k = 0.06075;
 const double dt = 0.2;
@@ -52,12 +52,13 @@ void calc(vd &u, vd &v, vd &u2, vd &v2) {
     for (int ix = 1; ix < L - 1; ix++) {
       double du = 0;
       double dv = 0;
+      const int i = ix + iy * L;
       du = Du * laplacian(ix, iy, u);
       dv = Dv * laplacian(ix, iy, v);
-      du += calcU(u[ix + iy * L], v[ix + iy * L]);
-      dv += calcV(u[ix + iy * L], v[ix + iy * L]);
-      u2[ix + iy * L] = u[ix + iy * L] + du * dt;
-      v2[ix + iy * L] = v[ix + iy * L] + dv * dt;
+      du += calcU(u[i], v[i]);
+      dv += calcV(u[i], v[i]);
+      u2[i] = u[i] + du * dt;
+      v2[i] = v[i] + dv * dt;
     }
   }
 }
@@ -73,15 +74,16 @@ void save_as_dat(vd &u) {
 }
 
 int main() {
+  const int V = L * L;
   vd u(V, 0.0), v(V, 0.0);
   vd u2(V, 0.0), v2(V, 0.0);
   init(u, v);
-  for (int i = 0; i < 20000; i++) {
+  for (int i = 0; i < TOTAL_STEP; i++) {
     if (i & 1) {
       calc(u2, v2, u, v);
     } else {
       calc(u, v, u2, v2);
     }
-    if (i % 200 == 0) save_as_dat(u);
+    if (i % INTERVAL == 0) save_as_dat(u);
   }
 }

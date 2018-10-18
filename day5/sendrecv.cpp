@@ -11,6 +11,12 @@ struct MPIinfo {
   int GX, GY;
   int local_grid_x, local_grid_y;
   int local_size_x, local_size_y;
+  // 自分から見て(dx,dy)だけずれたプロセスのrankを返す
+  int get_rank(int dx, int dy) {
+    int rx = (local_grid_x + dx + GX) % GX;
+    int ry = (local_grid_y + dy + GY) % GY;
+    return rx + ry * GX;
+  }
 };
 
 void init(std::vector<int> &local_data, MPIinfo &mi) {
@@ -62,20 +68,13 @@ void setup_info(MPIinfo &mi) {
   mi.local_size_y = L / mi.GY;
 }
 
-// 自分から見て +dx, +dyだけずれたプロセスのランクを返す
-int get_rank(int dx, int dy, MPIinfo &mi) {
-  int rx = (mi.local_grid_x + dx + mi.GX) % mi.GX;
-  int ry = (mi.local_grid_y + dy + mi.GY) % mi.GY;
-  return rx + ry * mi.GX;
-}
-
 void sendrecv_x(std::vector<int> &local_data, MPIinfo &mi) {
   const int lx = mi.local_size_x;
   const int ly = mi.local_size_y;
   std::vector<int> sendbuf(ly);
   std::vector<int> recvbuf(ly);
-  int left = get_rank(-1, 0, mi);
-  int right = get_rank(1, 0, mi);
+  int left = mi.get_rank(-1, 0);
+  int right = mi.get_rank(1, 0);
   for (int i = 0; i < ly; i++) {
     int index = lx + (i + 1) * (lx + 2);
     sendbuf[i] = local_data[index];
@@ -105,8 +104,8 @@ void sendrecv_y(std::vector<int> &local_data, MPIinfo &mi) {
   const int ly = mi.local_size_y;
   std::vector<int> sendbuf(lx + 2);
   std::vector<int> recvbuf(lx + 2);
-  int up = get_rank(0, -1, mi);
-  int down = get_rank(0, 1, mi);
+  int up = mi.get_rank(0, -1);
+  int down = mi.get_rank(0, 1);
   MPI_Status st;
   // 上に投げて下から受け取る
   for (int i = 0; i < lx + 2; i++) {
@@ -141,12 +140,15 @@ int main(int argc, char **argv) {
   // ローカルデータの初期化
   init(local_data, mi);
   // ローカルデータの表示
+  if (mi.rank == 0)printf("# 通信前\n");
   dump_local(local_data, mi);
   // x方向に通信
   sendrecv_x(local_data, mi);
+  if (mi.rank == 0)printf("# 左右の通信後\n");
   dump_local(local_data, mi);
   // y方向に通信
   sendrecv_y(local_data, mi);
+  if (mi.rank == 0)printf("# 上下の通信終了後 (これで斜め方向も完了)\n");
   dump_local(local_data, mi);
   MPI_Finalize();
 }

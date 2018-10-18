@@ -1365,7 +1365,7 @@ Day 3では自明並列を扱ってきた。自明並列は別名「馬鹿パラ
 
 とりあえずここでは非自明並列の例として、領域分割をやってみる。
 
-### 一次元拡散方程式 (スカラー版)
+### 一次元拡散方程式 (シリアル版)
 
 領域分割による並列化の題材として、一次元拡散方程式を考えよう。
 これは熱を加えられたり冷やされたりした物質の温度がどう変化していくかを表す方程式である。
@@ -1736,21 +1736,133 @@ mpirun -np 8 --oversubscribe ./a.out  3.28s user 2.89s system 311% cpu 1.980 tot
 
 ## Day 5 : 二次元反応拡散方程式
 
-Day 4で一次元拡散方程式を領域分割により並列化した。後はこの応用で相互作用距離が短いモデルはなんでも領域分割できるのだが、
-二次元、三次元だと、一次元よりちょっと面倒くさい。後、熱伝導方程式は、「最終的になにかに落ち着く」方程式なので、シミュレーションしてて
-あまりおもしろいものではない。そこで、二次元で、差分法で簡単に解けて、かつ結果がそこそこ面白い題材として反応拡散方程式を取り上げる。
+Day 4で一次元拡散方程式を領域分割により並列化した。後はこの応用で相互作用距離が短いモデルはなんでも領域分割できるのだが、二次元、三次元だと、一次元よりちょっと面倒くさい。後、熱伝導方程式は、「最終的になにかに落ち着く」方程式なので、シミュレーションしててあまりおもしろいものではない。そこで、二次元で、差分法で簡単に解けて、かつ結果がそこそこ面白い題材として反応拡散方程式(reaction-diffusion system)を取り上げる。反応拡散方程式とは、拡散方程式に力学系がくっついたような系で、様々なパターンを作る。例えば「reaction-diffusion system」でイメージ検索してみて欲しい。生物の模様なんかがこの方程式系で説明されたりする。
 
-TODO: 反応拡散方程式の説明
+世の中には様々な反応拡散方程式があるのだが、ここでは[Gray-Scottモデル](https://groups.csail.mit.edu/mac/projects/amorphous/GrayScott/)と呼ばれる、以下の方程式系を考えよう。
+
+$$
+\frac{\partial u}{\partial t} = D_u \Delta u + u^2 v - (F+k)u
+$$
+
+$$
+\frac{\partial v}{\partial t} = D_v \Delta v - u^2 v + F(1-v)
+$$
+
+これは$U$と$V$という化学物質の化学反応を模した方程式である。
+$U$が活性化因子、$V$が抑制因子と呼ばれる。
+$U$と$V$の濃度を$u$、$v$とすると、$V$の濃いところでは$U$が生成されないことがわかる。
+$D_u$や$D_v$は拡散係数であり、$D_v/D_u = 2$にとる。つまり、$V$の方が拡散しやすい物質となる。
+この方程式を計算することにしよう。
+
+ちなみに、世界で広く使われている表記と$U$と$V$が逆のようである。プログラム全部書き終わってから気がついたので、申し訳ないがそのままにする。
 
 ### シリアル版
 
-TODO: u, vを二つ用意して交互に使うことの説明
+まず、ある点におけるラプラシアンを返す関数`laplacian`を用意しよう。中央差分で表現すると、上下左右の点との平均との差で表現すれば良いので、こう書ける。
+
+```cpp
+double laplacian(int ix, int iy, vd &s) {
+  double ts = 0.0;
+  ts += s[ix - 1 + iy * L];
+  ts += s[ix + 1 + iy * L];
+  ts += s[ix + (iy - 1) * L];
+  ts += s[ix + (iy + 1) * L];
+  ts -= 4.0 * s[ix + iy * L];
+  return ts;
+}
+```
+
+また、$u$と$v$の力学系の部分を計算する関数も作っておこう。
+
+```cpp
+double calcU(double tu, double tv) {
+  return tu * tu * tv - (F + k) * tu;
+}
+
+double calcV(double tu, double tv) {
+  return -tu * tu * tv + F * (1.0 - tv);
+}
+```
+
+さて、差分を計算する際、$t+1$ステップ目の計算に$t$ステップの物理量を使う。
+もしここで$t$の値をどんどん更新してしまうと、ある場所の物理量を計算する時に$t$の値と$t+1$の値が混ざっておかしなことになる。実は、一次元拡散方程式ではそれを防ぐため、一度$t$の時の値を別の領域にコピーして、それを使って$t+1$の値を計算するようにしていた(要するに手抜きである)。しかし、二次元でこれをやるとさすがにコピーのオーバーヘッドが大きい。
+そこで、同じ物理量を表す配列を二本ずつ用意して、奇数時刻と偶数時刻で使い分けることにしよう。
+具体的には`u`に対して`u2`という配列も用意しておく。
+いま偶数時刻だとすると`u2`から`u`を、奇数時刻なら`u`から`u2`を計算する。
+
+というわけで、1ステップ時間発展を行う関数`calc`はこう書ける。
+
+```cpp
+void calc(vd &u, vd &v, vd &u2, vd &v2) {
+  for (int iy = 1; iy < L - 1; iy++) {
+    for (int ix = 1; ix < L - 1; ix++) {
+      double du = 0;
+      double dv = 0;
+      const int i = ix + iy * L;
+      du = Du * laplacian(ix, iy, u);
+      dv = Dv * laplacian(ix, iy, v);
+      du += calcU(u[i], v[i]);
+      dv += calcV(u[i], v[i]);
+      u2[i] = u[i] + du * dt;
+      v2[i] = v[i] + dv * dt;
+    }
+  }
+}
+```
+
+Gray-Scott系は、最初に「種」を置いておくと、そこから模様が広がっていく系である。なので最初に種を置いておこう。
+
+```cpp
+void init(vd &u, vd &v) {
+  int d = 3;
+  for (int i = L / 2 - d; i < L / 2 + d; i++) {
+    for (int j = L / 2 - d; j < L / 2 + d; j++) {
+      u[j + i * L] = 0.7;
+    }
+  }
+  d = 6;
+  for (int i = L / 2 - d; i < L / 2 + d; i++) {
+    for (int j = L / 2 - d; j < L / 2 + d; j++) {
+      v[j + i * L] = 0.9;
+    }
+  }
+}
+```
+
+系の中央のuとvに、それぞれ6x6の領域、12x12の初期値を種として置くコードである。
+
+以上を元に、時間発展を行う`main`関数はこんな感じになる。
+
+```cpp
+int main() {
+  const int V = L * L;
+  vd u(V, 0.0), v(V, 0.0);
+  vd u2(V, 0.0), v2(V, 0.0);
+  init(u, v);
+  for (int i = 0; i < TOTAL_STEP; i++) {
+    if (i & 1) {
+      calc(u2, v2, u, v);
+    } else {
+      calc(u, v, u2, v2);
+    }
+    if (i % INTERVAL == 0) save_as_dat(u);
+  }
+}
+```
+
+先程述べたように、偶数時刻と奇数時刻で二本の配列を使い分けているのに注意。
+
+`save_as_dat`は、呼ばれるたびに配列を連番のファイル名で保存する関数である。
+
+全体のコードはこんな感じになる。
 
 [day5/gs.cpp](day5/gs.cpp)
 
+コンパイル、実行してみよう。
+
 ```sh
 $ g++ -O3 gs.cpp
-$ ./a.out
+$ time ./a.out
 conf000.dat
 conf001.dat
 conf002.dat
@@ -1758,6 +1870,7 @@ conf002.dat
 conf097.dat
 conf098.dat
 conf099.dat
+./a.out  1.61s user 0.03s system 96% cpu 1.697 total
 ```
 
 出てきたデータ(`*.dat`)は、倍精度実数が`L*L`個入っている。これをRubyで読み込んでPNG形式で吐く
@@ -2217,11 +2330,66 @@ int main(int argc, char **argv) {
 
 最後の点線で囲ったデータが「斜め方向のプロセスが保持していたデータ」であり、間接的に受け取ったことになる。
 
+まず、上下左右にいるプロセス番号を知りたい。`MPIinfo`に`get_rank`メソッドを追加しておこう。
+
+```cpp
+struct MPIinfo {
+  int rank;
+  int procs;
+  int GX, GY;
+  int local_grid_x, local_grid_y;
+  int local_size_x, local_size_y;
+  // 自分から見て(dx,dy)だけずれたプロセスのrankを返す
+  int get_rank(int dx, int dy) {
+    int rx = (local_grid_x + dx + GX) % GX;
+    int ry = (local_grid_y + dy + GY) % GY;
+    return rx + ry * GX;
+  }
+};
+```
+
+これを使って、左右(x方向)に通信して、右と左の「のりしろ」データを交換するコードはこんな感じに書ける。
+
+```cpp
+void sendrecv_x(std::vector<int> &local_data, MPIinfo &mi) {
+  const int lx = mi.local_size_x;
+  const int ly = mi.local_size_y;
+  std::vector<int> sendbuf(ly);
+  std::vector<int> recvbuf(ly);
+  int left = mi.get_rank(-1, 0);
+  int right = mi.get_rank(1, 0);
+  for (int i = 0; i < ly; i++) {
+    int index = lx + (i + 1) * (lx + 2);
+    sendbuf[i] = local_data[index];
+  }
+  MPI_Status st;
+  MPI_Sendrecv(sendbuf.data(), ly, MPI_INT, right, 0,
+               recvbuf.data(), ly, MPI_INT, left, 0, MPI_COMM_WORLD, &st);
+  for (int i = 0; i < ly; i++) {
+    int index = (i + 1) * (lx + 2);
+    local_data[index] = recvbuf[i];
+  }
+
+  for (int i = 0; i < ly; i++) {
+    int index = 1 + (i + 1) * (lx + 2);
+    sendbuf[i] = local_data[index];
+  }
+  MPI_Sendrecv(sendbuf.data(), ly, MPI_INT, left, 0,
+               recvbuf.data(), ly, MPI_INT, right, 0, MPI_COMM_WORLD, &st);
+  for (int i = 0; i < ly; i++) {
+    int index = lx + 1 + (i + 1) * (lx + 2);
+    local_data[index] = recvbuf[i];
+  }
+}
+```
+
+全く同様にy方向の通信も書けるが、先に述べたように「左右からもらったデータも転送」するため、その分がちょっとだけ異なる。
+
 このアルゴリズムを実装するとこんな感じになる。
 
 [day5/sendrecv.cpp](day5/sendrecv.cpp)
 
-実行結果はこんな感じ。x通信
+実行結果はこんな感じ。
 
 ```sh
 $ mpic++ sendrecv.cpp
@@ -2329,6 +2497,8 @@ rank = 3
  003 016 017 018 019 000
 ```
 
+先の図と比べて、正しく通信が行われていることを確認してほしい。
+
 結局、通信プログラムとはこういうことをする。
 
 * 送信バッファと受信バッファを用意する
@@ -2338,10 +2508,250 @@ rank = 3
 
 通信そのものは関数呼び出し一発で難しくも面倒でもないが、送受信バッファの作業が面倒くさい。
 
-### 余談：並列化で大事なこと
+### 並列化ステップ3: 並列コードの実装
 
-* 並列化とは「既存のコードを改造する」ことではなく、「既存のコードを書き直す」こと
-* 並列化のデバッグは神経質に
+通信に使うアルゴリズムの確認が終わったので、いよいよ差分法コードに実装してみよう。まず、初期化の部分を考えないといけない。初期化についてはグローバル座標で考えたいが、実際に値を入れるのは各プロセスが保持するローカルデータである。そこで、「このグローバル座標が自分の領域に含まれるか？」「含まれるなら、そのインデックスはどこか？」が知りたくなる。それをMPIinfoのメソッドとして追加しておこう。
+
+```cpp
+struct MPIinfo {
+  int rank;
+  int procs;
+  int GX, GY;
+  int local_grid_x, local_grid_y;
+  int local_size_x, local_size_y;
+  
+  // 自分から見て +dx, +dyだけずれたプロセスのランクを返す
+  int get_rank(int dx, int dy) {
+    int rx = (local_grid_x + dx + GX) % GX;
+    int ry = (local_grid_y + dy + GY) % GY;
+    return rx + ry * GX;
+  }
+
+  // 自分の領域に含まれるか
+  bool is_inside(int x, int y) {
+    int sx = local_size_x * local_grid_x;
+    int sy = local_size_y * local_grid_y;
+    int ex = sx + local_size_x;
+    int ey = sy + local_size_y;
+    if (x < sx)return false;
+    if (x >= ex)return false;
+    if (y < sy)return false;
+    if (y >= ey)return false;
+    return true;
+  }
+  // グローバル座標をローカルインデックスに
+  int g2i(int gx, int gy) {
+    int sx = local_size_x * local_grid_x;
+    int sy = local_size_y * local_grid_y;
+    int x = gx - sx;
+    int y = gy - sy;
+    return (x + 1) + (y + 1) * (local_size_x + 2);
+  }
+};
+```
+
+そうすると、初期化処理はこんな感じにかける。
+
+```cpp
+void init(vd &u, vd &v, MPIinfo &mi) {
+  int d = 3;
+  for (int i = L / 2 - d; i < L / 2 + d; i++) {
+    for (int j = L / 2 - d; j < L / 2 + d; j++) {
+      if (!mi.is_inside(i, j)) continue;
+      int k = mi.g2i(i, j);
+      u[k] = 0.7;
+    }
+  }
+  d = 6;
+  for (int i = L / 2 - d; i < L / 2 + d; i++) {
+    for (int j = L / 2 - d; j < L / 2 + d; j++) {
+      if (!mi.is_inside(i, j)) continue;
+      int k = mi.g2i(i, j);
+      v[k] = 0.9;
+    }
+  }
+}
+```
+
+要するにグローバル座標でループを回してしまって、自分の領域に入っていたら(`mi.is_inside(i, j)==true`)、ローカルインデックスを取得して、そこに値を書き込む、というだけのコードである。自分の守備範囲外もループが回って非効率に思えるかもしれないが、どうせ初期化処理は最初に一度しか走らないし、こうしておくと他の初期化をしたい時や、ファイルから読み込む時に、シリアルコードと並列コードで同じファイルが使えたりして便利である。
+
+初期化処理が済んだら、可視化用のファイル保存コードを書こう。といっても、ステップ2で書いたコードを`int`から`double`に変えて、標準出力にダンプしていたのをファイルに保存するだけである。
+
+```cpp
+// 各プロセスから保存用のデータを受け取ってセーブ
+void save_as_dat_mpi(vd &local_data, MPIinfo &mi) {
+  const int lx = mi.local_size_x;
+  const int ly = mi.local_size_y;
+  vd sendbuf(lx * ly);
+  // 「のりしろ」を除いたデータのコピー
+  for (int iy = 0; iy < ly; iy++) {
+    for (int ix = 0; ix < lx; ix++) {
+      int index_from = (ix + 1) + (iy + 1) * (lx + 2);
+      int index_to = ix + iy * lx;
+      sendbuf[index_to] = local_data[index_from];
+    }
+  }
+  vd recvbuf;
+  if (mi.rank == 0) {
+    recvbuf.resize(lx * ly * mi.procs);
+  }
+  MPI_Gather(sendbuf.data(), lx * ly, MPI_DOUBLE, recvbuf.data(), lx * ly, MPI_DOUBLE, 0,  MPI_COMM_WORLD);
+  if (mi.rank == 0) {
+    reordering(recvbuf, mi);
+    save_as_dat(recvbuf);
+  }
+}
+```
+
+データの再配置(`reordering`)もほとんど同じなので割愛。ここで、 **いきなり時間発展させずに** 初期化処理をしてからファイルに保存し、正しく初期化、保存できているか確認しておこう。
+
+「のりしろ」の通信部分も、基本的に`int`を`double`に変更するだけなので割愛。ただし、`u`と`v`の両方を通信しないといけないので、それをまとめて行う関数を作っておこう。
+
+```cpp
+void sendrecv(vd &u, vd &v, MPIinfo &mi) {
+  sendrecv_x(u, mi);
+  sendrecv_y(u, mi);
+  sendrecv_x(v, mi);
+  sendrecv_y(v, mi);
+}
+```
+
+これを時間発展直前に呼び出せば、「のりしろ」部分の通信が完了している。
+ここでも、**いきなり時間発展させずに** 初期化処理を行った後に「のりしろ通信」を行い、ローカルデータをダンプして正しく通信できているか確認しよう。
+
+そこまでできればあとはシリアル版とほぼ同じ。main関数はこんな感じになる。
+
+```cpp
+int main(int argc, char **argv) {
+  MPI_Init(&argc, &argv);
+  MPIinfo mi;
+  setup_info(mi);
+  const int V = (mi.local_size_x + 2) * (mi.local_size_y + 2);
+  vd u(V, 0.0), v(V, 0.0);
+  vd u2(V, 0.0), v2(V, 0.0);
+  init(u, v, mi);
+  for (int i = 0; i < TOTAL_STEP; i++) {
+    if (i & 1) {
+      sendrecv(u2, v2, mi);
+      calc(u2, v2, u, v, mi);
+    } else {
+      sendrecv(u, v, mi);
+      calc(u, v, u2, v2, mi);
+    }
+    if (i % INTERVAL == 0) save_as_dat_mpi(u, mi);
+  }
+  MPI_Finalize();
+}
+```
+
+MPIの初期化、終了処理、および計算の直前に通信を呼んでるところ以外はシリアル版と変わらないことがわかる。
+
+実行してみよう。普通の`mpic++`を使ってしまうと`clang++`が呼ばれてしまう。先程、`g++`でコンパイルしたシリアル版と実行時間を比較するため、明示的に`g++`でコンパイルして実行しよう。筆者の環境ではMPIのヘッダやライブラリにパスが通っているので、`-lmpi -lmpi_cxx`をつけるだけでコンパイルできる。
+
+```sh
+$ g++ -O3 gs_mpi.cpp -lmpi -lmpi_cxx
+$ time mpirun -np 4 --oversubscribe ./a.out
+conf000.dat
+conf001.dat
+conf002.dat
+(snip)
+conf098.dat
+conf099.dat
+mpirun -np 4 --oversubscribe ./a.out  2.39s user 0.29s system 321% cpu 0.832 total
+```
+
+321%とか出てるので、並列化できているようだ。実行時間も1.697s→0.832sと倍近く早くなっている。
+実行結果も可視化して確認してみよう。
+
+![day5/fig/conf010_mpi.png](day5/fig/conf010_mpi.png)
+![day5/fig/conf030_mpi.png](day5/fig/conf030_mpi.png)
+![day5/fig/conf050_mpi.png](day5/fig/conf050_mpi.png)
+![day5/fig/conf090_mpi.png](day5/fig/conf090_mpi.png)
+
+うん、大丈夫そうですね。
+
+さて、いまは4コアあるローカルPCで4プロセス実行したから、理想的には4倍早くなって欲しいのに、2倍近くしか早くなっていない。つまり、並列化効率は50%程度である。
+
+ん？並列化効率が物足りない？ **そういう時はウィースケーリングに逃げてサイズで殴れ！**
+
+というわけでサイズをでかくする。一辺4倍にして再度実行してみよう。
+
+```diff
+-const int L = 128;
++const int L = 512;
+```
+
+```sh
+$ g++ -O3 gs.cpp
+$ time ./a.out
+(snip)
+./a.out  57.98s user 0.16s system 99% cpu 58.248 total
+
+$ g++ -O3 gs_mpi.cpp -lmpi -lmpi_cxx
+$ time mpirun -np 4 --oversubscribe ./a.out
+./a.out  57.98s user 0.16s system 99% cpu 58.248 total
+mpirun -np 4 --oversubscribe ./a.out  68.28s user 1.72s system 382% cpu 18.305 total
+```
+
+実行時間が58.248s → 18.305となり、並列化効率も80%近くに向上した。それでもなんか文句を言ってくる人がいたら、とてもローカルPCのメモリには乗りきらないほど大きな系を計算して黙らせよう。「並列化効率で悩んだらサイズに逃げろ」と覚えておくと良い。
+
+### 余談：MPIの面倒くささ
+
+本格的な領域分割コードの例として、二次元反応拡散方程式を並列化してみた。「並列化」によってどれくらいコードが増えたか見てみよう。
+
+```sh
+$ wc gs.cpp gs_mpi.cpp
+      89     430    1969 gs.cpp
+     272    1271    7345 gs_mpi.cpp
+     361    1701    9314 total
+```
+
+というわけで、89行から272行になった。3倍増である。つまり、もともとの計算コードの二倍の量の通信コードがついたことになる。といっても、「通信コードそのもの」の量は大したことがない。
+
+```sh
+$ grep MPI_ gs_mpi.cpp
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &procs);
+  MPI_Dims_create(procs, 2, d2);
+  MPI_Gather(sendbuf.data(), lx * ly, MPI_DOUBLE, recvbuf.data(), lx * ly, MPI_DOUBLE, 0,  MPI_COMM_WORLD);
+  MPI_Status st;
+  MPI_Sendrecv(sendbuf.data(), ly, MPI_DOUBLE, right, 0,
+               recvbuf.data(), ly, MPI_DOUBLE, left, 0, MPI_COMM_WORLD, &st);
+  MPI_Sendrecv(sendbuf.data(), ly, MPI_DOUBLE, left, 0,
+               recvbuf.data(), ly, MPI_DOUBLE, right, 0, MPI_COMM_WORLD, &st);
+  MPI_Status st;
+  MPI_Sendrecv(sendbuf.data(), lx + 2, MPI_DOUBLE, up, 0,
+               recvbuf.data(), lx + 2, MPI_DOUBLE, down, 0, MPI_COMM_WORLD, &st);
+  MPI_Sendrecv(sendbuf.data(), lx + 2, MPI_DOUBLE, down, 0,
+               recvbuf.data(), lx + 2, MPI_DOUBLE, up, 0, MPI_COMM_WORLD, &st);
+  MPI_Init(&argc, &argv);
+  MPI_Finalize();
+
+$ grep MPI_ gs_mpi.cpp | wc
+      16      82     850
+```
+
+`MPI_Status st`の宣言を除くと14行だけである。それ以外はバッファの準備と整理に費やされている。
+これをもって「MPIは面倒くさい」というであれば、私は同意する。しかし、「MPIの面倒くささ」の本質はそこではないように思う。
+
+MPIを使って並列コードを書くことを「並列化 (parallelization)」と呼ぶ。「並列化」という言葉から想像されるのは、「もともとあるシリアル版のコードを改造して並列コードを書く」という作業であろう。典型的には、
+
+1. シリアルコードを書く
+2. 大きな系がやりたくなったので、OpenMPを使ってスレッド並列をする
+3. さらにMPIを使って並列版に修正する
+
+といった開発プロセスとなりがちなのだと思われる。しかし、既存のコードを修正してMPIを入れていく作業は極めて面倒くさく、バグが入りやすく、かつやっている最中に何をやってるかわからなくなりがちである。一度何をやってるかわからない状態になったら、もうどこがバグなのか、バグが何に起因するのかわからず、泥沼にハマっていく。筆者は、学生さんだけでなくプログラムで飯を食っているプロな人でもそういう状態になっているのを何度も目撃している。
+
+さて、スレッド並列はともかく、**MPIを使った並列化とは、MPI向けに新規にコードを書き直す作業**である。「正しい」並列化プロセスは以下の通りとなる。
+
+1. シリアルコードを書く
+2. MPI並列化に必要な通信パターンを抽出する
+3. その通信パターンだけを抜き出してテストコードを書く
+4. シリアルコードとテストコードを参照しながら、新規にコードを開発する
+
+具体的に4つ目のプロセスでは、「初期化してgatherして保存し、正しいことを確認」「初期化後にのりしろ通信して、正しいことを確認」してから、次のステップに進んでいる。並列版として開発した`gs_mpi.cpp`は、シリアル版である`gs.cpp`をコピーせず、`gs.cpp`を参照しながらゼロから開発していった。MPIは面倒である。その感覚は正しい。しかし、順を追って開発していけば、別に難しくはない。ソースコードが三倍になった、というと「うっ」と思うかもしれないが、それでも300行も無いのだし、通信コードを書くこと自体は対して時間はかからない。並列化に限ったことではないが、プログラムの開発時間のほとんどはデバッグでしめられている。面倒臭がらずに、通信ロジックのテストコードなどをきちんと書いていけば、さほど時間はかからずに並列化することができるだろう。
+
+もし2万行のソースコードを渡されて「並列化しろ」と言われたら？それはもうご愁傷様としか……
 
 ## Day 6 : ハイブリッド並列
 
