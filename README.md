@@ -3068,7 +3068,7 @@ TODO:
 
 この記事は、[tanakamura](https://github.com/tanakamura) さんの
 [実践的低レベルプログラミング](https://tanakamura.github.io/pllp/docs/)に影響されて書き始めたものです。
-angel_p_57さんにMPIにおけるバッファリングについて教えていただきました。fujita_d_hさんにはBlueGene/LのL1エラー訂正について教えていただきました。
+angel_p_57さんにMPIにおけるバッファリングについて教えていただきました。fujita_d_hさんにはBlueGene/LのL1エラー訂正について議論していただきました。
 まだこの記事が書きかけだったときにたくさん星をつけてくださった皆様、Twitterなどで感想を寄せてくださった皆様、ありがとうございます。
 みなさんのポジティブな反応がなければ書き続けられませんでした。
 
