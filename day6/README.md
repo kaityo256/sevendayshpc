@@ -134,6 +134,230 @@ flat-MPIをやっている場合は、各プロセスごとに独立な論理メ
 
 ## OpenMPの例
 
-TODO: 簡単な例
+さて、いよいよOpenMPによるスレッド並列を行うが、その前にシリアルコードのプロファイルを取ろう。
+プロファイルとは、実行コードの性能分析のことで、最も簡単には関数ごとにどこがどれだけ時間を使っているか調べる。
+性能分析には`perf`を使うのが良い。残念ながらMacには`perf`相当のツールがなく、同様な目的に使われる`gprof`も正常に動作しないため、
+以下では`perf`が使えるLinuxを想定する。実行環境は以下の通り。
+
+* Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz 12コア x 2ソケット
+
+まず、シリアルコードとしてDay 4で使ったGray Scottモデルの計算を使おう。純粋に計算のみをカウントするため、途中のファイル出力を削除し、また実行時間を測定するようにしたのが[gs.cpp](gs.cpp)である。ただし、デバッグのために最終結果だけファイルに出力している。コンパイルして`perf`でプロファイルをとってみよう。まず、`perf record`で記録を取る。
+
+```sh
+$ g++ -O3 -mavx2 -std=c++11 -fopenmp gs.cpp -o gs.out
+$ perf record ./gs.out
+2527 [ms]
+conf000.dat
+[ perf record: Woken up 1 times to write data ]
+[ perf record: Captured and wrote 0.113 MB perf.data (~4953 samples) ]
+```
+
+実行時間が2527 msで、`conf000.dat`を出力したことがわかる。後のためにこれを`conf000.org`か何かにリネームしておこう。
+`perf`によって記録されたプロファイルデータは、`perf.data`として保存されている。これは`perf report`で中身を見ることができる。
+
+```sh
+perf report
+```
+
+環境によるが、こんな画面が出てくる。
+
+![perf.png](perf.png)
+
+いろいろ出てきているが、とりあえずメインの計算ルーチン`calc`が計算時間の99.36%を占めるのを確認すれば良い。
+このように一番「重い」関数のことを**ホットスポット(hotspot)**と呼ぶ。ホットスポットが90%以上を占めるような計算コードはチューニングがやりやすい。
+
+さて、一番重い関数はこんな感じになっている。
+
+```cpp
+void calc(vd &u, vd &v, vd &u2, vd &v2) {
+// (*1) 外側ループ
+  for (int iy = 1; iy < L - 1; iy++) {
+   // (*1) 内側ループ
+    for (int ix = 1; ix < L - 1; ix++) {
+      double du = 0;
+      double dv = 0;
+      const int i = ix + iy * L;
+      du = Du * laplacian(ix, iy, u);
+      dv = Dv * laplacian(ix, iy, v);
+      du += calcU(u[i], v[i]);
+      dv += calcV(u[i], v[i]);
+      u2[i] = u[i] + du * dt;
+      v2[i] = v[i] + dv * dt;
+    }
+  }
+}
+```
+
+二重ループになっている。OpenMPは、並列実行したいループの直前にディレクティブを入れて、「このループを並列化してください」と指示することで並列化する。スレッド並列する時には、ループインデックス間に依存性がないか確認しなければならないのだが、今回はたまたまループインデックス間に全く依存関係がないので、好きなように並列化してよい(たまたまというか、そうなるように題材を選んだわけだが)。
+
+まずは内側のループにディレクティブを入れてみよう。`#pragma omp parallel for`というディレクティブを対象ループの直前に入れるだけでよい。
+
+[gs_omp1.cpp](gs_omp1.cpp)
+
+```cpp
+void calc(vd &u, vd &v, vd &u2, vd &v2) {
+// (*1) 外側ループ
+  for (int iy = 1; iy < L - 1; iy++) {
+#pragma omp parallel for
+    for (int ix = 1; ix < L - 1; ix++) {
+      double du = 0;
+      double dv = 0;
+      const int i = ix + iy * L;
+      du = Du * laplacian(ix, iy, u);
+      dv = Dv * laplacian(ix, iy, v);
+      du += calcU(u[i], v[i]);
+      dv += calcV(u[i], v[i]);
+      u2[i] = u[i] + du * dt;
+      v2[i] = v[i] + dv * dt;
+    }
+  }
+}
+```
+
+実行してみよう。スレッド数は環境変数`OMP_NUM_THREADS`で指定する。12コア2ソケットマシンなので、全体で24コアあるから、24スレッドで走らせてみよう。ついでにtimeコマンドをかましてCPUがどれだけ使われているかも見てみる。
+
+```sh
+$ time OMP_NUM_THREADS=24 ./gs_omp1.out
+23940 [ms]
+conf000.dat
+OMP_NUM_THREADS=24 ./gs_omp1.out  571.34s user 1.60s system 2392% cpu 23.946 total
+```
+
+2392%、つまり24コア使われているのは間違いなさそうだが、シリアルコードで2527 msだったのが、23940ms、つまり**並列化により10倍遅くなった**ことになる。ついでに結果が正しいことも確認しておこう(**基本！**)。
+
+```sh
+diff conf000.org conf000.dat
+
+```
+
+問題なさそうですね。
+
+次に、外側を並列化してみよう。
+
+[gs_omp2.cpp](gs_omp2.cpp)
+
+```cpp
+void calc(vd &u, vd &v, vd &u2, vd &v2) {
+#pragma omp parallel for
+  for (int iy = 1; iy < L - 1; iy++) {
+    for (int ix = 1; ix < L - 1; ix++) {
+      double du = 0;
+      double dv = 0;
+      const int i = ix + iy * L;
+      du = Du * laplacian(ix, iy, u);
+      dv = Dv * laplacian(ix, iy, v);
+      du += calcU(u[i], v[i]);
+      dv += calcV(u[i], v[i]);
+      u2[i] = u[i] + du * dt;
+      v2[i] = v[i] + dv * dt;
+    }
+  }
+}
+```
+
+同じような計算をしてみよう。
+
+```sh
+$ time OMP_NUM_THREADS=24 ./gs_omp2.out
+562 [ms]
+conf000.dat
+OMP_NUM_THREADS=24 ./gs_omp2.out  11.97s user 0.02s system 2107% cpu 0.569 total
+
+$ diff conf000.org conf000.dat
+
+```
+
+今度は早くなった。結果も正しいようだ。しかし、24コアを使っているのに、実行速度が4.5倍にしかなっていない。並列化効率にして20%弱である。
+ちなみに、12スレッド実行にすると、実行速度も並列化効率も良くなる。
+
+```sh
+$ time OMP_NUM_THREADS=12 ./gs_omp2.out
+386 [ms]
+conf000.dat
+OMP_NUM_THREADS=12 ./gs_omp2.out  4.63s user 0.01s system 1184% cpu 0.392 total
+```
+
+実行時間が24スレッド実行のときよりも短くなった。並列化効率も55%にまで改善した。このように、
+
+* 二重ループの内側と外側、どちらを並列化するかで性能が全く変わる。むしろ並列化により遅くなる場合もある。
+* スレッドを増やせば増やすほど性能が良くなるわけではない。あるところからスレッドを増やすとむしろ性能が劣化する場合もある。
+
+ということがわかる。
+
+さて、なんで並列化して遅くなったのか見てみよう。まずは内側にディレクティブを入れた場合のコードを、1スレッド実行した場合のプロファイルである。
+見やすくするために、`perf report`に`--stdio --sort dso`オプションをつけよう。
+
+TODO: perfのオプションの説明。
+
+```sh
+$ OMP_NUM_THREADS=1 perf record ./gs_omp1.out
+3706 [ms]
+conf000.dat
+[ perf record: Woken up 1 times to write data ]
+[ perf record: Captured and wrote 0.157 MB perf.data (~6860 samples) ]
+
+$ perf report --stdio --sort dso
+(snip)
+# Overhead      Shared Object
+# ........  .................
+#
+    68.11%  gs_omp1.out
+    23.24%  [kernel.kallsyms]
+     6.32%  libgomp.so.1.0.0
+     2.07%  libc-2.11.3.so
+     0.25%  [obdclass]
+     0.01%  [ptlrpc]
+```
+
+「Overhead」が、全体の時間に占める割合だが、自分のプログラムである`gs_omp1.out`が68%しか占めていないことがわかる。
+同じことをスレッド並列していないコード`gs.out`でやるとこうなる。
+
+```sh
+$ perf record ./gs.out
+2422 [ms]
+conf000.dat
+[ perf record: Woken up 1 times to write data ]
+[ perf record: Captured and wrote 0.109 MB perf.data (~4758 samples) ]
+
+$ perf report --stdio --sort dso
+# Overhead      Shared Object
+# ........  .................
+#
+    99.77%  gs.out
+     0.21%  [kernel.kallsyms]
+     0.02%  [obdclass]
+```
+
+つまり、ここで増えた`kernel.kallsyms`とか`libgomp.so.1.0.0`が、スレッド並列化によるオーバーヘッドであることがわかる。
+実際、3706 msの68.11%は2524msであり、シリアルコードの実行時間とほぼ同じであることがわかる。
+
+同様なことを外側にディレクティブを入れた場合でやってみると、変なオーバーヘッドがないことがわかる。
+
+```sh
+$ OMP_NUM_THREADS=1 perf record ./gs_omp2.out
+2342 [ms]
+conf000.dat
+[ perf record: Woken up 1 times to write data ]
+[ perf record: Captured and wrote 0.106 MB perf.data (~4615 samples) ]
+
+$ perf report --stdio --sort dso
+# Overhead      Shared Object
+# ........  .................
+#
+    99.19%  gs_omp2.out
+     0.39%  [kernel.kallsyms]
+     0.30%  libgomp.so.1.0.0
+     0.13%  libc-2.11.3.so
+```
+
+外側にディレクティブを入れた場合で、さらにスレッド数を増やして行った場合、計算にかかったコストと、それ以外のオーバーヘッドをグラフにした。
+
+TODO: グラフ作図
+
+スレッド数を増やすほど計算時間は減るが、それに伴ってオーバーヘッドが増えてしまい、12スレッドのところで最も性能が良くなることがわかる。
+
+TODO: Loop collapseなど
+
+TODO: NUMA最適化する？
 
 ## ハイブリッド並列の実例
