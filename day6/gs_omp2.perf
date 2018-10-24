@@ -1,0 +1,21 @@
+1 threads 2339 [ms]
+conf000.dat
+    98.79%  gs_omp2.out      
+2 threads 1419 [ms]
+conf000.dat
+    88.65%  gs_omp2.out      
+4 threads 726 [ms]
+conf000.dat
+    83.99%  gs_omp2.out      
+8 threads 374 [ms]
+conf000.dat
+    78.36%  gs_omp2.out         
+12 threads 307 [ms]
+conf000.dat
+    63.08%  gs_omp2.out      
+18 threads 418 [ms]
+conf000.dat
+    40.10%  gs_omp2.out      
+24 threads 523 [ms]
+conf000.dat
+    27.21%  gs_omp2.out      
