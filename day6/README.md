@@ -401,9 +401,13 @@ conf000.dat
 
 本当はOpenMPについてもう少し真面目に、たとえばNUMA最適化やLoop Fusion/Fission/Collapseなども扱おうかと思ったのだが、正直面倒くさくなった。個人的な感想で申し訳ないのだが、ディレクティブベースの最適化はコンパイラが何をやっているかが分かりづらく、隔靴掻痒の感があってどうしても好きになれない。
 
-OpenMPについてはネットに多数良い文献が落ちている。例えば、Intelによる以下の文献がわかりやすかったので参照されたい。
+OpenMPには様々な構文があり、実にいろいろなことができる。OpenMPについてはネットに良い文献が多数落ちているが、例えばIntelによる以下の文献がわかりやすかったので参照されたい。
 
 [インテルコンパイラーOpenMP入門](http://jp.xlsoft.com/documents/intel/compiler/525J-001.pdf)
+
+また、名大の片桐先生による講義資料も詳しいので一読されたい。
+
+[計算科学技術特論 第三回 OpenMPの基礎](http://www.r-ccs.riken.jp/r-ccssite/wp-content/uploads/2017/04/tokuronA_17_3_katagiri_r1.pdf)
 
 ## ハイブリッド並列の実例
 
