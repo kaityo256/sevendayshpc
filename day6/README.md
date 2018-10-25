@@ -285,9 +285,8 @@ OMP_NUM_THREADS=12 ./gs_omp2.out  4.91s user 0.01s system 1185% cpu 0.415 total
 ということがわかる。
 
 さて、なんで並列化して遅くなったのか見てみよう。まずは内側にディレクティブを入れた場合のコードを、1スレッド実行した場合のプロファイルである。
-見やすくするために、`perf report`に`--stdio --sort dso`オプションをつけよう。
-
-TODO: perfのオプションの説明。
+見やすくするために、`perf report`の結果を`cat`にパイプしよう。`perf report`はデフォルトで結果をTUIインタフェースにより表示する(`--tui`)が、
+パイプをつないだ場合には標準出力に結果を流す(`--stdio`)。`--sort`は、ソートするキーを指定する。デフォルトでは関数ごとに表示されるが、`dso`を指定すると、シェアードライブラリごとにまとめてくれる。
 
 ```sh
 $ OMP_NUM_THREADS=1 perf record ./gs_omp1.out
@@ -296,7 +295,7 @@ conf000.dat
 [ perf record: Woken up 1 times to write data ]
 [ perf record: Captured and wrote 0.157 MB perf.data (~6859 samples) ]
 
-$ perf report --stdio --sort dso | cat
+$ perf report --sort dso | cat
 (snip)
 # Overhead      Shared Object
 # ........  .................
@@ -309,6 +308,7 @@ $ perf report --stdio --sort dso | cat
 ```
 
 「Overhead」が、全体の時間に占める割合だが、自分のプログラムである`gs_omp1.out`が68%しか占めていないことがわかる。
+`libgomp.so.1.0.0`はOpenMPの実装である。
 同じことをスレッド並列していないコード`gs.out`でやるとこうなる。
 
 ```sh
@@ -318,7 +318,7 @@ conf000.dat
 [ perf record: Woken up 1 times to write data ]
 [ perf record: Captured and wrote 0.109 MB perf.data (~4758 samples) ]
 
-$ perf report --stdio --sort dso
+$ perf report --sort dso | cat
 # Overhead      Shared Object
 # ........  .................
 #
@@ -339,7 +339,7 @@ conf000.dat
 [ perf record: Woken up 1 times to write data ]
 [ perf record: Captured and wrote 0.106 MB perf.data (~4615 samples) ]
 
-$ perf report --stdio --sort dso | cat
+$ perf report --sort dso | cat
 (snip)
 # Overhead      Shared Object
 # ........  .................
@@ -478,7 +478,8 @@ OMP_NUM_THREADS=24 record ./gs_omp1.out
 
 見るとわかると思うが、あるメモリの指す場所を監視して、条件を満たしたらアドレス`a3b8`に飛べ、そうでなければアドレス`a390`(抜き出した場所の先頭)に戻れ、というループである。
 つまり、スレッドは同期待ちの間遊んでいるのではなく、条件が満たされるまでひたすらこのこのループを繰り返しているのである。
-これが「同期待ちで暇そうなのに、なぜかCPUコアが忙しかった理由」である。ここでは「待ち合わせ」でぐるぐる回っていたが、ロックを獲得するのにぐるぐるループでまわる方式を[スピンロック](https://ja.wikipedia.org/wiki/%E3%82%B9%E3%83%94%E3%83%B3%E3%83%AD%E3%83%83%E3%82%AF)と言う。アトミックな「read-modify-write」命令があれば実装は簡単である。
+例えるなら、赤信号で待っているあいだもずっとエンジンをふかしている状態である。
+これが「同期待ちで暇そうなのに、なぜかCPUコアが忙しかった理由」である。ここでは「待ち合わせ」でぐるぐる回っていたが、ロックを獲得するのにぐるぐるループでまわる方式を[スピンロック](https://ja.wikipedia.org/wiki/%E3%82%B9%E3%83%94%E3%83%B3%E3%83%AD%E3%83%83%E3%82%AF)と言う。アトミックな「read-modify-write」命令があればスピンロックの実装は簡単である。
 詳細は先のWikipediaの記事を参照されたい。
 ちなみに、京コンピュータで採用されているCPUはSPARC VIIIfxだが、このCPUにはハードウェアバリアが実装されている。
 どんな実装になっているか詳しくは知らないのだが、スピンロックなどのソフトウェア実装に比べて[10倍以上高速](http://www.fujitsu.com/downloads/JP/archive/imgjp/jmag/vol63-3/paper04.pdf)とのことである。

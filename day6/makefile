@@ -32,34 +32,34 @@ data:
 
 perf1:
 	OMP_NUM_THREADS=1 perf record ./gs_omp1.out > gs_omp1.perf
-	perf report --stdio --sort dso | grep -E "gs_omp1.out" >> gs_omp1.perf
+	perf report --sort dso | grep -E "gs_omp1.out" >> gs_omp1.perf
 	OMP_NUM_THREADS=2 perf record ./gs_omp1.out >> gs_omp1.perf
-	perf report --stdio --sort dso | grep -E "gs_omp1.out" >> gs_omp1.perf
+	perf report --sort dso | grep -E "gs_omp1.out" >> gs_omp1.perf
 	OMP_NUM_THREADS=4 perf record ./gs_omp1.out >> gs_omp1.perf
-	perf report --stdio --sort dso | grep -E "gs_omp1.out" >> gs_omp1.perf
+	perf report --sort dso | grep -E "gs_omp1.out" >> gs_omp1.perf
 	OMP_NUM_THREADS=8 perf record ./gs_omp1.out >> gs_omp1.perf
-	perf report --stdio --sort dso | grep -E "gs_omp1.out" >> gs_omp1.perf
+	perf report --sort dso | grep -E "gs_omp1.out" >> gs_omp1.perf
 	OMP_NUM_THREADS=12 perf record ./gs_omp1.out >> gs_omp1.perf
-	perf report --stdio --sort dso | grep -E "gs_omp1.out" >> gs_omp1.perf
+	perf report --sort dso | grep -E "gs_omp1.out" >> gs_omp1.perf
 	OMP_NUM_THREADS=18 perf record ./gs_omp1.out >> gs_omp1.perf
-	perf report --stdio --sort dso | grep -E "gs_omp1.out" >> gs_omp1.perf
+	perf report --sort dso | grep -E "gs_omp1.out" >> gs_omp1.perf
 	OMP_NUM_THREADS=24 perf record ./gs_omp1.out >> gs_omp1.perf
-	perf report --stdio --sort dso | grep -E "gs_omp1.out" >> gs_omp1.perf
+	perf report --sort dso | grep -E "gs_omp1.out" >> gs_omp1.perf
 
 perf2:
 	OMP_NUM_THREADS=1 perf record ./gs_omp2.out > gs_omp2.perf
-	perf report --stdio --sort dso | grep -E "gs_omp2.out" >> gs_omp2.perf
+	perf report --sort dso | grep -E "gs_omp2.out" >> gs_omp2.perf
 	OMP_NUM_THREADS=2 perf record ./gs_omp2.out >> gs_omp2.perf
-	perf report --stdio --sort dso | grep -E "gs_omp2.out" >> gs_omp2.perf
+	perf report --sort dso | grep -E "gs_omp2.out" >> gs_omp2.perf
 	OMP_NUM_THREADS=4 perf record ./gs_omp2.out >> gs_omp2.perf
-	perf report --stdio --sort dso | grep -E "gs_omp2.out" >> gs_omp2.perf
+	perf report --sort dso | grep -E "gs_omp2.out" >> gs_omp2.perf
 	OMP_NUM_THREADS=8 perf record ./gs_omp2.out >> gs_omp2.perf
-	perf report --stdio --sort dso | grep -E "gs_omp2.out" >> gs_omp2.perf
+	perf report --sort dso | grep -E "gs_omp2.out" >> gs_omp2.perf
 	OMP_NUM_THREADS=12 perf record ./gs_omp2.out >> gs_omp2.perf
-	perf report --stdio --sort dso | grep -E "gs_omp2.out" >> gs_omp2.perf
+	perf report --sort dso | grep -E "gs_omp2.out" >> gs_omp2.perf
 	OMP_NUM_THREADS=18 perf record ./gs_omp2.out >> gs_omp2.perf
-	perf report --stdio --sort dso | grep -E "gs_omp2.out" >> gs_omp2.perf
+	perf report --sort dso | grep -E "gs_omp2.out" >> gs_omp2.perf
 	OMP_NUM_THREADS=24 perf record ./gs_omp2.out >> gs_omp2.perf
-	perf report --stdio --sort dso | grep -E "gs_omp2.out" >> gs_omp2.perf
+	perf report --sort dso | grep -E "gs_omp2.out" >> gs_omp2.perf
 clean:
 	rm -f $(EXE)
