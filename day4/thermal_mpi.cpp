@@ -14,7 +14,7 @@ void dump(std::vector<double> &data) {
   sprintf(filename, "data%03d.dat", index);
   std::cout << filename << std::endl;
   std::ofstream ofs(filename);
-  for (int i = 0; i < data.size(); i++) {
+  for (unsigned int i = 0; i < data.size(); i++) {
     ofs << i << " " << data[i] << std::endl;
   }
   index++;
@@ -41,7 +41,7 @@ void onestep(std::vector<double> &lattice, double h, int rank, int procs) {
   // 左端を左に送って、右端を右から受け取る
   MPI_Sendrecv(&(lattice[1]), 1, MPI_DOUBLE, left, 0, &(orig[size - 1]), 1, MPI_DOUBLE, right, 0, MPI_COMM_WORLD, &st);
 
-  //あとはシリアル番と同じ
+  //あとはシリアル版と同じ
   for (int i = 1; i < size - 1; i++) {
     lattice[i] += (orig[i - 1] - 2.0 * orig[i] + orig[i + 1]) * 0.5 * h;
   }
