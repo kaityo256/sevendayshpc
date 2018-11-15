@@ -57,7 +57,7 @@ void print256d(__m256d x) {
 `_m256d x`が、そのまま`double x[4]`として使えているのがわかると思う。この時、`x[0]`が一番下位となる。
 先程の代入と合わせるとこんな感じになる。
 
-![print.cpp](print.cpp)
+[print.cpp](print.cpp)
 
 ```cpp
 #include <cstdio>
@@ -99,7 +99,7 @@ __m256d add(__m256d v1, __m256d v2) {
 アセンブリを見てみる。少し最適化したほうがアセンブリが読みやすい。
 
 ```sh
-$ g++ -mavx2 -O2 -S add.cpp
+g++ -mavx2 -O2 -S add.cpp
 ```
 
 アセンブリはこうなる。
@@ -114,7 +114,7 @@ __Z3addDv4_dS_:
 
 実際に4要素同時に足し算できることを確認しよう。
 
-![add.cpp](add.cpp)
+[add.cpp](add.cpp)
 
 ```cpp
 #include <cstdio>
@@ -142,7 +142,7 @@ $ ./a.out
 このように、ベクトル同士の演算に見えるので、SIMD化のことをベクトル化と呼んだりする。ただし、線形代数で出てくる
 ベクトルの積とは違い、SIMDの積は単に要素ごとの積になることに注意。実際、さっきの和を積にするとこうなる。
 
-![mul.cpp](mul.cpp)
+[mul.cpp](mul.cpp)
 
 ```cpp
 #include <cstdio>
@@ -171,7 +171,7 @@ $ ./a.out
 あとSIMD化で大事なのは、SIMDレジスタへのデータの読み書きである。先程はデバッグのために`_mm256_set_pd`を使ったが、これは極めて遅い。
 どんな動作をするか見てみよう。
 
-![setpd.cpp](setpd.cpp)
+[setpd.cpp](setpd.cpp)
 
 ```cpp
 #include <x86intrin.h>
@@ -213,7 +213,7 @@ YMMレジスタに入れてくれる。ただし、そのポインタの指す�
 
 利用例はこんな感じになる。
 
-![load.cpp](load.cpp)
+[load.cpp](load.cpp)
 
 ```cpp
 #include <cstdio>
@@ -233,9 +233,9 @@ int main(void) {
 }
 ```
 
-ここで`__attribute__((aligned(32)))`が、「後に続くデータを32バイトアラインにしてください」という指示である。
-
-TODO: メモリアラインについて書く？
+ここで`__attribute__((aligned(32)))`が、「後に続くデータを32バイトアライメントにしてください」という指示である。
+メモリアライメントについてはここでは深入りしないが、「利用メモリの端がちょうど良いとこから始まっていること」とおぼえておけば良い。
+具体的には、配列の先頭アドレスが32で割り切れる値になる。メモリアライメントが合わないと遅くなったり、実行時にSIGSEGVで落ちたりする。
 
 コンパイル、実行はこんな感じ。
 
@@ -247,7 +247,7 @@ $ ./a.out
 
 `_mm256_load_pd`が何をやっているか(どんなアセンブリに対応するか)も見てみよう。こんなコードのアセンブリを見てみる。
 
-![loadasm.cpp](loadasm.cpp)
+[loadasm.cpp](loadasm.cpp)
 
 ```cpp
 #include <x86intrin.h>  
@@ -298,7 +298,6 @@ IBM以外でも、ARMが規定したアセンブリ言語であるUALは「[Unif
 しかし、誰かが「アセンブラを書く」もしくは「アセンブラ言語」と言ったときに、脊髄反射で「アセンブリ言語が正しい」とマウントを取る前に、上記のような事情を思い出していただけたらと思う。
 
 余談の余談となるが、アセンブリで書かれたものを手で機械語に翻訳する作業を「ハンドアセンブル」と呼ぶ。昔のアセンブリはほぼ機械語と一対一対応しており、「便利なマクロ付き機械語」といった趣であったため、ハンドアセンブルはさほど難しい作業ではなかった。しかし、現在の機械語、特にx86の機械語はかなり複雑になっており、アセンブリから機械語に翻訳するのはかなり大変になっている。そのあたりは例えば[x86_64機械語入門](https://tanakamura.github.io/pllp/docs/x8664_language.html)なんかを参照してほしい。
-
 
 ## 簡単なSIMD化の例
 
@@ -556,10 +555,391 @@ x87コプロセッサは、x86の進化に合わせて一緒に進化してい�
 
 さて、浮動小数点演算にはもう一本の歴史がある。SIMDである。CPUの処理能力が上がると、音声や動画のエンコード、デコードや、3D処理などの処理能力がもっとほしい、という要望が出てきた。そうした声に答える形でAMDが3DNow!というSIMD命令拡張を発表した。これはIntelによるMMXを拡張し、64ビットのMMXレジスタを使って単精度実数の演算を二つ同時にできるようにしたものだ。その後、IntelもSSEというSIMD命令拡張を作り、ここで128ビットであるXMMレジスタが導入された。当初、XMMレジスタは単精度実数の演算しかできなかったが、SSE2で倍精度実数を扱えるようになる。AMDは倍精度実数の計算にデフォルトでXMMレジスタを使うようになり、その後Intelもそうなったと思われる(そのあたりの前後関係はよく知らない)。
 
-そんなわけで、x86には浮動小数点レジスタとして、x87で導入された80ビットのレジスタと、SSEで導入された128ビットのXMMレジスタがあるが、「普通の」64ビットの浮動小数点レジスタはついに導入されなかった。現在のx86では、SIMDではない普段遣いの倍精度実数演算でも、SIMDレジスタであるXMMレジスタの下位64ビットを使って演算する。
+そんなわけで、x86には浮動小数点レジスタとして、x87で導入された80ビットのレジスタと、SSEで導入された128ビットのXMMレジスタがあるが、「普通の」64ビットの浮動小数点レジスタはついに導入されなかった。現在のx86では、SIMDではない普段遣いの倍精度実数演算でも、SIMDレジスタkであるXMMレジスタの下位64ビットを使って演算する。
 
 その後、SIMD命令拡張はAVX、AVX2、AVX-512と発展を続け、SIMD幅も256ビット、512ビットと増えていった。それに伴ってSIMDレジスタもYMM、ZMMと拡張されていく。YMMの下位128ビットがXMM、ZMMの下位256ビットがYMMになるのは、汎用レジスタAX、EAX、RAXに包含関係があるのと同様である。
 
 ## もう少し実戦的なSIMD化
 
-TODO: 書く？書かない？
+上記で触れたSIMD化は非常に単純なもので、コンパイラが自動でできるものだった。しかし、一般にはSIMD化はレジスタ内をシャッフルしたり、データ構造を考えたりといろいろ複雑である。
+ここでは「もっとガチなSIMD化をしたい！」というコアなSIMDerのために、もう少しだけ実践的な例を挙げてみよう。
+
+磁場中の荷電粒子の運動を考える。磁場ベクトルを$\vec{B}$、速度ベクトルを$\vec{v}$、位置ベクトルを$\vec{r}$とする。簡単のため、素電荷も質量も光速も1とする単位系を取ろう。
+運動方程式はこんな感じになる。
+
+$$
+\dot{\vec{v}} = \vec{v} \times \vec{B}
+$$
+
+$$
+\dot{\vec{r}} = \vec{v}
+$$
+
+ここで、速度の時間微分を要素をあらわに書くとこうなる。
+
+$$
+\dot{v_x} = v_y B_z - v_z B_y
+$$
+
+$$
+\dot{v_y} = v_z B_x - v_x B_z
+$$
+
+$$
+\dot{v_z} = v_x B_y - v_y B_x
+$$
+
+磁場中の荷電粒子の運動は、磁場と平行な向きには等速直線運動、垂直な向きには円運動をするため、結果として螺旋を描いてすすむ。こんな感じ。
+
+![magnetic/one.png](magnetic/one.png)
+
+さて、適当な方向に向いた磁場中に、ランダムな向きに初速を持った荷電粒子たちをばらまいた系を計算してみよう。なお、粒子同士の相互作用も無視する。
+三次元シミュレーションなので、三次元ベクトルを構造体で表現する。
+
+```cpp
+struct vec {
+  double x, y, z;
+};
+```
+
+粒子数を`N`とし、位置ベクトル、速度ベクトルを構造体の配列にとる。
+
+```cpp
+const int N = 100000;
+vec r[N], v[N];
+```
+
+この時、一次のオイラー法で時間発展を書くとこんな感じになる。
+
+```cpp
+void calc_euler() {
+  for (int i = 0; i < N; i++) {
+    double px = v[i].y * BZ - v[i].z * BY;
+    double py = v[i].z * BX - v[i].x * BZ;
+    double pz = v[i].x * BY - v[i].y * BX;
+    v[i].x += px * dt;
+    v[i].y += py * dt;
+    v[i].z += pz * dt;
+    r[i].x = r[i].x + v[i].x * dt;
+    r[i].y = r[i].y + v[i].y * dt;
+    r[i].z = r[i].z + v[i].z * dt;
+  }
+}
+```
+
+しかし、よく知られているように一次のオイラー法は非常に精度が悪い。あなたが物理を学んだのなら、「磁場は荷電粒子に仕事をしない」ということを知っているはずである。つまり、全エネルギーは保存しなければならない。粒子間相互作用がないため、エネルギーは運動エネルギーだけである。
+
+```cpp
+double energy(void) {
+  double e = 0.0;
+  for (int i = 0; i < N; i++) {
+    e += v[i].x * v[i].x;
+    e += v[i].y * v[i].y;
+    e += v[i].z * v[i].z;
+  }
+  return e * 0.5 / static_cast<double>(N);
+}
+```
+
+ちなみに、運動エネルギーなどは「一粒子あたり」の量にしておく(つまり平均エネルギーとする)と、粒子数の増減にエネルギーがよらなくなって便利である。時間発展はこんな感じにかけるだろう。
+
+```cpp
+  init();
+  double t = 0.0;
+  for (int i = 0; i < 10000; i++) {
+    calc_euler();
+    t += dt;
+    if ((i % 1000) == 0) {
+      std::cout << t << " " << energy() << std::endl;
+    }
+  }
+```
+
+平均エネルギーの時間発展はこうなる。
+
+![magnetic/energy.png](magnetic/energy.png)
+
+1st-Eulerとあるのが1次のオイラー法である。保存するべきエネルギーがどんどん増えてしまっていることがわかる。
+
+さて、精度を上げる数値積分法はいくらでもあるが、ここでは簡単に二次のRunge-Kutta(RK)法を採用しよう。
+
+```cpp
+void calc_rk2() {
+  for (int i = 0; i < N; i++) {
+    double px = v[i].y * BZ - v[i].z * BY;
+    double py = v[i].z * BX - v[i].x * BZ;
+    double pz = v[i].x * BY - v[i].y * BX;
+    double vcx = v[i].x + px * dt * 0.5;
+    double vcy = v[i].y + py * dt * 0.5;
+    double vcz = v[i].z + pz * dt * 0.5;
+    double px2 = vcy * BZ - vcz * BY;
+    double py2 = vcz * BX - vcx * BZ;
+    double pz2 = vcx * BY - vcy * BX;
+    v[i].x += px2 * dt;
+    v[i].y += py2 * dt;
+    v[i].z += pz2 * dt;
+    r[i].x += v[i].x * dt;
+    r[i].y += v[i].y * dt;
+    r[i].z += v[i].z * dt;
+  }
+}
+```
+
+二次のRKは、まず1次のオイラー法で時間刻みの半分だけ系を仮想的に時間発展させ、その場所において再度時間微分を計算し、その微分係数をもとに現在時刻から時間発展させる方法である。一般にRunge-Kuttaというと4次の方法を指すが、ここでは手抜きして2次にする。また、座標の更新はどうせ同じなので1次のオイラーのままにする。
+
+こうして計算したエネルギーが先程の図の「2nd-RK」と記されたデータ点である。エネルギーがきっちり保存していることがわかるだろう。この関数`calc_rk2`をSIMD化して見ることにしよう。
+
+先に、SIMD化では、連続したデータを取ってくるのが重要であると書いた。いまはYMMレジスタを使うので、4つの要素を取ってきたい。しかし、三次元シミュレーションなので、各粒子は3要素の速度と3要素の位置を持っている。まずこれをなんとかしよう。
+
+具体的には、3要素のベクトルを4要素にしてしまう。
+
+```cpp
+struct vec {
+  double x, y, z, w; // wを増やした
+};
+```
+
+こうすると、一命令で粒子の速度がごそっとレジスタに乗る。
+
+![fig/load_pd.png](fig/load_pd.png)
+
+上図の例では、ポインタ`&v[i].x`が、i番目の粒子の速度ベクトルの先頭位置を示すため、
+
+```cpp
+__m256d vv = _mm256_load_pd((double *)(&(v[i].x)));
+```
+
+とすると、レジスタに3つのデータを一度に持ってくることができる(一要素は無駄になる)。
+
+次に、レジスタに載せたデータから微分を計算したいのだが、そのままではベクトル積の形にならない。
+具体的にやりたいのはこんな計算であった。
+
+```cpp
+    double px = v[i].y * BZ - v[i].z * BY;
+    double py = v[i].z * BX - v[i].x * BZ;
+    double pz = v[i].x * BY - v[i].y * BX;
+```
+
+この計算をデータをレジスタに載せたままで実行するためには、レジスタ内で(x,y,z,w)と並んでいるデータを(y,z,x,w)という順番に並び替えなければならない。このようなレジスタ内の要素の並び替えをするためにシャッフル命令が用意されている。シャッフルのやり方については、例えば[AVXの倍精度実数シャッフル系命令チートシート](https://qiita.com/kaityo256/items/ee8afca236e0af21ad96)を参照してほしいが、シャッフル後の要素の並び方を四進数で表現してやる。
+たとえば(0,1,2,3)とあるレジスタを(1,2,0,3)の順番にしたければ、
+
+```cpp
+const int im_yzx = 64 * 3 + 16 * 0 + 4 * 2 + 1 * 1;
+```
+
+という数字を引数に与えてやれば良い。上記の数を四進数表記すると3021になることに注意。
+
+注：このあたり、左右どちらを下位に取るかいつも混乱する。レジスタは右に下位ビットを取るのが慣例であるため、その意味では(w,z,y,x)という順番で並んでいる。しかし、普通の数学の意味でのベクトルは最初の要素を左に書くのが慣例なので(x,y,z,w)と書きたくなる。そのあたり混乱しがちだが、適当に補って読んでほしい。
+
+![fig/permute.png](fig/permute.png)
+
+これによりレジスタの中身を適宜並び替えて、足したりかけたり引いたりすればよろしい。磁場については、使うベクトルが(z,x,y,0)と(z,x,y,0)のパターンしかないので、最初に宣言しておこう。
+
+```cpp
+  __m256d vb_zxy = _mm256_set_pd(0.0, BY, BX, BZ);
+  __m256d vb_yzx = _mm256_set_pd(0.0, BX, BZ, BY);
+```
+
+先程の図の中央に縦に並んだベクトルの計算は、実際のコードでは
+
+```cpp
+__m256d vp = vv_yzx * vb_zxy - vv_zxy * vb_yzx;
+```
+
+と一行で書ける(SIMDがベクトル演算と呼ばれる所以である)。
+
+これを使って中点の微分係数を求めるのはさほど難しくなく、中点の微分係数がもとまったら、それを使って速度を更新するのも難しくないだろう。
+
+さて、速度ベクトルが、`__m256d vv`に保存されたとする。これはレジスタであるため、メモリに書き戻してやる必要がある。これはロードと同様にポインタ`&v[i].x`が指す場所にストアしてやればよろしい。
+
+```cpp
+_mm256_store_pd((double *)(&(v[i].x)), vv);
+```
+
+位置の更新も同様に、更新された速度を使って
+
+```cpp
+    __m256d vr = _mm256_load_pd((double *)(&(r[i].x)));
+    vr += vv * vdt;
+    _mm256_store_pd((double *)(&(r[i].x)), vr);
+```
+
+とすれば良い。以上をまとめると、時間発展ルーチンのSIMD版はこんな感じにかける。
+
+```cpp
+void calc_rk2_simd() {
+  __m256d vb_zxy = _mm256_set_pd(0.0, BY, BX, BZ);
+  __m256d vb_yzx = _mm256_set_pd(0.0, BX, BZ, BY);
+  __m256d vdt = _mm256_set_pd(0.0, dt, dt, dt);
+  __m256d vdt_h = _mm256_set_pd(0.0, dt * 0.5, dt * 0.5, dt * 0.5);
+  const int im_yzx = 64 * 3 + 16 * 0 + 4 * 2 + 1 * 1;
+  const int im_zxy = 64 * 3 + 16 * 1 + 4 * 0 + 1 * 2;
+  for (int i = 0; i < N; i++) {
+    __m256d vv = _mm256_load_pd((double *)(&(v[i].x)));
+    __m256d vr = _mm256_load_pd((double *)(&(r[i].x)));
+    __m256d vv_yzx = _mm256_permute4x64_pd(vv, im_yzx);
+    __m256d vv_zxy = _mm256_permute4x64_pd(vv, im_zxy);
+    __m256d vp = vv_yzx * vb_zxy - vv_zxy * vb_yzx;
+    __m256d vc = vv + vp * vdt_h;
+    __m256d vp_yzx = _mm256_permute4x64_pd(vc, im_yzx);
+    __m256d vp_zxy = _mm256_permute4x64_pd(vc, im_zxy);
+    __m256d vp2 = vp_yzx * vb_zxy - vp_zxy * vb_yzx;
+    vv += vp2 * vdt;
+    vr += vv * vdt;
+    _mm256_store_pd((double *)(&(v[i].x)), vv);
+    _mm256_store_pd((double *)(&(r[i].x)), vr);
+  }
+}
+```
+
+19行が23行になっただけなので、さほどややこしいことはないと思う。増えた4行も、磁場ベクトルを作るところとシャッフルのインデックスの準備だけである。いきなりこのルーチンを作るとバグが入りやすいが、シリアルコードに埋め込む形でSIMD化をすすめ、各ステップごとにシリアルルーチンとSIMDレジスタの内容が一致することを確認しながらやればさほど難しいことはない。
+
+さて、これはSIMD化はしたが、演算順序その他は全く変えていないため、丸め誤差も含めて完全にシリアルコードと一致するはずである。それを確認するため、時間発展後に位置ベクトルのダンプを取ろう。
+
+```cpp
+void dump() {
+  for (int i = 0; i < N; i++) {
+    std::cout << r[i].x << " ";
+    std::cout << r[i].y << " ";
+    std::cout << r[i].z << std::endl;
+  }
+}
+```
+
+時間発展後に座標をダンプして、その結果を比較しよう。シリアル版を[mag.cpp](mag.cpp)、SIMD版を[mag_simd.cpp](mag_simd.cpp)としておき、以下のようにコンパイル、実行、結果の比較をする。
+
+```sh
+$ g++ -std=c++11 -O3 -mavx2 -mfma mag.cpp -o a.out
+$ g++ -std=c++11 -O3 -mavx2 -mfma mag_simd.cpp -o b.out
+$ time ./a.out > a.txt
+./a.out > a.txt  4.58s user 0.27s system 99% cpu 4.876 total
+
+$ time ./b.out > b.txt
+./b.out > b.txt  2.54s user 0.29s system 99% cpu 2.849 total
+
+$ diff a.txt b.txt # 結果が一致
+
+```
+
+実行時間が4.58s → 2.54sと高速化され、かつ実行結果が一致していることがわかる。
+
+さて、この結果を見て「おお！まぁまぁSIMD化の効果あるじゃん！」と思うのは早計である。先程のデータ構造は、構造体の配列の形になっていた。このような構造を **Array of Structure (AoS)** と呼ぶ。逆に、同じデータを、配列の構造体で表現することもできる。
+
+```cpp
+double rx[N], ry[N], rz[N];
+double vx[N], vy[N], vz[N];
+```
+
+ここでは配列を構造体にまとめていないが、このようなデータ構造を **Structure of Array (SoA)** と呼ぶ。AoSとSoA、どちらが良いかは場合によるのだが、SIMD化においてはSoAにしたほうが性能がでる場合が多い。
+
+先程のAoSのシリアルコードと全く同じ内容を、SoAで書いたものを[mag_soa.cpp](mag_soa.cpp)とする。例えば、時間発展ルーチンはこんな感じにかける。
+
+```cpp
+void calc_rk2() {
+  for (int i = 0; i < N; i++) {
+    double px = vy[i] * BZ - vz[i] * BY;
+    double py = vz[i] * BX - vx[i] * BZ;
+    double pz = vx[i] * BY - vy[i] * BX;
+    double vcx = vx[i] + px * dt * 0.5;
+    double vcy = vy[i] + py * dt * 0.5;
+    double vcz = vz[i] + pz * dt * 0.5;
+    double px2 = vcy * BZ - vcz * BY;
+    double py2 = vcz * BX - vcx * BZ;
+    double pz2 = vcx * BY - vcy * BX;
+    vx[i] += px2 * dt;
+    vy[i] += py2 * dt;
+    vz[i] += pz2 * dt;
+    rx[i] = rx[i] + vx[i] * dt;
+    ry[i] = ry[i] + vy[i] * dt;
+    rz[i] = rz[i] + vz[i] * dt;
+  }
+}
+```
+
+そのまんまなのがわかるかと思う。これも実行して、結果を比較しよう。
+
+```sh
+$ g++ -std=c++11 -O3 -mavx2 -mfma mag_soa.cpp -o c.out
+$ time ./c.out > c.txt
+./c.out > c.txt  1.20s user 0.28s system 98% cpu 1.493 total
+
+$ diff a.txt c.txt # 結果が一致
+
+```
+
+手でSIMD化した場合に比べて、2.54s → 1.20sと倍以上高速化されたことがわかる。もともとのシリアルコードが4.58sだったので、4倍近い。つまり、このコードはコンパイラによる自動SIMD化により4倍早くなったわけで、理想的なSIMD化ができたことがわかる。
+
+実際にコンパイラはこんなコードを吐いている。
+
+```asm
+L10:
+  vmovapd (%rdi,%rax), %ymm0
+  vmovapd (%r9,%rax), %ymm11
+  vmovapd (%r8,%rax), %ymm10
+  vmulpd  %ymm7, %ymm0, %ymm2
+  vmulpd  %ymm11, %ymm5, %ymm1
+  vfmsub231pd %ymm6, %ymm0, %ymm1
+  vmulpd  %ymm4, %ymm1, %ymm1
+  vmulpd  %ymm10, %ymm6, %ymm3
+  vfmadd132pd %ymm8, %ymm10, %ymm1
+  vfmsub231pd %ymm11, %ymm7, %ymm3
+  vfmsub231pd %ymm10, %ymm5, %ymm2
+  vmulpd  %ymm4, %ymm3, %ymm3
+  vmulpd  %ymm4, %ymm2, %ymm2
+  vfmadd132pd %ymm8, %ymm0, %ymm3
+  vfmadd132pd %ymm8, %ymm11, %ymm2
+  vmulpd  %ymm6, %ymm1, %ymm9
+  vfmsub231pd %ymm7, %ymm2, %ymm9
+  vmulpd  %ymm5, %ymm2, %ymm2
+  vfmadd132pd %ymm4, %ymm0, %ymm9
+  vfmsub231pd %ymm6, %ymm3, %ymm2
+  vmovapd %ymm9, (%rdi,%rax)
+  vfmadd132pd %ymm4, %ymm10, %ymm2
+  vfmadd213pd (%rsi,%rax), %ymm4, %ymm9
+  vmovapd %ymm2, (%r8,%rax)
+  vmulpd  %ymm7, %ymm3, %ymm0
+  vfmadd213pd (%rdx,%rax), %ymm4, %ymm2
+  vfmsub231pd %ymm5, %ymm1, %ymm0
+  vmovapd %ymm9, (%rsi,%rax)
+  vfmadd132pd %ymm4, %ymm11, %ymm0
+  vmovapd %ymm2, (%rdx,%rax)
+  vmovapd %ymm0, (%r9,%rax)
+  vfmadd213pd (%rcx,%rax), %ymm4, %ymm0
+  vmovapd %ymm0, (%rcx,%rax)
+  addq  $32, %rax
+  cmpq  $800000, %rax
+  jne L10
+```
+
+最内ループだけ抜き出したが、基本的に`ymm`レジスタだらけであり、理想的にSIMD化されていることがわかる。また、シャッフル命令も全く出ていないことがわかる。コンパイラはループを素直に4倍展開し、各レジスタに(x1, x2, x3, x4)のような形でデータを保持して計算している。ループカウンタは`%rax`で、毎回32ずつ増えており、800000になったら終了なので、このループは25000回転することがわかる。
+
+ちなみに、先程手でSIMD化したループのアセンブリはこうなっている。
+
+```asm
+L13:
+  vmovapd (%rax), %ymm2
+  addq  $32, %rax
+  addq  $32, %rdx
+  vpermpd $201, %ymm2, %ymm0
+  vpermpd $210, %ymm2, %ymm1
+  vmulpd  %ymm3, %ymm1, %ymm1
+  vfmsub132pd %ymm4, %ymm1, %ymm0
+  vfmadd132pd %ymm6, %ymm2, %ymm0
+  vpermpd $201, %ymm0, %ymm1
+  vpermpd $210, %ymm0, %ymm0
+  vmulpd  %ymm3, %ymm0, %ymm0
+  vfmsub231pd %ymm4, %ymm1, %ymm0
+  vfmadd132pd %ymm5, %ymm2, %ymm0
+  vmovapd %ymm0, -32(%rax)
+  vmovapd %ymm0, %ymm1
+  vfmadd213pd -32(%rdx), %ymm5, %ymm1
+  vmovapd %ymm1, -32(%rdx)
+  cmpq  %rcx, %rax
+  jne L13
+```
+
+`vpermpd`がシャッフル命令である。ループボディがかなり小さいが、このループは100000回まわるため、25000回しかまわらないコンパイラによる自動SIMD化ルーチンには勝てない。大雑把な話、ループボディの計算コストが半分だが、回転数が4倍なので2倍負けた、という感じである。
+
+上記の例のように、「いま手元にあるコード」をがんばって「そのままSIMD化」して高速化しても、データ構造を変えるとコンパイラがあっさり自動SIMD化できて負けることがある。多くの場合「SIMD化」はデータ構造のグローバルな変更を伴う。先のコードのAoS版である[md.cpp](md.cpp)と、SoA版である[md_soa.cpp](md_soa.cpp)は、全く同じことをしているが **全書き換え** になっている。今回はコードが短いから良いが、10万行とかあるコードだと「やっぱりSoAの方が早いから全書き換えで！」と気軽には言えないだろう。また、デバイスによってデータ構造の向き不向きもある。例えば「CPUではAoSの方が早いが、GPGPUではSoAの方が早い」なんてこともざらにある。こういう場合には、ホットスポットルーチンに入る前にAoS←→SoAの相互変換をしたりすることも検討するが、もちろんその分オーバーヘッドもあるので面倒くさいところである。
+
+まぁ、以上のようにいろいろ面倒なことを書いたが、ちゃんと手を動かして上記を試してみた方には「SIMD化は(原理的には)簡単だ」というのは同意してもらえると思う。MPIもSIMD化も同じである。いろいろ考えることがあって面倒だが、やること自体は単純なので難しくはない。「やるだけ」である。ただし、MPI化は「やれば並列計算ができ、かつプロセスあたりの計算量を増やせばいくらでも並列化効率を上げられる」ことが期待されるのに対して、SIMD化は「やっても性能が向上するかはわからず、下手に手を出すよりコンパイラに任せた方が早い」なんてこともある。全くSIMD化されていないコードに対してSIMD化で得られるゲインは、256bitなら4倍、512ビットでも8倍程度しかなく、現実にはその半分も出れば御の字であろう。SIMD化はやってて楽しい作業であるが、手間とコストが釣り合うかどうかは微妙だな、というのが筆者の実感である。
