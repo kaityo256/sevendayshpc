@@ -4,8 +4,9 @@
 #include <fstream>
 #include <mpi.h>
 #include <omp.h>
+#include <chrono>
 
-const int L = 512;
+const int L = 9 * 36;
 const int TOTAL_STEP = 20000;
 const int INTERVAL = 200;
 const double F = 0.04;
@@ -256,13 +257,18 @@ int main(int argc, char **argv) {
   MPI_Init(&argc, &argv);
   MPIinfo mi;
   setup_info(mi);
+  int num_threads = omp_get_max_threads();
   if (mi.rank == 0) {
-    printf("%d process * %d threads\n", mi.procs, omp_get_max_threads());
+    printf("# Sytem Size = %d\n", L);
+    printf("# %d Process x %d Threads\n", mi.procs, num_threads);
+    printf("# Domain = %d x %d\n", mi.GX, mi.GY);
   }
+
   const int V = (mi.local_size_x + 2) * (mi.local_size_y + 2);
   vd u(V, 0.0), v(V, 0.0);
   vd u2(V, 0.0), v2(V, 0.0);
   init(u, v, mi);
+  const auto s = std::chrono::system_clock::now();
   for (int i = 0; i < TOTAL_STEP; i++) {
     if (i & 1) {
       sendrecv(u2, v2, mi);
@@ -271,7 +277,13 @@ int main(int argc, char **argv) {
       sendrecv(u, v, mi);
       calc(u, v, u2, v2, mi);
     }
-    if (i % INTERVAL == 0) save_as_dat_mpi(u, mi);
+    //if (i % INTERVAL == 0) save_as_dat_mpi(u, mi);
+  }
+  const auto e = std::chrono::system_clock::now();
+  const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(e   - s).count();
+  if (mi.rank == 0) {
+    std::cout << mi.procs << " " << num_threads << " ";
+    std::cout << elapsed << " [ms]" << std::endl;
   }
   MPI_Finalize();
 }
