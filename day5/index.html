@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  </style>
+
+<style>
+  .markdown-body {
+    box-sizing: border-box;
+    min-width: 200px;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 45px;
+  }
+  img {width: 100%}
+
+  @media (max-width: 767px) {
+    .markdown-body {
+      padding: 15px;
+    }
+  }
+</style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://kaityo256.github.io/sevendayshpc/github-markdown.css" type="text/css" />
+  <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_CHTML-full" type="text/javascript"></script>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<article class="markdown-body">
+<h1 id="day-5-二次元反応拡散方程式">Day 5 :二次元反応拡散方程式</h1>
+<p>Day 4で一次元拡散方程式を領域分割により並列化した。後はこの応用で相互作用距離が短いモデルはなんでも領域分割できるのだが、二次元、三次元だと、一次元よりちょっと面倒くさい。後、熱伝導方程式は、「最終的になにかに落ち着く」方程式なので、シミュレーションしててあまりおもしろいものではない。そこで、二次元で、差分法で簡単に解けて、かつ結果がそこそこ面白い題材として反応拡散方程式(reaction-diffusion system)を取り上げる。反応拡散方程式とは、拡散方程式に力学系がくっついたような系で、様々なパターンを作る。例えば「reaction-diffusion system」でイメージ検索してみて欲しい。生物の模様なんかがこの方程式系で説明されたりする。</p>
+<p>世の中には様々な反応拡散方程式があるのだが、ここでは<a href="https://groups.csail.mit.edu/mac/projects/amorphous/GrayScott/">Gray-Scottモデル</a>と呼ばれる、以下の方程式系を考えよう。</p>
+<p><span class="math display">\[
+\frac{\partial u}{\partial t} = D_u \Delta u + u^2 v - (F+k)u
+\]</span></p>
+<p><span class="math display">\[
+\frac{\partial v}{\partial t} = D_v \Delta v - u^2 v + F(1-v)
+\]</span></p>
+<p>これは<span class="math inline">\(U\)</span>と<span class="math inline">\(V\)</span>という化学物質の化学反応を模した方程式である。 <span class="math inline">\(U\)</span>が活性化因子、<span class="math inline">\(V\)</span>が抑制因子と呼ばれる。 <span class="math inline">\(U\)</span>と<span class="math inline">\(V\)</span>の濃度を<span class="math inline">\(u\)</span>、<span class="math inline">\(v\)</span>とすると、<span class="math inline">\(V\)</span>の濃いところでは<span class="math inline">\(U\)</span>が生成されないことがわかる。 <span class="math inline">\(D_u\)</span>や<span class="math inline">\(D_v\)</span>は拡散係数であり、<span class="math inline">\(D_v/D_u = 2\)</span>にとる。つまり、<span class="math inline">\(V\)</span>の方が拡散しやすい物質となる。 この方程式を計算することにしよう。</p>
+<p>ちなみに、世界で広く使われている表記と<span class="math inline">\(U\)</span>と<span class="math inline">\(V\)</span>が逆のようである。プログラム全部書き終わってから気がついたので、申し訳ないがそのままにする。</p>
+<h2 id="シリアル版">シリアル版</h2>
+<p>まず、ある点におけるラプラシアンを返す関数<code>laplacian</code>を用意しよう。中央差分で表現すると、上下左右の点との平均との差で表現すれば良いので、こう書ける。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">double</span> laplacian(<span class="dt">int</span> ix, <span class="dt">int</span> iy, vd &amp;s) {
+  <span class="dt">double</span> ts = <span class="fl">0.0</span>;
+  ts += s[ix - <span class="dv">1</span> + iy * L];
+  ts += s[ix + <span class="dv">1</span> + iy * L];
+  ts += s[ix + (iy - <span class="dv">1</span>) * L];
+  ts += s[ix + (iy + <span class="dv">1</span>) * L];
+  ts -= <span class="fl">4.0</span> * s[ix + iy * L];
+  <span class="cf">return</span> ts;
+}</code></pre></div>
+<p>また、<span class="math inline">\(u\)</span>と<span class="math inline">\(v\)</span>の力学系の部分を計算する関数も作っておこう。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">double</span> calcU(<span class="dt">double</span> tu, <span class="dt">double</span> tv) {
+  <span class="cf">return</span> tu * tu * tv - (F + k) * tu;
+}
+
+<span class="dt">double</span> calcV(<span class="dt">double</span> tu, <span class="dt">double</span> tv) {
+  <span class="cf">return</span> -tu * tu * tv + F * (<span class="fl">1.0</span> - tv);
+}</code></pre></div>
+<p>さて、差分を計算する際、<span class="math inline">\(t+1\)</span>ステップ目の計算に<span class="math inline">\(t\)</span>ステップの物理量を使う。 もしここで<span class="math inline">\(t\)</span>の値をどんどん更新してしまうと、ある場所の物理量を計算する時に<span class="math inline">\(t\)</span>の値と<span class="math inline">\(t+1\)</span>の値が混ざっておかしなことになる。実は、一次元拡散方程式ではそれを防ぐため、一度<span class="math inline">\(t\)</span>の時の値を別の領域にコピーして、それを使って<span class="math inline">\(t+1\)</span>の値を計算するようにしていた(要するに手抜きである)。しかし、二次元でこれをやるとさすがにコピーのオーバーヘッドが大きい。 そこで、同じ物理量を表す配列を二本ずつ用意して、奇数時刻と偶数時刻で使い分けることにしよう。 具体的には<code>u</code>に対して<code>u2</code>という配列も用意しておく。 いま偶数時刻だとすると<code>u2</code>から<code>u</code>を、奇数時刻なら<code>u</code>から<code>u2</code>を計算する。</p>
+<p>というわけで、1ステップ時間発展を行う関数<code>calc</code>はこう書ける。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> calc(vd &amp;u, vd &amp;v, vd &amp;u2, vd &amp;v2) {
+  <span class="cf">for</span> (<span class="dt">int</span> iy = <span class="dv">1</span>; iy &lt; L - <span class="dv">1</span>; iy++) {
+    <span class="cf">for</span> (<span class="dt">int</span> ix = <span class="dv">1</span>; ix &lt; L - <span class="dv">1</span>; ix++) {
+      <span class="dt">double</span> du = <span class="dv">0</span>;
+      <span class="dt">double</span> dv = <span class="dv">0</span>;
+      <span class="at">const</span> <span class="dt">int</span> i = ix + iy * L;
+      du = Du * laplacian(ix, iy, u);
+      dv = Dv * laplacian(ix, iy, v);
+      du += calcU(u[i], v[i]);
+      dv += calcV(u[i], v[i]);
+      u2[i] = u[i] + du * dt;
+      v2[i] = v[i] + dv * dt;
+    }
+  }
+}</code></pre></div>
+<p>Gray-Scott系は、最初に「種」を置いておくと、そこから模様が広がっていく系である。なので最初に種を置いておこう。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> init(vd &amp;u, vd &amp;v) {
+  <span class="dt">int</span> d = <span class="dv">3</span>;
+  <span class="cf">for</span> (<span class="dt">int</span> i = L / <span class="dv">2</span> - d; i &lt; L / <span class="dv">2</span> + d; i++) {
+    <span class="cf">for</span> (<span class="dt">int</span> j = L / <span class="dv">2</span> - d; j &lt; L / <span class="dv">2</span> + d; j++) {
+      u[j + i * L] = <span class="fl">0.7</span>;
+    }
+  }
+  d = <span class="dv">6</span>;
+  <span class="cf">for</span> (<span class="dt">int</span> i = L / <span class="dv">2</span> - d; i &lt; L / <span class="dv">2</span> + d; i++) {
+    <span class="cf">for</span> (<span class="dt">int</span> j = L / <span class="dv">2</span> - d; j &lt; L / <span class="dv">2</span> + d; j++) {
+      v[j + i * L] = <span class="fl">0.9</span>;
+    }
+  }
+}</code></pre></div>
+<p>系の中央のuとvに、それぞれ6x6の領域、12x12の初期値を種として置くコードである。</p>
+<p>以上を元に、時間発展を行う<code>main</code>関数はこんな感じになる。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">int</span> main() {
+  <span class="at">const</span> <span class="dt">int</span> V = L * L;
+  vd u(V, <span class="fl">0.0</span>), v(V, <span class="fl">0.0</span>);
+  vd u2(V, <span class="fl">0.0</span>), v2(V, <span class="fl">0.0</span>);
+  init(u, v);
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; TOTAL_STEP; i++) {
+    <span class="cf">if</span> (i &amp; <span class="dv">1</span>) {
+      calc(u2, v2, u, v);
+    } <span class="cf">else</span> {
+      calc(u, v, u2, v2);
+    }
+    <span class="cf">if</span> (i % INTERVAL == <span class="dv">0</span>) save_as_dat(u);
+  }
+}</code></pre></div>
+<p>先程述べたように、偶数時刻と奇数時刻で二本の配列を使い分けているのに注意。</p>
+<p><code>save_as_dat</code>は、呼ばれるたびに配列を連番のファイル名で保存する関数である。</p>
+<p>全体のコードはこんな感じになる。</p>
+<p><a href="gs.cpp" class="uri">gs.cpp</a></p>
+<p>コンパイル、実行してみよう。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">g++</span> -O3 gs.cpp
+$ <span class="bu">time</span> ./a.out
+<span class="ex">conf000.dat</span>
+<span class="ex">conf001.dat</span>
+<span class="ex">conf002.dat</span>
+<span class="kw">(</span><span class="ex">snip</span><span class="kw">)</span>
+<span class="ex">conf097.dat</span>
+<span class="ex">conf098.dat</span>
+<span class="ex">conf099.dat</span>
+<span class="ex">./a.out</span>  1.61s user 0.03s system 96% cpu 1.697 total</code></pre></div>
+<p>出てきたデータ(<code>*.dat</code>)は、倍精度実数が<code>L*L</code>個入っている。これをRubyで読み込んでPNG形式で吐く スクリプトを作っておこう。</p>
+<p><a href="image.rb" class="uri">image.rb</a></p>
+<div class="sourceCode"><pre class="sourceCode rb"><code class="sourceCode ruby">require <span class="st">&quot;cairo&quot;</span>
+require <span class="st">&quot;pathname&quot;</span>
+
+<span class="kw">def</span> convert(datfile)
+  puts datfile
+  buf = <span class="dt">File</span>.binread(datfile).unpack(<span class="st">&quot;d*&quot;</span>)
+  l = <span class="dt">Math</span>.sqrt(buf.size).to_i
+  m = <span class="dv">4</span>
+  size = l * m
+
+  surface = <span class="dt">Cairo</span>::<span class="dt">ImageSurface</span>.new(<span class="dt">Cairo</span>::<span class="dt">FORMAT_RGB24</span>, size, size)
+  context = <span class="dt">Cairo</span>::<span class="dt">Context</span>.new(surface)
+  context.set_source_rgb(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>)
+  context.rectangle(<span class="dv">0</span>, <span class="dv">0</span>, size, size)
+  context.fill
+
+  l.times <span class="kw">do</span> |x|
+    l.times <span class="kw">do</span> |y|
+      u = buf[x + y * l]
+      context.set_source_rgb(<span class="dv">0</span>, u, <span class="dv">0</span>)
+      context.rectangle(x * m, y * m, m, m)
+      context.fill
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+  pngfile = <span class="dt">Pathname</span>(datfile).sub_ext(<span class="st">&quot;.png&quot;</span>).to_s
+  surface.write_to_png(pngfile)
+<span class="kw">end</span>
+
+<span class="st">`ls *.dat`</span>.split(<span class="ot">/\n/</span>).each <span class="kw">do</span> |f|
+  convert(f)
+<span class="kw">end</span></code></pre></div>
+<p>これで一括で処理する。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">ruby</span> image.rb
+<span class="ex">conf000.dat</span>
+<span class="ex">conf001.dat</span>
+<span class="ex">conf002.dat</span>
+<span class="kw">(</span><span class="ex">snip</span><span class="kw">)</span>
+<span class="ex">conf097.dat</span>
+<span class="ex">conf098.dat</span>
+<span class="ex">conf099.dat</span></code></pre></div>
+<p>するとこんな感じの画像が得られる。</p>
+<p><img src="fig/conf010.png" alt="fig/conf010.png" /> <img src="fig/conf030.png" alt="fig/conf030.png" /> <img src="fig/conf050.png" alt="fig/conf050.png" /> <img src="fig/conf090.png" alt="fig/conf090.png" /></p>
+<h2 id="並列化ステップ1-通信の準備など">並列化ステップ1: 通信の準備など</h2>
+<p>さて、さっそく反応拡散方程式を二次元領域分割により並列化していくわけだが、 並列化で重要なのは、 <strong>いきなり本番コードで通信アルゴリズムを試さない</strong> ということである。 まずは、今やろうとしている通信と同じアルゴリズムだけを抜き出したコードを書き、ちゃんと想定通りに通信できていることを確かめる。 実際のデータは倍精度実数だが、とりあえず整数データでいろいろためそう。</p>
+<p>まず、通信関連のコードを書く前に、領域分割により、全体をどうやって分割するか、 各プロセスはどこを担当するかといった基本的なセットアップを確認しよう。</p>
+<p>いま、LxLのグリッドがあるとしよう。これをprocsプロセスで分割する。 この時、なるべく「のりしろ」が小さくなるように分割したい。 例えば4プロセスなら2x2に、24プロセスなら6x4という具合である。 このためには、与えられたプロセス数を、なるべく似たような数字になるように 因数分解してやらないといけない。 MPIにはそのための関数、<code>MPI_Dims_create</code>が用意されている。 使い方は、二次元分割なら、<code>procs</code>にプロセス数が入っているとして、</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">  <span class="dt">int</span> d2[<span class="dv">2</span>] = {};
+  MPI_Dims_create(procs, <span class="dv">2</span>, d2);</code></pre></div>
+<p>のように呼ぶと、<code>d2[0]</code>と<code>d2[1]</code>に分割数が入ってくる。三次元分割をしたければ、</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">  <span class="dt">int</span> d3[<span class="dv">3</span>] = {};
+  MPI_Dims_create(procs, <span class="dv">3</span>, d3);</code></pre></div>
+<p>などと、分割数3を指定し、3要素の配列を食わせてやれば良い。 ただし、OpenMPIの<code>MPI_Dims_create</code>は若干動作が怪しいので注意すること。 例えば9プロセスを二次元分割したら3x3になってほしいが、9x1を返してくる。 Intel MPIやSGI MPTはちゃんと3x3を返してくるので、このあたりは実装依存のようだ。 気になる場合は自分で因数分解コードを書いて欲しい。</p>
+<p>さて、procsプロセスを、GX*GYと分割することにしよう。 すると、各プロセスは、横がL/GX、縦がL/GY個のサイトを保持すれば良い。 例えば8x8の系を4プロセスで並列化する際、一つのプロセスが担当するのは4x4となるが、 上下左右に1列余分に必要になるので、合わせて6x6のデータを保持することになる。</p>
+<div class="figure">
+<img src="fig/margin.png" alt="fig/margin.png" />
+<p class="caption">fig/margin.png</p>
+</div>
+<p>また、各プロセスは自分がどの場所を担当しているかも知っておきたいし、担当する領域のサイズも保持しておきたい。 これらに加えてランクや総プロセス数といった並列化情報を、<code>MPIinfo</code>という構造体にまとめて突っ込んで置こう。 とりあえず必要な情報はこんな感じだろうか。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="kw">struct</span> MPIinfo {
+  <span class="dt">int</span> rank;  <span class="co">//ランク番号</span>
+  <span class="dt">int</span> procs; <span class="co">//総プロセス数</span>
+  <span class="dt">int</span> GX, GY; <span class="co">// プロセスをどう分割したか (GX*GY=procs)</span>
+  <span class="dt">int</span> local_grid_x, local_grid_y; <span class="co">// 自分が担当する位置</span>
+  <span class="dt">int</span> local_size_x, local_size_y; <span class="co">// 自分が担当する領域のサイズ(のりしろ含まず)</span>
+};</code></pre></div>
+<p><code>MPIinfo</code>の各値をセットする関数、<code>setup_info</code>を作っておこう。こんな感じかな。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> setup_info(MPIinfo &amp;mi) {
+  <span class="dt">int</span> rank = <span class="dv">0</span>;
+  <span class="dt">int</span> procs = <span class="dv">0</span>;
+  MPI_Comm_rank(MPI_COMM_WORLD, &amp;rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &amp;procs);
+  <span class="dt">int</span> d2[<span class="dv">2</span>] = {};
+  MPI_Dims_create(procs, <span class="dv">2</span>, d2);
+  mi.rank = rank;
+  mi.procs = procs;
+  mi.GX = d2[<span class="dv">0</span>];
+  mi.GY = d2[<span class="dv">1</span>];
+  mi.local_grid_x = rank % mi.GX;
+  mi.local_grid_y = rank / mi.GX;
+  mi.local_size_x = L / mi.GX;
+  mi.local_size_y = L / mi.GY;
+}</code></pre></div>
+<p>自分が保持するデータを<code>std::vector&lt;int&gt; local_data</code>として宣言しよう。のりしろの部分も考慮するとこんな感じになる。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">  MPIinfo mi;
+  setup_info(mi);
+  <span class="bu">std::</span>vector&lt;<span class="dt">int</span>&gt; local_data((mi.local_size_x + <span class="dv">2</span>) * (mi.local_size_y + <span class="dv">2</span>), <span class="dv">0</span>);</code></pre></div>
+<p>あとの通信がうまくいっているか確認するため、ローカルデータに「のりしろ」以外に通し番号を降っておこう。 例えばL=8で、procs = 4の場合に、各プロセスにこういうデータを保持させたい。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">rank</span> = 0
+ <span class="ex">000</span> 000 000 000 000 000
+ <span class="ex">000</span> 000 001 002 003 000
+ <span class="ex">000</span> 004 005 006 007 000
+ <span class="ex">000</span> 008 009 010 011 000
+ <span class="ex">000</span> 012 013 014 015 000
+ <span class="ex">000</span> 000 000 000 000 000
+
+<span class="ex">rank</span> = 1
+ <span class="ex">000</span> 000 000 000 000 000
+ <span class="ex">000</span> 016 017 018 019 000
+ <span class="ex">000</span> 020 021 022 023 000
+ <span class="ex">000</span> 024 025 026 027 000
+ <span class="ex">000</span> 028 029 030 031 000
+ <span class="ex">000</span> 000 000 000 000 000
+
+<span class="ex">rank</span> = 2
+ <span class="ex">000</span> 000 000 000 000 000
+ <span class="ex">000</span> 032 033 034 035 000
+ <span class="ex">000</span> 036 037 038 039 000
+ <span class="ex">000</span> 040 041 042 043 000
+ <span class="ex">000</span> 044 045 046 047 000
+ <span class="ex">000</span> 000 000 000 000 000
+
+<span class="ex">rank</span> = 3
+ <span class="ex">000</span> 000 000 000 000 000
+ <span class="ex">000</span> 048 049 050 051 000
+ <span class="ex">000</span> 052 053 054 055 000
+ <span class="ex">000</span> 056 057 058 059 000
+ <span class="ex">000</span> 060 061 062 063 000
+ <span class="ex">000</span> 000 000 000 000 000</code></pre></div>
+<p>このような初期化をする関数<code>init</code>を用意する。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> init(<span class="bu">std::</span>vector&lt;<span class="dt">int</span>&gt; &amp;local_data, MPIinfo &amp;mi) {
+  <span class="at">const</span> <span class="dt">int</span> offset = mi.local_size_x * mi.local_size_y * mi.rank;
+  <span class="cf">for</span> (<span class="dt">int</span> iy = <span class="dv">0</span>; iy &lt; mi.local_size_y; iy++) {
+    <span class="cf">for</span> (<span class="dt">int</span> ix = <span class="dv">0</span>; ix &lt; mi.local_size_x; ix++) {
+      <span class="dt">int</span> index = (ix + <span class="dv">1</span>) + (iy + <span class="dv">1</span>) * (mi.local_size_x + <span class="dv">2</span>);
+      <span class="dt">int</span> value = ix + iy * mi.local_size_x + offset;
+      local_data[index] = value;
+    }
+  }
+}</code></pre></div>
+<p>自分が担当する領域の左上に来る番号を<code>offset</code>として計算し、そこから通し番号を降っているだけである。 このローカルなデータをダンプする関数も作っておく。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> dump_local_sub(<span class="bu">std::</span>vector&lt;<span class="dt">int</span>&gt; &amp;local_data, MPIinfo &amp;mi) {
+  printf(<span class="st">&quot;rank = </span><span class="sc">%d\n</span><span class="st">&quot;</span>, mi.rank);
+  <span class="cf">for</span> (<span class="dt">int</span> iy = <span class="dv">0</span>; iy &lt; mi.local_size_y + <span class="dv">2</span>; iy++) {
+    <span class="cf">for</span> (<span class="dt">int</span> ix = <span class="dv">0</span>; ix &lt; mi.local_size_x + <span class="dv">2</span>; ix++) {
+      <span class="dt">unsigned</span> <span class="dt">int</span> index = ix + iy * (mi.local_size_x + <span class="dv">2</span>);
+      printf(<span class="st">&quot;</span><span class="sc">%03d</span><span class="st"> &quot;</span>, local_data[index]);
+    }
+    printf(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>);
+  }
+  printf(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>);
+}</code></pre></div>
+<p><code>dump_local_sub</code>に自分が保持する<code>std::vector</code>を渡せば表示されるのだが、 複数のプロセスから一気に標準出力に吐くと表示が乱れる可能性がある。 各プロセスからファイルに吐いてしまっても良いが、こういう時は、プロセスの数だけループをまわし、ループカウンタが自分のランク番号と同じになった時に書き込む、 というコードが便利である。全プロセスが順番待ちをするので速度は遅いが、主にデバッグに使うので問題ない。 こんな感じである。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> dump_local(<span class="bu">std::</span>vector&lt;<span class="dt">int</span>&gt; &amp;local_data, MPIinfo &amp;mi) {
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; mi.procs; i++) {
+    MPI_Barrier(MPI_COMM_WORLD);
+    <span class="cf">if</span> (i == mi.rank) {
+      dump_local_sub(local_data, mi);
+    }
+  }
+}</code></pre></div>
+<p>毎回バリア同期が必要なことに注意。この、</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; procs; i++) {
+    MPI_Barrier(MPI_COMM_WORLD);
+    <span class="cf">if</span> (i == rank) {
+      do_something();
+    }
+  }</code></pre></div>
+<p>というイディオムは、MPIで頻出するので覚えておくと良いかもしれない。 4プロセス実行し、<code>dump_local</code>を呼ぶと、先程の「のりしろ付きのローカルデータ」がダンプされる。</p>
+<h2 id="並列化ステップ2-データの保存">並列化ステップ2: データの保存</h2>
+<p>計算を実行するにあたり、必要な通信は、</p>
+<ul>
+<li>時間発展のための「のりしろ」の通信</li>
+<li>計算の途中経過のデータの保存のための集団通信</li>
+</ul>
+<p>の二種類である。一次元分割の時と同様に、まずは後者、データの保存のための通信を考えよう。</p>
+<div class="figure">
+<img src="fig/gather.png" alt="fig/gather.png" />
+<p class="caption">fig/gather.png</p>
+</div>
+<p>時間発展した結果を保存したいので、各プロセスが保持するデータを集約したい。 各プロセスが保持するデータをローカルデータ、系全体のデータをグローバルデータと呼ぶことにする。 「のりしろ」は計算の時には必要だが、データの保存の時には不要だ。 なので、各プロセスはまず、ローカルデータから「のりしろ」を除いたデータを用意し、 それを<code>MPI_Gather</code>を使ってルートプロセスに集める。</p>
+<p>今、各プロセスがこんな感じにデータを持っていたとする。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">rank</span> = 0
+ <span class="ex">000</span> 000 000 000 000 000
+ <span class="ex">000</span> 000 001 002 003 000
+ <span class="ex">000</span> 004 005 006 007 000
+ <span class="ex">000</span> 008 009 010 011 000
+ <span class="ex">000</span> 012 013 014 015 000
+ <span class="ex">000</span> 000 000 000 000 000
+
+<span class="ex">rank</span> = 1
+ <span class="ex">000</span> 000 000 000 000 000
+ <span class="ex">000</span> 016 017 018 019 000
+ <span class="ex">000</span> 020 021 022 023 000
+ <span class="ex">000</span> 024 025 026 027 000
+ <span class="ex">000</span> 028 029 030 031 000
+ <span class="ex">000</span> 000 000 000 000 000
+
+<span class="ex">rank</span> = 2
+ <span class="ex">000</span> 000 000 000 000 000
+ <span class="ex">000</span> 032 033 034 035 000
+ <span class="ex">000</span> 036 037 038 039 000
+ <span class="ex">000</span> 040 041 042 043 000
+ <span class="ex">000</span> 044 045 046 047 000
+ <span class="ex">000</span> 000 000 000 000 000
+
+<span class="ex">rank</span> = 3
+ <span class="ex">000</span> 000 000 000 000 000
+ <span class="ex">000</span> 048 049 050 051 000
+ <span class="ex">000</span> 052 053 054 055 000
+ <span class="ex">000</span> 056 057 058 059 000
+ <span class="ex">000</span> 060 061 062 063 000
+ <span class="ex">000</span> 000 000 000 000 000</code></pre></div>
+<p>000は「のりしろ」である。グローバル領域は二次元的に分割されるが、各プロセスはそれを一次元的に保持しているので、「のりしろ」を除いてデータをコピーするところを除けば、通信部分は一次元の時と同じになる。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">void</span> gather(std::vector<span class="op">&lt;</span>int<span class="op">&gt;</span> <span class="kw">&amp;</span><span class="ex">local_data</span>, MPIinfo <span class="kw">&amp;</span><span class="ex">mi</span>) <span class="kw">{</span>
+  <span class="ex">const</span> int lx = mi.local_size_x<span class="kw">;</span>
+  <span class="ex">const</span> int ly = mi.local_size_y<span class="kw">;</span>
+  <span class="ex">std</span>::vector<span class="op">&lt;</span>int<span class="op">&gt;</span> sendbuf(lx * ly);
+  <span class="ex">//</span> 「のりしろ」を除いたデータのコピー
+  <span class="kw">for</span> <span class="kw">(</span><span class="ex">int</span> iy = 0<span class="kw">;</span> <span class="ex">iy</span> <span class="op">&lt;</span> ly<span class="kw">;</span> <span class="ex">iy++</span><span class="kw">)</span> <span class="kw">{</span>
+    <span class="kw">for</span> <span class="kw">(</span><span class="ex">int</span> ix = 0<span class="kw">;</span> <span class="ex">ix</span> <span class="op">&lt;</span> lx<span class="kw">;</span> <span class="ex">ix++</span><span class="kw">)</span> <span class="kw">{</span>
+      <span class="ex">int</span> index_from = (ix + 1) <span class="ex">+</span> (iy + 1) <span class="ex">*</span> (lx + 2);
+      <span class="ex">int</span> index_to = ix + iy * lx<span class="kw">;</span>
+      <span class="ex">sendbuf</span>[index_to] = local_data[index_from]<span class="kw">;</span>
+    <span class="kw">}</span>
+  <span class="kw">}</span>
+  <span class="ex">std</span>::vector<span class="op">&lt;</span>int<span class="op">&gt;</span> recvbuf<span class="kw">;</span>
+  <span class="kw">if</span> <span class="kw">(</span><span class="ex">mi.rank</span> == 0<span class="kw">)</span> <span class="kw">{</span>
+    <span class="ex">recvbuf.resize</span>(lx * ly * mi.procs);
+  <span class="kw">}</span>
+  <span class="ex">MPI_Gather</span>(sendbuf.data(), <span class="ex">lx</span> * ly, MPI_INT, recvbuf.data(), <span class="ex">lx</span> * ly, MPI_INT, 0,  MPI_COMM_WORLD);
+  <span class="ex">//</span> ここで、ランク0番のプロセスの保持するrecvbufにグローバルデータが入る。
+<span class="kw">}</span></code></pre></div>
+<p>しかし、このようにして集約されたグローバルデータは、各プロセスが論理的に保持するデータと場所が異なり、こんな感じになる。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">Before</span> reordering
+ <span class="ex">000</span> 001 002 003 004 005 006 007
+ <span class="ex">008</span> 009 010 011 012 013 014 015
+ <span class="ex">016</span> 017 018 019 020 021 022 023
+ <span class="ex">024</span> 025 026 027 028 029 030 031
+ <span class="ex">032</span> 033 034 035 036 037 038 039
+ <span class="ex">040</span> 041 042 043 044 045 046 047
+ <span class="ex">048</span> 049 050 051 052 053 054 055
+ <span class="ex">056</span> 057 058 059 060 061 062 063</code></pre></div>
+<p>数字が連番になっているのがわかるだろうか。デバッグに便利なように、そうなるようにローカルデータに数字を振っておいた。 さて、論理的にはこういう配置になっていて欲しい。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">After</span> reordering
+ <span class="ex">000</span> 001 002 003 016 017 018 019
+ <span class="ex">004</span> 005 006 007 020 021 022 023
+ <span class="ex">008</span> 009 010 011 024 025 026 027
+ <span class="ex">012</span> 013 014 015 028 029 030 031
+ <span class="ex">032</span> 033 034 035 048 049 050 051
+ <span class="ex">036</span> 037 038 039 052 053 054 055
+ <span class="ex">040</span> 041 042 043 056 057 058 059
+ <span class="ex">044</span> 045 046 047 060 061 062 063</code></pre></div>
+<p>というわけで、そうなるようにデータを並び替えればよい。並び替えのための関数<code>reordering</code>はこう書けるだろう。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> reordering(<span class="bu">std::</span>vector&lt;<span class="dt">int</span>&gt; &amp;v, MPIinfo &amp;mi) {
+  <span class="bu">std::</span>vector&lt;<span class="dt">int</span>&gt; v2(v.size());
+  <span class="bu">std::</span>copy(v.begin(), v.end(), v2.begin());
+  <span class="at">const</span> <span class="dt">int</span> lx = mi.local_size_x;
+  <span class="at">const</span> <span class="dt">int</span> ly = mi.local_size_y;
+  <span class="dt">int</span> i = <span class="dv">0</span>;
+  <span class="cf">for</span> (<span class="dt">int</span> r = <span class="dv">0</span>; r &lt; mi.procs; r++) {
+    <span class="dt">int</span> rx = r % mi.GX;
+    <span class="dt">int</span> ry = r / mi.GX;
+    <span class="dt">int</span> sx = rx * lx;
+    <span class="dt">int</span> sy = ry * ly;
+    <span class="cf">for</span> (<span class="dt">int</span> iy = <span class="dv">0</span>; iy &lt; ly; iy++) {
+      <span class="cf">for</span> (<span class="dt">int</span> ix = <span class="dv">0</span>; ix &lt; lx; ix++) {
+        <span class="dt">int</span> index = (sx + ix) + (sy + iy) * L;
+        v[index] = v2[i];
+        i++;
+      }
+    }
+  }
+}</code></pre></div>
+<p>以上の処理まで含めて、<code>gather</code>完成である。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> gather(<span class="bu">std::</span>vector&lt;<span class="dt">int</span>&gt; &amp;local_data, MPIinfo &amp;mi) {
+  <span class="at">const</span> <span class="dt">int</span> lx = mi.local_size_x;
+  <span class="at">const</span> <span class="dt">int</span> ly = mi.local_size_y;
+  <span class="bu">std::</span>vector&lt;<span class="dt">int</span>&gt; sendbuf(lx * ly);
+  <span class="co">// 「のりしろ」を除いたデータのコピー</span>
+  <span class="cf">for</span> (<span class="dt">int</span> iy = <span class="dv">0</span>; iy &lt; ly; iy++) {
+    <span class="cf">for</span> (<span class="dt">int</span> ix = <span class="dv">0</span>; ix &lt; lx; ix++) {
+      <span class="dt">int</span> index_from = (ix + <span class="dv">1</span>) + (iy + <span class="dv">1</span>) * (lx + <span class="dv">2</span>);
+      <span class="dt">int</span> index_to = ix + iy * lx;
+      sendbuf[index_to] = local_data[index_from];
+    }
+  }
+  <span class="bu">std::</span>vector&lt;<span class="dt">int</span>&gt; recvbuf;
+  <span class="cf">if</span> (mi.rank == <span class="dv">0</span>) {
+    recvbuf.resize(lx * ly * mi.procs);
+  }
+  MPI_Gather(sendbuf.data(), lx * ly, MPI_INT, recvbuf.data(), lx * ly, MPI_INT, <span class="dv">0</span>,  MPI_COMM_WORLD);
+  <span class="cf">if</span> (mi.rank == <span class="dv">0</span>) {
+    printf(<span class="st">&quot;Before reordering</span><span class="sc">\n</span><span class="st">&quot;</span>);
+    dump_global(recvbuf);
+    reordering(recvbuf, mi);
+    printf(<span class="st">&quot;After reordering</span><span class="sc">\n</span><span class="st">&quot;</span>);
+    dump_global(recvbuf);
+  }
+}</code></pre></div>
+<p>送信前や送信後にデータの処理が必要となるので、やってることが単純なわりにコード量がそこそこの長さになる。 このあたりが「MPIは面倒くさい」と言われる所以かもしれない。筆者も「MPIは面倒くさい」ことは否定しない。 しかし、ここまで読んでくださった方なら「MPIは難しくはない」ということも同意してもらえると思う。 MPIは書いた通りに動く。なので、通信アルゴリズムが決まっていれば、その手順どおりに書くだけである。 実際面倒なのは通信そのものよりも、通信の前処理と後処理だったりする(そもそも今回も通信は一行だけだ)。</p>
+<p>以上をすべてまとめたコードは以下の通り。</p>
+<p><a href="gather2d.cpp" class="uri">gather2d.cpp</a></p>
+<p>main関数だけ書いておくとこんな感じ。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv) {
+  MPI_Init(&amp;argc, &amp;argv);
+  MPIinfo mi;
+  setup_info(mi);
+  <span class="co">// ローカルデータの確保</span>
+  <span class="bu">std::</span>vector&lt;<span class="dt">int</span>&gt; local_data((mi.local_size_x + <span class="dv">2</span>) * (mi.local_size_y + <span class="dv">2</span>), <span class="dv">0</span>);
+  <span class="co">// ローカルデータの初期化</span>
+  init(local_data, mi);
+  <span class="co">// ローカルデータの表示</span>
+  dump_local(local_data, mi);
+  <span class="co">// ローカルデータを集約してグローバルデータに</span>
+  gather(local_data, mi);
+  MPI_Finalize();
+}</code></pre></div>
+<p>まぁ、そのまんま手続きを書いただけですね。</p>
+<h2 id="並列化ステップ2-のりしろの通信">並列化ステップ2: のりしろの通信</h2>
+<p>さて、計算を実行するためには、上下左右のプロセスから自分の「のりしろ」に情報を受け取らないといけない。 問題は、二次元の場合には角の情報、つまり「斜め方向」の通信も必要なことである。 普通に考えると、左右2回、上下2回、角4つで8回の通信が必要となるのだが、左右から受け取ったデータを、上下に転送することで、4回の通信で斜め方向の通信も完了する。</p>
+<p>どうでも良いが筆者は昔ブログを書いており(今は書いてないが)、「斜め方向の通信どうするかなぁ」と書いたら、日記の読者二人から別々にこのアルゴリズムを教えていただいた(その節はありがとうございます)。ブログも書いてみるものである。</p>
+<p>データの転送を図解するとこんな感じになる。まず、左右方向の通信。実際の例では2x2分割のため、自分から見て左にいるプロセスと右にいるプロセスが同一になってしまうが、図では別プロセスとして描いているから注意。</p>
+<div class="figure">
+<img src="fig/sendrecv_x.png" alt="fig/sendrecv_x.png" />
+<p class="caption">fig/sendrecv_x.png</p>
+</div>
+<p>左右の通信が終わったら、左右からもらったデータも込みで上下に転送する。以下は、「下から受け取り、上に送る」通信。</p>
+<div class="figure">
+<img src="fig/sendrecv_y.png" alt="fig/sendrecv_y.png" />
+<p class="caption">fig/sendrecv_y.png</p>
+</div>
+<p>最後の点線で囲ったデータが「斜め方向のプロセスが保持していたデータ」であり、間接的に受け取ったことになる。</p>
+<p>まず、上下左右にいるプロセス番号を知りたい。<code>MPIinfo</code>に<code>get_rank</code>メソッドを追加しておこう。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="kw">struct</span> MPIinfo {
+  <span class="dt">int</span> rank;
+  <span class="dt">int</span> procs;
+  <span class="dt">int</span> GX, GY;
+  <span class="dt">int</span> local_grid_x, local_grid_y;
+  <span class="dt">int</span> local_size_x, local_size_y;
+  <span class="co">// 自分から見て(dx,dy)だけずれたプロセスのrankを返す</span>
+  <span class="dt">int</span> get_rank(<span class="dt">int</span> dx, <span class="dt">int</span> dy) {
+    <span class="dt">int</span> rx = (local_grid_x + dx + GX) % GX;
+    <span class="dt">int</span> ry = (local_grid_y + dy + GY) % GY;
+    <span class="cf">return</span> rx + ry * GX;
+  }
+};</code></pre></div>
+<p>これを使って、左右(x方向)に通信して、右と左の「のりしろ」データを交換するコードはこんな感じに書ける。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> sendrecv_x(<span class="bu">std::</span>vector&lt;<span class="dt">int</span>&gt; &amp;local_data, MPIinfo &amp;mi) {
+  <span class="at">const</span> <span class="dt">int</span> lx = mi.local_size_x;
+  <span class="at">const</span> <span class="dt">int</span> ly = mi.local_size_y;
+  <span class="bu">std::</span>vector&lt;<span class="dt">int</span>&gt; sendbuf(ly);
+  <span class="bu">std::</span>vector&lt;<span class="dt">int</span>&gt; recvbuf(ly);
+  <span class="dt">int</span> left = mi.get_rank(<span class="dv">-1</span>, <span class="dv">0</span>);
+  <span class="dt">int</span> right = mi.get_rank(<span class="dv">1</span>, <span class="dv">0</span>);
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; ly; i++) {
+    <span class="dt">int</span> index = lx + (i + <span class="dv">1</span>) * (lx + <span class="dv">2</span>);
+    sendbuf[i] = local_data[index];
+  }
+  MPI_Status st;
+  MPI_Sendrecv(sendbuf.data(), ly, MPI_INT, right, <span class="dv">0</span>,
+               recvbuf.data(), ly, MPI_INT, left, <span class="dv">0</span>, MPI_COMM_WORLD, &amp;st);
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; ly; i++) {
+    <span class="dt">int</span> index = (i + <span class="dv">1</span>) * (lx + <span class="dv">2</span>);
+    local_data[index] = recvbuf[i];
+  }
+
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; ly; i++) {
+    <span class="dt">int</span> index = <span class="dv">1</span> + (i + <span class="dv">1</span>) * (lx + <span class="dv">2</span>);
+    sendbuf[i] = local_data[index];
+  }
+  MPI_Sendrecv(sendbuf.data(), ly, MPI_INT, left, <span class="dv">0</span>,
+               recvbuf.data(), ly, MPI_INT, right, <span class="dv">0</span>, MPI_COMM_WORLD, &amp;st);
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; ly; i++) {
+    <span class="dt">int</span> index = lx + <span class="dv">1</span> + (i + <span class="dv">1</span>) * (lx + <span class="dv">2</span>);
+    local_data[index] = recvbuf[i];
+  }
+}</code></pre></div>
+<p>全く同様にy方向の通信も書けるが、先に述べたように「左右からもらったデータも転送」するため、その分がちょっとだけ異なる。</p>
+<p>このアルゴリズムを実装するとこんな感じになる。</p>
+<p><a href="sendrecv.cpp" class="uri">sendrecv.cpp</a></p>
+<p>実行結果はこんな感じ。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">mpic++</span> sendrecv.cpp
+$ <span class="ex">mpirun</span> -np 4 ./a.out
+
+<span class="co"># 通信前</span>
+<span class="ex">rank</span> = 0
+ <span class="ex">000</span> 000 000 000 000 000
+ <span class="ex">000</span> 000 001 002 003 000
+ <span class="ex">000</span> 004 005 006 007 000
+ <span class="ex">000</span> 008 009 010 011 000
+ <span class="ex">000</span> 012 013 014 015 000
+ <span class="ex">000</span> 000 000 000 000 000
+
+<span class="ex">rank</span> = 1
+ <span class="ex">000</span> 000 000 000 000 000
+ <span class="ex">000</span> 016 017 018 019 000
+ <span class="ex">000</span> 020 021 022 023 000
+ <span class="ex">000</span> 024 025 026 027 000
+ <span class="ex">000</span> 028 029 030 031 000
+ <span class="ex">000</span> 000 000 000 000 000
+
+<span class="ex">rank</span> = 2
+ <span class="ex">000</span> 000 000 000 000 000
+ <span class="ex">000</span> 032 033 034 035 000
+ <span class="ex">000</span> 036 037 038 039 000
+ <span class="ex">000</span> 040 041 042 043 000
+ <span class="ex">000</span> 044 045 046 047 000
+ <span class="ex">000</span> 000 000 000 000 000
+
+<span class="ex">rank</span> = 3
+ <span class="ex">000</span> 000 000 000 000 000
+ <span class="ex">000</span> 048 049 050 051 000
+ <span class="ex">000</span> 052 053 054 055 000
+ <span class="ex">000</span> 056 057 058 059 000
+ <span class="ex">000</span> 060 061 062 063 000
+ <span class="ex">000</span> 000 000 000 000 000
+
+<span class="co"># 左右の通信終了後</span>
+
+<span class="ex">rank</span> = 0
+ <span class="ex">000</span> 000 000 000 000 000
+ <span class="ex">019</span> 000 001 002 003 016
+ <span class="ex">023</span> 004 005 006 007 020
+ <span class="ex">027</span> 008 009 010 011 024
+ <span class="ex">031</span> 012 013 014 015 028
+ <span class="ex">000</span> 000 000 000 000 000
+
+<span class="ex">rank</span> = 1
+ <span class="ex">000</span> 000 000 000 000 000
+ <span class="ex">003</span> 016 017 018 019 000
+ <span class="ex">007</span> 020 021 022 023 004
+ <span class="ex">011</span> 024 025 026 027 008
+ <span class="ex">015</span> 028 029 030 031 012
+ <span class="ex">000</span> 000 000 000 000 000
+
+<span class="ex">rank</span> = 2
+ <span class="ex">000</span> 000 000 000 000 000
+ <span class="ex">051</span> 032 033 034 035 048
+ <span class="ex">055</span> 036 037 038 039 052
+ <span class="ex">059</span> 040 041 042 043 056
+ <span class="ex">063</span> 044 045 046 047 060
+ <span class="ex">000</span> 000 000 000 000 000
+
+<span class="ex">rank</span> = 3
+ <span class="ex">000</span> 000 000 000 000 000
+ <span class="ex">035</span> 048 049 050 051 032
+ <span class="ex">039</span> 052 053 054 055 036
+ <span class="ex">043</span> 056 057 058 059 040
+ <span class="ex">047</span> 060 061 062 063 044
+ <span class="ex">000</span> 000 000 000 000 000
+
+<span class="co"># 上下の通信終了後 (これで斜め方向も完了)</span>
+
+<span class="ex">rank</span> = 0
+ <span class="ex">063</span> 044 045 046 047 060
+ <span class="ex">019</span> 000 001 002 003 016
+ <span class="ex">023</span> 004 005 006 007 020
+ <span class="ex">027</span> 008 009 010 011 024
+ <span class="ex">031</span> 012 013 014 015 028
+ <span class="ex">051</span> 032 033 034 035 048
+
+<span class="ex">rank</span> = 1
+ <span class="ex">047</span> 060 061 062 063 044
+ <span class="ex">003</span> 016 017 018 019 000
+ <span class="ex">007</span> 020 021 022 023 004
+ <span class="ex">011</span> 024 025 026 027 008
+ <span class="ex">015</span> 028 029 030 031 012
+ <span class="ex">035</span> 048 049 050 051 032
+
+<span class="ex">rank</span> = 2
+ <span class="ex">031</span> 012 013 014 015 028
+ <span class="ex">051</span> 032 033 034 035 048
+ <span class="ex">055</span> 036 037 038 039 052
+ <span class="ex">059</span> 040 041 042 043 056
+ <span class="ex">063</span> 044 045 046 047 060
+ <span class="ex">019</span> 000 001 002 003 016
+
+<span class="ex">rank</span> = 3
+ <span class="ex">015</span> 028 029 030 031 012
+ <span class="ex">035</span> 048 049 050 051 032
+ <span class="ex">039</span> 052 053 054 055 036
+ <span class="ex">043</span> 056 057 058 059 040
+ <span class="ex">047</span> 060 061 062 063 044
+ <span class="ex">003</span> 016 017 018 019 000</code></pre></div>
+<p>先の図と比べて、正しく通信が行われていることを確認してほしい。</p>
+<p>結局、通信プログラムとはこういうことをする。</p>
+<ul>
+<li>送信バッファと受信バッファを用意する</li>
+<li>送信バッファに送るべきデータをコピー</li>
+<li>通信する</li>
+<li>受信バッファに来たデータを必要な場所にコピー</li>
+</ul>
+<p>通信そのものは関数呼び出し一発で難しくも面倒でもないが、送受信バッファの作業が面倒くさい。</p>
+<h2 id="並列化ステップ3-並列コードの実装">並列化ステップ3: 並列コードの実装</h2>
+<p>通信に使うアルゴリズムの確認が終わったので、いよいよ差分法コードに実装してみよう。まず、初期化の部分を考えないといけない。初期化についてはグローバル座標で考えたいが、実際に値を入れるのは各プロセスが保持するローカルデータである。そこで、「このグローバル座標が自分の領域に含まれるか？」「含まれるなら、そのインデックスはどこか？」が知りたくなる。それをMPIinfoのメソッドとして追加しておこう。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="kw">struct</span> MPIinfo {
+  <span class="dt">int</span> rank;
+  <span class="dt">int</span> procs;
+  <span class="dt">int</span> GX, GY;
+  <span class="dt">int</span> local_grid_x, local_grid_y;
+  <span class="dt">int</span> local_size_x, local_size_y;
+  
+  <span class="co">// 自分から見て +dx, +dyだけずれたプロセスのランクを返す</span>
+  <span class="dt">int</span> get_rank(<span class="dt">int</span> dx, <span class="dt">int</span> dy) {
+    <span class="dt">int</span> rx = (local_grid_x + dx + GX) % GX;
+    <span class="dt">int</span> ry = (local_grid_y + dy + GY) % GY;
+    <span class="cf">return</span> rx + ry * GX;
+  }
+
+  <span class="co">// 自分の領域に含まれるか</span>
+  <span class="dt">bool</span> is_inside(<span class="dt">int</span> x, <span class="dt">int</span> y) {
+    <span class="dt">int</span> sx = local_size_x * local_grid_x;
+    <span class="dt">int</span> sy = local_size_y * local_grid_y;
+    <span class="dt">int</span> ex = sx + local_size_x;
+    <span class="dt">int</span> ey = sy + local_size_y;
+    <span class="cf">if</span> (x &lt; sx)<span class="cf">return</span> <span class="kw">false</span>;
+    <span class="cf">if</span> (x &gt;= ex)<span class="cf">return</span> <span class="kw">false</span>;
+    <span class="cf">if</span> (y &lt; sy)<span class="cf">return</span> <span class="kw">false</span>;
+    <span class="cf">if</span> (y &gt;= ey)<span class="cf">return</span> <span class="kw">false</span>;
+    <span class="cf">return</span> <span class="kw">true</span>;
+  }
+  <span class="co">// グローバル座標をローカルインデックスに</span>
+  <span class="dt">int</span> g2i(<span class="dt">int</span> gx, <span class="dt">int</span> gy) {
+    <span class="dt">int</span> sx = local_size_x * local_grid_x;
+    <span class="dt">int</span> sy = local_size_y * local_grid_y;
+    <span class="dt">int</span> x = gx - sx;
+    <span class="dt">int</span> y = gy - sy;
+    <span class="cf">return</span> (x + <span class="dv">1</span>) + (y + <span class="dv">1</span>) * (local_size_x + <span class="dv">2</span>);
+  }
+};</code></pre></div>
+<p>そうすると、初期化処理はこんな感じにかける。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> init(vd &amp;u, vd &amp;v, MPIinfo &amp;mi) {
+  <span class="dt">int</span> d = <span class="dv">3</span>;
+  <span class="cf">for</span> (<span class="dt">int</span> i = L / <span class="dv">2</span> - d; i &lt; L / <span class="dv">2</span> + d; i++) {
+    <span class="cf">for</span> (<span class="dt">int</span> j = L / <span class="dv">2</span> - d; j &lt; L / <span class="dv">2</span> + d; j++) {
+      <span class="cf">if</span> (!mi.is_inside(i, j)) <span class="cf">continue</span>;
+      <span class="dt">int</span> k = mi.g2i(i, j);
+      u[k] = <span class="fl">0.7</span>;
+    }
+  }
+  d = <span class="dv">6</span>;
+  <span class="cf">for</span> (<span class="dt">int</span> i = L / <span class="dv">2</span> - d; i &lt; L / <span class="dv">2</span> + d; i++) {
+    <span class="cf">for</span> (<span class="dt">int</span> j = L / <span class="dv">2</span> - d; j &lt; L / <span class="dv">2</span> + d; j++) {
+      <span class="cf">if</span> (!mi.is_inside(i, j)) <span class="cf">continue</span>;
+      <span class="dt">int</span> k = mi.g2i(i, j);
+      v[k] = <span class="fl">0.9</span>;
+    }
+  }
+}</code></pre></div>
+<p>要するにグローバル座標でループを回してしまって、自分の領域に入っていたら(<code>mi.is_inside(i, j)==true</code>)、ローカルインデックスを取得して、そこに値を書き込む、というだけのコードである。自分の守備範囲外もループが回って非効率に思えるかもしれないが、どうせ初期化処理は最初に一度しか走らないし、こうしておくと他の初期化をしたい時や、ファイルから読み込む時に、シリアルコードと並列コードで同じファイルが使えたりして便利である。</p>
+<p>初期化処理が済んだら、可視化用のファイル保存コードを書こう。といっても、ステップ2で書いたコードを<code>int</code>から<code>double</code>に変えて、標準出力にダンプしていたのをファイルに保存するだけである。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="co">// 各プロセスから保存用のデータを受け取ってセーブ</span>
+<span class="dt">void</span> save_as_dat_mpi(vd &amp;local_data, MPIinfo &amp;mi) {
+  <span class="at">const</span> <span class="dt">int</span> lx = mi.local_size_x;
+  <span class="at">const</span> <span class="dt">int</span> ly = mi.local_size_y;
+  vd sendbuf(lx * ly);
+  <span class="co">// 「のりしろ」を除いたデータのコピー</span>
+  <span class="cf">for</span> (<span class="dt">int</span> iy = <span class="dv">0</span>; iy &lt; ly; iy++) {
+    <span class="cf">for</span> (<span class="dt">int</span> ix = <span class="dv">0</span>; ix &lt; lx; ix++) {
+      <span class="dt">int</span> index_from = (ix + <span class="dv">1</span>) + (iy + <span class="dv">1</span>) * (lx + <span class="dv">2</span>);
+      <span class="dt">int</span> index_to = ix + iy * lx;
+      sendbuf[index_to] = local_data[index_from];
+    }
+  }
+  vd recvbuf;
+  <span class="cf">if</span> (mi.rank == <span class="dv">0</span>) {
+    recvbuf.resize(lx * ly * mi.procs);
+  }
+  MPI_Gather(sendbuf.data(), lx * ly, MPI_DOUBLE, recvbuf.data(), lx * ly, MPI_DOUBLE, <span class="dv">0</span>,  MPI_COMM_WORLD);
+  <span class="cf">if</span> (mi.rank == <span class="dv">0</span>) {
+    reordering(recvbuf, mi);
+    save_as_dat(recvbuf);
+  }
+}</code></pre></div>
+<p>データの再配置(<code>reordering</code>)もほとんど同じなので割愛。ここで、 <strong>いきなり時間発展させずに</strong> 初期化処理をしてからファイルに保存し、正しく初期化、保存できているか確認しておこう。</p>
+<p>「のりしろ」の通信部分も、基本的に<code>int</code>を<code>double</code>に変更するだけなので割愛。ただし、<code>u</code>と<code>v</code>の両方を通信しないといけないので、それをまとめて行う関数を作っておこう。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> sendrecv(vd &amp;u, vd &amp;v, MPIinfo &amp;mi) {
+  sendrecv_x(u, mi);
+  sendrecv_y(u, mi);
+  sendrecv_x(v, mi);
+  sendrecv_y(v, mi);
+}</code></pre></div>
+<p>これを時間発展直前に呼び出せば、「のりしろ」部分の通信が完了している。 ここでも、<strong>いきなり時間発展させずに</strong> 初期化処理を行った後に「のりしろ通信」を行い、ローカルデータをダンプして正しく通信できているか確認しよう。</p>
+<p>そこまでできればあとはシリアル版とほぼ同じ。main関数はこんな感じになる。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv) {
+  MPI_Init(&amp;argc, &amp;argv);
+  MPIinfo mi;
+  setup_info(mi);
+  <span class="at">const</span> <span class="dt">int</span> V = (mi.local_size_x + <span class="dv">2</span>) * (mi.local_size_y + <span class="dv">2</span>);
+  vd u(V, <span class="fl">0.0</span>), v(V, <span class="fl">0.0</span>);
+  vd u2(V, <span class="fl">0.0</span>), v2(V, <span class="fl">0.0</span>);
+  init(u, v, mi);
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; TOTAL_STEP; i++) {
+    <span class="cf">if</span> (i &amp; <span class="dv">1</span>) {
+      sendrecv(u2, v2, mi);
+      calc(u2, v2, u, v, mi);
+    } <span class="cf">else</span> {
+      sendrecv(u, v, mi);
+      calc(u, v, u2, v2, mi);
+    }
+    <span class="cf">if</span> (i % INTERVAL == <span class="dv">0</span>) save_as_dat_mpi(u, mi);
+  }
+  MPI_Finalize();
+}</code></pre></div>
+<p>MPIの初期化、終了処理、および計算の直前に通信を呼んでるところ以外はシリアル版と変わらないことがわかる。</p>
+<p>実行してみよう。普通の<code>mpic++</code>を使ってしまうと<code>clang++</code>が呼ばれてしまう。先程、<code>g++</code>でコンパイルしたシリアル版と実行時間を比較するため、明示的に<code>g++</code>でコンパイルして実行しよう。筆者の環境ではMPIのヘッダやライブラリにパスが通っているので、<code>-lmpi -lmpi_cxx</code>をつけるだけでコンパイルできる。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">g++</span> -O3 gs_mpi.cpp -lmpi -lmpi_cxx
+$ <span class="bu">time</span> mpirun -np 4 --oversubscribe ./a.out
+<span class="ex">conf000.dat</span>
+<span class="ex">conf001.dat</span>
+<span class="ex">conf002.dat</span>
+<span class="kw">(</span><span class="ex">snip</span><span class="kw">)</span>
+<span class="ex">conf098.dat</span>
+<span class="ex">conf099.dat</span>
+<span class="ex">mpirun</span> -np 4 --oversubscribe ./a.out  2.39s user 0.29s system 321% cpu 0.832 total</code></pre></div>
+<p>321%とか出てるので、並列化できているようだ。実行時間も1.697s→0.832sと倍近く早くなっている。 実行結果も可視化して確認してみよう。</p>
+<p><img src="fig/conf010_mpi.png" alt="fig/conf010_mpi.png" /> <img src="fig/conf030_mpi.png" alt="fig/conf030_mpi.png" /> <img src="fig/conf050_mpi.png" alt="fig/conf050_mpi.png" /> <img src="fig/conf090_mpi.png" alt="fig/conf090_mpi.png" /></p>
+<p>うん、大丈夫そうですね。</p>
+<p>さて、いまは4コアあるローカルPCで4プロセス実行したから、理想的には4倍早くなって欲しいのに、2倍近くしか早くなっていない。つまり、並列化効率は50%程度である。</p>
+<p>ん？並列化効率が物足りない？ <strong>そういう時はウィースケーリングに逃げてサイズで殴れ！</strong></p>
+<p>というわけでサイズをでかくする。一辺4倍にして再度実行してみよう。</p>
+<div class="sourceCode"><pre class="sourceCode diff"><code class="sourceCode diff"><span class="st">-const int L = 128;</span>
+<span class="va">+const int L = 512;</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">g++</span> -O3 gs.cpp
+$ <span class="bu">time</span> ./a.out
+<span class="kw">(</span><span class="ex">snip</span><span class="kw">)</span>
+<span class="ex">./a.out</span>  57.98s user 0.16s system 99% cpu 58.248 total
+
+$ <span class="ex">g++</span> -O3 gs_mpi.cpp -lmpi -lmpi_cxx
+$ <span class="bu">time</span> mpirun -np 4 --oversubscribe ./a.out
+<span class="ex">./a.out</span>  57.98s user 0.16s system 99% cpu 58.248 total
+<span class="ex">mpirun</span> -np 4 --oversubscribe ./a.out  68.28s user 1.72s system 382% cpu 18.305 total</code></pre></div>
+<p>実行時間が58.248s → 18.305となり、並列化効率も80%近くに向上した。それでもなんか文句を言ってくる人がいたら、とてもローカルPCのメモリには乗りきらないほど大きな系を計算して黙らせよう。「並列化効率で悩んだらサイズに逃げろ」と覚えておくと良い。</p>
+<h2 id="余談mpiの面倒くささ">余談：MPIの面倒くささ</h2>
+<p>本格的な領域分割コードの例として、二次元反応拡散方程式を並列化してみた。「並列化」によってどれくらいコードが増えたか見てみよう。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="fu">wc</span> gs.cpp gs_mpi.cpp
+      <span class="ex">89</span>     430    1969 gs.cpp
+     <span class="ex">272</span>    1271    7345 gs_mpi.cpp
+     <span class="ex">361</span>    1701    9314 total</code></pre></div>
+<p>というわけで、89行から272行になった。3倍増である。つまり、もともとの計算コードの二倍の量の通信コードがついたことになる。といっても、「通信コードそのもの」の量は大したことがない。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="fu">grep</span> MPI_ gs_mpi.cpp
+  <span class="ex">MPI_Comm_rank</span>(MPI_COMM_WORLD, <span class="kw">&amp;</span><span class="ex">rank</span>);
+  <span class="ex">MPI_Comm_size</span>(MPI_COMM_WORLD, <span class="kw">&amp;</span><span class="ex">procs</span>);
+  <span class="ex">MPI_Dims_create</span>(procs, 2, d2);
+  <span class="ex">MPI_Gather</span>(sendbuf.data(), <span class="ex">lx</span> * ly, MPI_DOUBLE, recvbuf.data(), <span class="ex">lx</span> * ly, MPI_DOUBLE, 0,  MPI_COMM_WORLD);
+  <span class="ex">MPI_Status</span> st<span class="kw">;</span>
+  <span class="ex">MPI_Sendrecv</span>(sendbuf.data(), <span class="ex">ly</span>, MPI_DOUBLE, right, 0,
+               <span class="ex">recvbuf.data</span>(), <span class="ex">ly</span>, MPI_DOUBLE, left, 0, MPI_COMM_WORLD, <span class="kw">&amp;</span><span class="ex">st</span>);
+  <span class="ex">MPI_Sendrecv</span>(sendbuf.data(), <span class="ex">ly</span>, MPI_DOUBLE, left, 0,
+               <span class="ex">recvbuf.data</span>(), <span class="ex">ly</span>, MPI_DOUBLE, right, 0, MPI_COMM_WORLD, <span class="kw">&amp;</span><span class="ex">st</span>);
+  <span class="ex">MPI_Status</span> st<span class="kw">;</span>
+  <span class="ex">MPI_Sendrecv</span>(sendbuf.data(), <span class="ex">lx</span> + 2, MPI_DOUBLE, up, 0,
+               <span class="ex">recvbuf.data</span>(), <span class="ex">lx</span> + 2, MPI_DOUBLE, down, 0, MPI_COMM_WORLD, <span class="kw">&amp;</span><span class="ex">st</span>);
+  <span class="ex">MPI_Sendrecv</span>(sendbuf.data(), <span class="ex">lx</span> + 2, MPI_DOUBLE, down, 0,
+               <span class="ex">recvbuf.data</span>(), <span class="ex">lx</span> + 2, MPI_DOUBLE, up, 0, MPI_COMM_WORLD, <span class="kw">&amp;</span><span class="ex">st</span>);
+  <span class="ex">MPI_Init</span>(<span class="kw">&amp;</span><span class="ex">argc</span>, <span class="kw">&amp;</span><span class="ex">argv</span>);
+  <span class="fu">MPI_Finalize()</span>;
+
+$ <span class="fu">grep</span> MPI_ gs_mpi.cpp <span class="kw">|</span> <span class="fu">wc</span>
+      <span class="ex">16</span>      82     850</code></pre></div>
+<p><code>MPI_Status st</code>の宣言を除くと14行だけである。それ以外はバッファの準備と整理に費やされている。 これをもって「MPIは面倒くさい」というのであれば、私は同意する。しかし、「MPIの面倒くささ」の本質はそこではないように思う。</p>
+<p>MPIを使って並列コードを書くことを「並列化 (parallelization)」と呼ぶ。「並列化」という言葉から想像されるのは、「もともとあるシリアル版のコードを改造して並列コードを書く」という作業であろう。典型的には、</p>
+<ol style="list-style-type: decimal">
+<li>シリアルコードを書く</li>
+<li>大きな系がやりたくなったので、OpenMPを使ってスレッド並列をする</li>
+<li>さらにMPIを使って並列版に修正する</li>
+</ol>
+<p>といった開発プロセスとなりがちなのだと思われる。しかし、既存のコードを修正してMPIを入れていく作業は極めて面倒くさく、バグが入りやすく、かつやっている最中に何をやってるかわからなくなりがちである。一度何をやってるかわからない状態になったら、もうどこがバグなのか、バグが何に起因するのかわからず、泥沼にハマっていく。筆者は、学生さんだけでなくプログラムで飯を食っているプロな人でもそういう状態になっているのを何度も目撃している。</p>
+<p>さて、スレッド並列はともかく、<strong>MPIを使った並列化とは、MPI向けに新規にコードを書き直す作業</strong>である。「正しい」並列化プロセスは以下の通りとなる。</p>
+<ol style="list-style-type: decimal">
+<li>シリアルコードを書く</li>
+<li>MPI並列化に必要な通信パターンを抽出する</li>
+<li>その通信パターンだけを抜き出してテストコードを書く</li>
+<li>シリアルコードとテストコードを参照しながら、新規にコードを開発する</li>
+</ol>
+<p>具体的に4つ目のプロセスでは、「初期化してgatherして保存し、正しいことを確認」「初期化後にのりしろ通信して、正しいことを確認」してから、次のステップに進んでいる。並列版として開発した<code>gs_mpi.cpp</code>は、シリアル版である<code>gs.cpp</code>をコピーせず、<code>gs.cpp</code>を参照しながらゼロから開発していった。MPIは面倒である。その感覚は正しい。しかし、順を追って開発していけば、別に難しくはない。ソースコードが三倍になった、というと「うっ」と思うかもしれないが、それでも300行も無いのだし、通信コードを書くこと自体は対して時間はかからない。並列化に限ったことではないが、プログラムの開発時間のほとんどはデバッグでしめられている。面倒臭がらずに、通信ロジックのテストコードなどをきちんと書いていけば、さほど時間はかからずに並列化することができるだろう。</p>
+<p>もし2万行のソースコードを渡されて「並列化しろ」と言われたら？それはもうご愁傷様としか……</p>
+</article>
+</body>
+</html>

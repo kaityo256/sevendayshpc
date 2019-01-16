@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  </style>
+
+<style>
+  .markdown-body {
+    box-sizing: border-box;
+    min-width: 200px;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 45px;
+  }
+  img {width: 100%}
+
+  @media (max-width: 767px) {
+    .markdown-body {
+      padding: 15px;
+    }
+  }
+</style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://kaityo256.github.io/sevendayshpc/github-markdown.css" type="text/css" />
+  <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_CHTML-full" type="text/javascript"></script>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<article class="markdown-body">
+<h1 id="day-7-simd化">Day 7 : SIMD化</h1>
+<h2 id="はじめに">はじめに</h2>
+<p>ここまで読んだ人、お疲れ様です。ここから読んでいる人、それでも問題ありません。 これまで、主に並列化についてだらだら書いてきたが、最後はシングルコアでの最適化技術であるSIMD化について説明してみたいと思う。</p>
+<h2 id="simdとは">SIMDとは</h2>
+<p>スパコンプログラミングに興味があるような人なら、「SIMD」という言葉を聞いたことがあるだろう。SIMDとは、「single instruction multiple data」の略で、「一回の命令で複数のデータを同時に扱う」という意味である。先に、並列化は大きく分けて「データ並列」「共有メモリ並列」「分散メモリ並列」の三種類になると書いたが、SIMDはデータ並列(Data parallelism)に属す。現在、一般的に数値計算に使われるCPUにはほとんどSIMD命令が実装されている。後述するが、SIMDとは1サイクルに複数の演算を同時に行う技術であり、CPUの「理論ピーク性能」は、SIMDの能力を使い切った場合の性能を指す。したがって、<strong>まったくSIMD化できなければ、ピーク性能が数分の1になることと等価である</strong>。ここでは、なぜSIMDが必要になるか、そしてSIMDとは何かについて見てみよう。</p>
+<p>計算機というのは、要するにメモリからデータと命令を取ってきて、演算器に投げ、結果をメモリに書き戻す機械である。CPUの動作単位は「サイクル」で表される。演算器に計算を投げてから、結果が返ってくるまでに数サイクルかかるが、現代のCPUではパイプライン処理という手法によって事実上1サイクルに1個演算ができる。1サイクル1演算できるので、あとは「1秒あたりのサイクル数=動作周波数」を増やせば増やすほど性能が向上することになる。</p>
+<p>というわけでCPUベンダーで動作周波数を向上させる熾烈な競争が行われたのだが、2000年代に入って動作周波数は上がらなくなった。これはリーク電流による発熱が主な原因なのだが、ここでは深く立ち入らない。1サイクルに1演算できる状態で、動作周波数をもう上げられないのだから、性能を向上させるためには「1サイクルに複数演算」をさせなければならない。この「1サイクルに複数演算」の実現にはいくつかの方法が考えられた。</p>
+<div class="figure">
+<img src="fig/simd.png" alt="fig/simd.png" />
+<p class="caption">fig/simd.png</p>
+</div>
+<p>まず、単純に演算器の数を増やすという方法が考えられる。1サイクルで命令を複数取ってきて、その中に独立に実行できるものがあれば、複数の演算器に同時に投げることで1サイクルあたりの演算数を増やそう、という方法論である。これを <strong>スーパースカラ</strong> と呼ぶ。独立に実行できる命令がないと性能が上がらないため、よくアウトオブオーダー実行と組み合わされる。要するに命令をたくさん取ってきて命令キューにためておき、スケジューラがそこを見て独立に実行できる命令を選んでは演算器に投げる、ということをする。</p>
+<p>この方法には「命令セットの変更を伴わない」という大きなメリットがある。ハードウェアが勝手に並列実行できる命令を探して同時に実行してくれるので、プログラマは何もしなくて良い。そういう意味において、 <strong>スーパースカラとはハードウェアにがんばらせる方法論</strong> である。デメリット、というか問題点は、実行ユニットの数が増えると、依存関係チェックの手間が指数関数的に増えることである。一般的には整数演算が4つ程度、浮動小数点演算が2つくらいまでが限界だと思われる。</p>
+<p>さて、スーパースカラの問題点は、命令の依存関係チェックが複雑であることだった。そこさえ解決できるなら、演算器をたくさん設置すればするほど性能が向上できると期待できる。そこで、事前に並列に実行できる命令を並べておいて、それをそのままノーチェックで演算器に流せばいいじゃないか、という方法論が考えられた。整数演算器や浮動小数点演算器、メモリのロードストアといった実行ユニットを並べておき、それらに供給する命令を予め全部ならべたものを「一つの命令」とする。並列実行できる実行ユニットの数だけ命令を「パック」したものを一つの命令にとするため、命令が極めて長くなる。そのため、この方式は「Very Long Instruction Word (超長い命令語)」、略してVLIWと呼ばれる。実際にはコンパイラがソースコードを見て並列に実行できる命令を抽出し、なるべく並列に実行できるように並べて一つの命令を作る。そういう意味において、 <strong>VLIWとはコンパイラにがんばらせる方法論</strong>である。</p>
+<p>この方式で性能を稼ぐためには、VLIWの「命令」に有効な命令が並んでなければならない。しかし、命令に依存関係が多いと同時に使える実行ユニットが少なくなり、「遊ぶ」実行ユニットに対応する箇所には「NOP(no operation = 何もしない)」が並ぶことになる。VLIWはIntelとHPが共同開発したIA-64というアーキテクチャに採用され、それを実装したItanium2は、ハイエンドサーバやスパコン向けにそれなりに採用された。個人的にはItanium2は(レジスタもいっぱいあって)好きな石なのだが、この方式が輝くためには「神のように賢いコンパイラ」が必須となる。一般に「神のように賢いコンパイラ」を要求する方法はだいたい失敗する運命にある。また、命令セットが実行ユニットの仕様と強く結びついており、後方互換性に欠けるのも痛い。VLIWは組み込み用途では人気があるものの、いまのところハイエンドなHPC向けとしてはほぼ滅びたと言ってよいと思う。</p>
+<p>さて、「ハードウェアにがんばらせる」方法には限界があり、「コンパイラにがんばらせる」方法には無理があった。残る方式は <strong>プログラマにがんばらせる方法論</strong> だけである。それがSIMDである。</p>
+<p>異なる命令をまとめてパックするのは難しい。というわけで、命令ではなく、データをパックすることを考える。たとえば「C=A+B」という足し算を考える。これは「AとBというデータを取ってきて、加算し、Cとしてメモリに書き戻す」という動作をする。ここで、「C1 = A1+B1」「C2 = A2+B2」という独立な演算があったとしよう。予め「A1:A2」「B1:B2」とデータを一つのレジスタにパックしておき、それぞれの和を取ると「C1:C2」という、2つの演算結果がパックしたレジスタが得られる。このように複数のデータをパックするレジスタをSIMDレジスタと呼ぶ。例えばAVX2なら256ビットのSIMDレジスタがあるため、64ビットの倍精度実数を4つパックできる。そしてパックされた4つのデータ間に独立な演算を実行することができる。ここで、ハードウェアはパックされたデータの演算には依存関係が無いことを仮定する。つまり依存関係の責任はプログラマ側にある。ハードウェアから見れば、レジスタや演算器の「ビット幅」が増えただけのように見えるため、ハードウェアはさほど複雑にならない。しかし、性能向上のためには、SIMDレジスタを活用したプログラミングを行わなければならない。 SIMDレジスタを活用して性能を向上させることを俗に「SIMD化 (SIMD-vectorization)」などと呼ぶ。 原理的にはコンパイラによってSIMD化することは可能であり、実際に、最近のコンパイラのSIMD最適化能力の向上には目を見張るものがある。 しかし、効果的なSIMD化のためにはデータ構造の変更を伴うことが多く、コンパイラにはそういったグローバルな変更を伴う最適化が困難であることから、基本的には「SIMD化はプログラマが手で行う必要がある」のが現状である。</p>
+<h2 id="simdレジスタを触ってみる">SIMDレジスタを触ってみる</h2>
+<p>SIMD化とは、CPUに実装されているSIMDレジスタをうまく使うコードを書いて実行速度を加速させることである。 そのためには、まずSIMDレジスタを使う必要がある。SIMDレジスタとは、要するに複数のデータを一度に保持できる変数である。 これを読んでいる人の大多数はAVX2に対応したx86系CPUのパソコンを持っているだろう。まずはAVX2の256bitレジスタ、YMMレジスタを使ってみよう。 以下、変数としては倍精度実数型を使う。倍精度実数は64ビットなので、256ビットレジスタは倍精度実数を4つ保持できる。</p>
+<p>SIMDを明示的に扱うには、まず<code>x86intrin.h</code>をincludeする。すると、SIMDレジスタに対応する<code>_m256d</code>という型が使えるようになる。 これは256bitのYMMレジスタを、倍精度実数4つだと思って使う型である。この型の変数に値を入れるには、例えば<code>_mm256_set_pd</code>という組み込み関数を使う。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">__m256d v1 =  _mm256_set_pd(<span class="fl">3.0</span>, <span class="fl">2.0</span>, <span class="fl">1.0</span>, <span class="fl">0.0</span>);</code></pre></div>
+<p>この関数は、<strong>右から</strong> 下位に値を放り込んでいく。上記の例なら、一番下位の64ビットに倍精度実数の0、次の64ビットに1・・・と値が入る。 さて、SIMDレジスタとは、変数を複数同時に保持できるものである。今回のケースでは、<code>_m256d</code>という型は、ほぼ<code>double [4]</code>だと思ってかまわない。 実際、これらはそのままキャスト可能である。SIMD化を行う時、こんなデバッグ用の関数を作っておくと便利である。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> print256d(__m256d x) {
+  printf(<span class="st">&quot;</span><span class="sc">%f</span><span class="st"> </span><span class="sc">%f</span><span class="st"> </span><span class="sc">%f</span><span class="st"> </span><span class="sc">%f\n</span><span class="st">&quot;</span>, x[<span class="dv">3</span>], x[<span class="dv">2</span>], x[<span class="dv">1</span>], x[<span class="dv">0</span>]);
+}</code></pre></div>
+<p><code>_m256d x</code>が、そのまま<code>double x[4]</code>として使えているのがわかると思う。この時、<code>x[0]</code>が一番下位となる。 先程の代入と合わせるとこんな感じになる。</p>
+<p><a href="print.cpp" class="uri">print.cpp</a></p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;x86intrin.h&gt;</span>
+
+<span class="dt">void</span> print256d(__m256d x) {
+  printf(<span class="st">&quot;</span><span class="sc">%f</span><span class="st"> </span><span class="sc">%f</span><span class="st"> </span><span class="sc">%f</span><span class="st"> </span><span class="sc">%f\n</span><span class="st">&quot;</span>, x[<span class="dv">3</span>], x[<span class="dv">2</span>], x[<span class="dv">1</span>], x[<span class="dv">0</span>]);
+}
+
+<span class="dt">int</span> main(<span class="dt">void</span>) {
+  __m256d v1 =  _mm256_set_pd(<span class="fl">3.0</span>, <span class="fl">2.0</span>, <span class="fl">1.0</span>, <span class="fl">0.0</span>);
+  print256d(v1);
+}</code></pre></div>
+<p>これをg++でコンパイルするには、AVX2を使うよ、と教えてあげる必要がある。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">g++</span> -mavx2 print.cpp
+$ <span class="ex">./a.out</span>
+<span class="ex">3.000000</span> 2.000000 1.000000 0.000000</code></pre></div>
+<p>ちゃんとSIMDレジスタに値が代入され、それが表示されたことがわかる。</p>
+<p>さて、SIMDレジスタの強みは、SIMDレジスタ同士で四則演算をすると、4つ同時に計算が実行できることであった。それを確認してみよう。</p>
+<p>単に<code>_m256d</code>同士の足し算をやる関数を書いてみる。<code>_m256d</code>の型は、そのまま四則演算ができる。<code>double[4]</code>の型をラップしたクラスを作り、オペレータのオーバーロードをしたようなイメージである。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;x86intrin.h&gt;</span>
+
+__m256d add(__m256d v1, __m256d v2) {
+  <span class="cf">return</span> v1 + v2;
+}</code></pre></div>
+<p>アセンブリを見てみる。少し最適化したほうがアセンブリが読みやすい。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">g++</span> -mavx2 -O2 -S add.cpp</code></pre></div>
+<p>アセンブリはこうなる。</p>
+<div class="sourceCode"><pre class="sourceCode asm"><code class="sourceCode fasm"><span class="fu">__Z3addDv4_dS_:</span>
+  vaddpd  %ymm1, %ymm0, %ymm0
+  <span class="bu">ret</span></code></pre></div>
+<p><code>vaddpd</code>はSIMDの足し算を行う命令であり、ちゃんとYMMレジスタの足し算が呼ばれていることがわかる。</p>
+<p>実際に4要素同時に足し算できることを確認しよう。</p>
+<p><a href="add.cpp" class="uri">add.cpp</a></p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;x86intrin.h&gt;</span>
+
+<span class="dt">void</span> print256d(__m256d x) {
+  printf(<span class="st">&quot;</span><span class="sc">%f</span><span class="st"> </span><span class="sc">%f</span><span class="st"> </span><span class="sc">%f</span><span class="st"> </span><span class="sc">%f\n</span><span class="st">&quot;</span>, x[<span class="dv">3</span>], x[<span class="dv">2</span>], x[<span class="dv">1</span>], x[<span class="dv">0</span>]);
+}
+
+<span class="dt">int</span> main(<span class="dt">void</span>) {
+  __m256d v1 =  _mm256_set_pd(<span class="fl">3.0</span>, <span class="fl">2.0</span>, <span class="fl">1.0</span>, <span class="fl">0.0</span>);
+  __m256d v2 =  _mm256_set_pd(<span class="fl">7.0</span>, <span class="fl">6.0</span>, <span class="fl">5.0</span>, <span class="fl">4.0</span>);
+  __m256d v3 = v1 + v2;
+  print256d(v3);
+}</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">g++</span> -mavx2 add.cpp
+$ <span class="ex">./a.out</span>
+<span class="ex">10.000000</span> 8.000000 6.000000 4.000000</code></pre></div>
+<p><code>(0,1,2,3)</code>というベクトルと、<code>(4,5,6,7)</code>というベクトルの和をとり、<code>(4,6,8,10)</code>というベクトルが得られた。 このように、ベクトル同士の演算に見えるので、SIMD化のことをベクトル化と呼んだりする。ただし、線形代数で出てくる ベクトルの積とは違い、SIMDの積は単に要素ごとの積になることに注意。実際、さっきの和を積にするとこうなる。</p>
+<p><a href="mul.cpp" class="uri">mul.cpp</a></p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;x86intrin.h&gt;</span>
+
+<span class="dt">void</span> print256d(__m256d x) {
+  printf(<span class="st">&quot;</span><span class="sc">%f</span><span class="st"> </span><span class="sc">%f</span><span class="st"> </span><span class="sc">%f</span><span class="st"> </span><span class="sc">%f\n</span><span class="st">&quot;</span>, x[<span class="dv">3</span>], x[<span class="dv">2</span>], x[<span class="dv">1</span>], x[<span class="dv">0</span>]);
+}
+
+<span class="dt">int</span> main(<span class="dt">void</span>) {
+  __m256d v1 =  _mm256_set_pd(<span class="fl">3.0</span>, <span class="fl">2.0</span>, <span class="fl">1.0</span>, <span class="fl">0.0</span>);
+  __m256d v2 =  _mm256_set_pd(<span class="fl">7.0</span>, <span class="fl">6.0</span>, <span class="fl">5.0</span>, <span class="fl">4.0</span>);
+  __m256d v3 = v1 * v2; <span class="co">// 積にした</span>
+  print256d(v3);
+}</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">g++</span> -mavx2 mul.cpp
+$ <span class="ex">./a.out</span>
+<span class="ex">21.000000</span> 12.000000 5.000000 0.000000</code></pre></div>
+<p>それぞれ、<code>0*0</code>、<code>1*5</code>、<code>2*6</code>、<code>3*7</code>が計算されていることがわかる。</p>
+<p>あとSIMD化で大事なのは、SIMDレジスタへのデータの読み書きである。先程はデバッグのために<code>_mm256_set_pd</code>を使ったが、これは極めて遅い。 どんな動作をするか見てみよう。</p>
+<p><a href="setpd.cpp" class="uri">setpd.cpp</a></p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;x86intrin.h&gt;</span>
+  
+__m256d setpd(<span class="dt">double</span> a, <span class="dt">double</span> b, <span class="dt">double</span> c, <span class="dt">double</span> d) {
+  <span class="cf">return</span> _mm256_set_pd(d, c, b, a);
+}</code></pre></div>
+<p>このアセンブリを見てみる。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">g++</span> -mavx2 -O2 -S setpd.cpp</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode asm"><code class="sourceCode fasm"><span class="fu">__Z5setpddddd:</span>
+  vunpcklpd %<span class="kw">xmm3</span>, %<span class="kw">xmm2</span>, %<span class="kw">xmm2</span>
+  vunpcklpd %<span class="kw">xmm1</span>, %<span class="kw">xmm0</span>, %<span class="kw">xmm0</span>
+  vinsertf128 <span class="dv">$</span><span class="bn">0x1, </span>%<span class="kw">xmm2</span>, %ymm0, %ymm0
+  <span class="bu">ret</span></code></pre></div>
+<p>これは、</p>
+<ol style="list-style-type: decimal">
+<li>aとbをxmm2レジスタにパック</li>
+<li>cとdをxmm0レジスタにパック</li>
+<li>xmm2レジスタの値をymm0レジスタの上位に挿入</li>
+</ol>
+<p>ということをしている。ここで、<code>xmm0</code>レジスタと<code>ymm0</code>レジスタの下位128ビットは共有していることに注意。 つまり、<code>xmm0</code>レジスタに読み書きすると、<code>ymm0</code>レジスタの下位128ビットも影響を受ける。 上記の例はそれを利用して、最終的に欲しい情報、つまり4要素をパックしたレジスタを作っている。</p>
+<p>とりあえず4つの要素をYMMレジスタに載せることができれば、あとは4要素同時に計算ができるようになるのだが、 4要素をパックする際に<code>_mm256_set_pd</code>を使うとメモリアクセスが多くなって性能が出ない。 そのため、メモリから連続するデータをごそっとレジスタにとってきたり、書き戻したりする命令がある。 例えば、<code>_mm256_load_pd</code>は、指定されたポインタから連続する4つの倍精度実数をとってきて YMMレジスタに入れてくれる。ただし、そのポインタの指すアドレスは32バイトアラインされていなければならない。</p>
+<p>利用例はこんな感じになる。</p>
+<p><a href="load.cpp" class="uri">load.cpp</a></p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;x86intrin.h&gt;</span>
+
+<span class="dt">void</span> print256d(__m256d x) {
+  printf(<span class="st">&quot;</span><span class="sc">%f</span><span class="st"> </span><span class="sc">%f</span><span class="st"> </span><span class="sc">%f</span><span class="st"> </span><span class="sc">%f\n</span><span class="st">&quot;</span>, x[<span class="dv">3</span>], x[<span class="dv">2</span>], x[<span class="dv">1</span>], x[<span class="dv">0</span>]);
+}
+
+<span class="ex">__attribute__((aligned(32)))</span> <span class="dt">double</span> a[] = {<span class="fl">0.0</span>, <span class="fl">1.0</span>, <span class="fl">2.0</span>, <span class="fl">3.0</span>, <span class="fl">4.0</span>, <span class="fl">5.0</span>, <span class="fl">6.0</span>, <span class="fl">7.0</span>};
+
+<span class="dt">int</span> main(<span class="dt">void</span>) {
+  __m256d v1 = _mm256_load_pd(a);
+  __m256d v2 = _mm256_load_pd(a + <span class="dv">4</span>);
+  __m256d v3 = v1 + v2;
+  print256d(v3);
+}</code></pre></div>
+<p>ここで<code>__attribute__((aligned(32)))</code>が、「後に続くデータを32バイトアライメントにしてください」という指示である。 メモリアライメントについてはここでは深入りしないが、「利用メモリの端がちょうど良いとこから始まっていること」とおぼえておけば良い。 具体的には、配列の先頭アドレスが32で割り切れる値になる。メモリアライメントが合わないと遅くなったり、実行時にSIGSEGVで落ちたりする。</p>
+<p>コンパイル、実行はこんな感じ。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">g++</span> -mavx2 load.cpp
+$ <span class="ex">./a.out</span>
+<span class="ex">10.000000</span> 8.000000 6.000000 4.000000</code></pre></div>
+<p><code>_mm256_load_pd</code>が何をやっているか(どんなアセンブリに対応するか)も見てみよう。こんなコードのアセンブリを見てみる。</p>
+<p><a href="loadasm.cpp" class="uri">loadasm.cpp</a></p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;x86intrin.h&gt;</span><span class="pp">  </span>
+__m256d load(<span class="dt">double</span> *a, <span class="dt">int</span> index) {
+  <span class="cf">return</span> _mm256_load_pd(a + index);
+}</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">g++</span> -O2 -mavx2 loadasm.cpp</code></pre></div>
+<p>例によって、少し最適化をかけておく。</p>
+<div class="sourceCode"><pre class="sourceCode asm"><code class="sourceCode fasm"><span class="fu">__Z4loadPdi:</span>
+  movslq  %<span class="kw">esi</span>, %<span class="kw">rsi</span>
+  vmovapd (%<span class="kw">rdi</span>,%<span class="kw">rsi</span>,<span class="dv">8</span>), %ymm0
+  <span class="bu">ret</span></code></pre></div>
+<p><code>ymm0</code>レジスタに、<code>vmovapd</code>一発でデータがロードされていることがわかる。</p>
+<p>ここでは読み出しを見たが、書き戻し(<code>_mm256_store_pd</code>)も同様である。</p>
+<p>さて、これでSIMD化の基礎は終わりである。ようするにデータを複数個とってきて、SIMDレジスタに乗せて、 レジスタでなんか計算して、それを書き戻せばよろしい。簡単でしょう？ ただし、バラバラのデータをpack/unpackすると遅いので、なるべく連続したデータをロードしたりストアしたりするように心がける必要がある。 実際に使おうとすると、「あれ？if文があるんだけど、どうすればいいんだろう？」とか「メモリの配置とレジスタに載せたい配置が微妙に違う」とかいろいろ出てくると思うが、それに対応してSIMDのための補助命令(シャッフルとか)が死ぬほどある。まぁ、それは必要に応じて覚えておけばいいと思う。以下、簡単な例でSIMD化の実際を見てみよう。</p>
+<h2 id="余談アセンブリ言語アセンブラ言語">余談：アセンブリ言語？アセンブラ言語？</h2>
+<p>アセンブリの話になると、必ずといっていいほど「アセンブリ言語(assembly language)が正しく、アセンブラ言語(assembler language)は誤り」と言い出す人がいる。 もちろんほとんどの場合において、<strong>アセンブリ言語</strong> (assembly language)」を<strong>アセンブル</strong>(assemble)して<strong>機械語</strong>(machine language)に変換するのが<strong>アセンブラ</strong>(assembler)である、という認識で良い。しかし、「アセンブラ言語 (assembler language)」という用法が無いわけではない。 もっとも有名なのがIBMである。IBMは昔から「アセンブラ言語 (assembler language)」という呼び方をしてきた。 IBMが現在サポートしているアセンブリ言語はIBM High Level Assembler(HLASM)であり、メインフレームであるSystem z上で動作する。 <a href="http://publibfp.dhe.ibm.com/epubs/pdf/asmg1022.pdf">HLASMのマニュアル</a>内でも「アセンブラ言語(assembler language)」という呼び方をしている。 しかし、System zの祖先であるSystem 360上で動作するアセンブリ言語は「<a href="https://en.wikipedia.org/wiki/IBM_Basic_assembly_language_and_successors">IBM Basic Assembly Language (BAL)</a>」と呼ばれており、「Assembly language」と「Assembler language」の使い分けは微妙である。しかし、IBM自身はBALのことを <a href="http://bitsavers.trailing-edge.com/pdf/ibm/360/bos_bps/C20-6503-0_BAL_Feb65.pdf">Basic Assembler Language</a>と表現しているので、 もしかしたらBALのことをIBMはBasic Assembler Language、サードパーティはBasic Assembly Languageと呼んでいるのかもしれない。</p>
+<p>IBM以外でも、ARMが規定したアセンブリ言語であるUALは「<a href="http://www.keil.com/support/man/docs/armasm/armasm_dom1359731145130.htm">Unified Assembler Language</a>」の略である。 直訳すると「統合<strong>アセンブラ</strong>言語」とでもなるだろうか。しかし、ARM自身はアセンブリ言語のことを「assembly language」と呼んでおり、やはりその使い分けは微妙である。 これは筆者の経験になるが、日本でも昔は「アセンブリ言語」のことを指して「アセンブラ」と呼ぶのがかなり一般的であった記憶がある。C言語などを使わずに書くことを「フルアセンブラで書く」といった具合である。 いまでもそのような使い方をしている人を見かける。どうでもいいが、当時x86のアセンブラを書いていた人は、機械語のことを「マシン語」と呼ぶのが一般的であった気もする。</p>
+<p>繰り返しになるが、現在は「アセンブリ言語 (assembly language)」の方が一般的な用語であると思われるので、「アセンブリ言語をアセンブラがアセンブルして機械語にする」と表現することになんの問題もない。 しかし、誰かが「アセンブラを書く」もしくは「アセンブラ言語」と言ったときに、脊髄反射で「アセンブリ言語が正しい」とマウントを取る前に、上記のような事情を思い出していただけたらと思う。</p>
+<p>余談の余談となるが、アセンブリで書かれたものを手で機械語に翻訳する作業を「ハンドアセンブル」と呼ぶ。昔のアセンブリはほぼ機械語と一対一対応しており、「便利なマクロ付き機械語」といった趣であったため、ハンドアセンブルはさほど難しい作業ではなかった。しかし、現在の機械語、特にx86の機械語はかなり複雑になっており、アセンブリから機械語に翻訳するのはかなり大変になっている。そのあたりは例えば<a href="https://tanakamura.github.io/pllp/docs/x8664_language.html">x86_64機械語入門</a>なんかを参照してほしい。</p>
+<h2 id="簡単なsimd化の例">簡単なSIMD化の例</h2>
+<p>では、実際にSIMD化をやってみよう。こんなコードを考える。 一次元の配列の単純な和のループである。</p>
+<p><a href="func.cpp" class="uri">func.cpp</a></p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="at">const</span> <span class="dt">int</span> N = <span class="dv">10000</span>;
+<span class="dt">double</span> a[N], b[N], c[N];
+
+<span class="dt">void</span> func() {
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; N; i++) {
+    c[i] = a[i] + b[i];
+  }
+}</code></pre></div>
+<p>これを普通にコンパイルすると、こんなアセンブリになる。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">g++</span> -O1 -S func.cpp  </code></pre></div>
+<div class="sourceCode"><pre class="sourceCode asm"><code class="sourceCode fasm">  xorl  %<span class="kw">eax</span>, %<span class="kw">eax</span>
+  leaq  _a(%rip), %<span class="kw">rcx</span>
+  leaq  _b(%rip), %<span class="kw">rdx</span>
+  leaq  _c(%rip), %<span class="kw">rsi</span>
+  <span class="bu">movsd</span> (%<span class="kw">rax</span>,%<span class="kw">rcx</span>), %<span class="kw">xmm0</span>
+  <span class="bu">addsd</span> (%<span class="kw">rax</span>,%<span class="kw">rdx</span>), %<span class="kw">xmm0</span>
+  <span class="bu">movsd</span> %<span class="kw">xmm0</span>, (%<span class="kw">rax</span>,%<span class="kw">rsi</span>)
+  addq<span class="bn">  $8, </span>%<span class="kw">rax</span>
+  cmpq<span class="bn">  $80000, </span>%<span class="kw">rax</span>
+  <span class="bu">jne</span> LBB0_<span class="dv">1</span></code></pre></div>
+<p>配列<code>a</code>,<code>b</code>,<code>c</code>のアドレスを<code>%rcx</code>, <code>%rdx</code>, <code>%rsi</code>に取得し、 <code>movsd</code>で<code>a[i]</code>のデータを<code>%xmm0</code>に持ってきて、<code>addsd</code>で<code>a[i]+b[i]</code>を計算して<code>%xmm0</code>に保存し、 それを<code>c[i]</code>の指すアドレスに<code>movsd</code>で書き戻す、ということをやっている。 これはスカラーコードなのだが、<code>xmm</code>は128ビットSIMDレジスタである。 x86は歴史的経緯からスカラーコードでも浮動小数点演算にSIMDレジスタである<code>xmm</code>を使う(後述の余談参照)。</p>
+<p>さて、このループをAVX2を使ってSIMD化することを考える。SIMD化の基本は、ループをアンロールして 独立な演算を複数作り、それをSIMDレジスタで同時に演算することである。AVX2のSIMDレジスタはymmで表記される。ymmレジスタは256ビットで、倍精度実数(64ビット)が4つ保持できるので、</p>
+<ul>
+<li>ループを4倍展開する</li>
+<li>配列aから4つデータを持ってきてymmレジスタに乗せる</li>
+<li>配列bから4つデータを持ってきてymmレジスタに乗せる</li>
+<li>二つのレジスタを足す</li>
+<li>結果のレジスタを配列cのしかるべき場所に保存する</li>
+</ul>
+<p>ということをすればSIMD化完了である。コードを見たほうが早いと思う。</p>
+<p><a href="func_simd.cpp" class="uri">func_simd.cpp</a></p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;x86intrin.h&gt;</span>
+<span class="dt">void</span> func_simd() {
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; N; i += <span class="dv">4</span>) {
+    __m256d va = _mm256_load_pd(&amp;(a[i]));
+    __m256d vb = _mm256_load_pd(&amp;(b[i]));
+    __m256d vc = va + vb;
+    _mm256_store_pd(&amp;(c[i]), vc);
+  }
+}</code></pre></div>
+<p>先程みたように、4つ連続したデータを持ってくる命令が<code>_mm256_load_pd</code>であり、 SIMDレジスタの内容をメモリに保存する命令が<code>_mm256_load_pd</code>である。 これをコンパイルしてアセンブリを見てみよう。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">g++</span> -O1 -mavx2 -S func_simd.cpp</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode asm"><code class="sourceCode fasm">  xorl  %<span class="kw">eax</span>, %<span class="kw">eax</span>
+  leaq  _a(%rip), %<span class="kw">rcx</span>
+  leaq  _b(%rip), %<span class="kw">rdx</span>
+  leaq  _c(%rip), %<span class="kw">rsi</span>
+  xorl  %<span class="kw">edi</span>, %<span class="kw">edi</span>
+<span class="fu">LBB0_1:</span>  
+  vmovupd (%<span class="kw">rax</span>,%<span class="kw">rcx</span>), %ymm0         # (a[i],a[i+<span class="dv">1</span>],a[i+<span class="dv">2</span>],a[i+<span class="dv">3</span>]) -&gt; ymm0
+  vaddpd  (%<span class="kw">rax</span>,%<span class="kw">rdx</span>), %ymm0, %ymm0  # ymm0 + (b[i],b[i+<span class="dv">1</span>],b[i+<span class="dv">2</span>],b[i+<span class="dv">3</span>]) -&gt; ymm <span class="dv">0</span>
+  vmovupd %ymm0, (%<span class="kw">rax</span>,%<span class="kw">rsi</span>)         # ymm0 -&gt; (c[i],c[i+<span class="dv">1</span>],c[i+<span class="dv">2</span>],c[i+<span class="dv">3</span>])
+  addq<span class="bn">  $4, </span>%<span class="kw">rdi</span>    # i += <span class="dv">4</span>
+  addq<span class="bn">  $32, </span>%<span class="kw">rax</span>
+  cmpq<span class="bn">  $10000, </span>%<span class="kw">rdi</span>
+  <span class="bu">jb</span>  LBB0_<span class="dv">1</span></code></pre></div>
+<p>ほとんどそのままなので、アセンブリ詳しくない人でも理解は難しくないと思う。 配列のアドレスを<code>%rcx</code>, <code>%rdx</code>, <code>%rsi</code>に取得するところまでは同じ。 元のコードでは<code>movsd</code>で<code>xmm</code>レジスタにデータをコピーしていたのが、 <code>vmovupd</code>で<code>ymm</code>レジスタにデータをコピーしているのがわかる。 どの組み込み関数がどんなSIMD命令に対応しているかは<a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#">Intel Intrinsics Guide</a>が便利である。</p>
+<p>念の為、このコードが正しく計算できてるかチェックしよう。 適当に乱数を生成して配列<code>a[N]</code>と<code>b[N]</code>に保存し、ついでに答えも<code>ans[N]</code>に保存しておく。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">int</span> main() {
+  <span class="bu">std::</span>mt19937 mt;
+  <span class="bu">std::</span>uniform_real_distribution&lt;<span class="dt">double</span>&gt; ud(<span class="fl">0.0</span>, <span class="fl">1.0</span>);
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; N; i++) {
+    a[i] = ud(mt);
+    b[i] = ud(mt);
+    ans[i] = a[i] + b[i];
+  }
+  check(func, <span class="st">&quot;scalar&quot;</span>);
+  check(func_simd, <span class="st">&quot;vector&quot;</span>);
+}</code></pre></div>
+<p>倍精度実数同士が等しいかチェックするのはいろいろと微妙なので、バイト単位で比較しよう。 ここでは配列<code>c[N]</code>と<code>ans[N]</code>を<code>unsigned char</code>にキャストして比較している。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> check(<span class="dt">void</span>(*pfunc)(), <span class="at">const</span> <span class="dt">char</span> *type) {
+  pfunc();
+  <span class="dt">unsigned</span> <span class="dt">char</span> *x = (<span class="dt">unsigned</span> <span class="dt">char</span> *)c;
+  <span class="dt">unsigned</span> <span class="dt">char</span> *y = (<span class="dt">unsigned</span> <span class="dt">char</span> *)ans;
+  <span class="dt">bool</span> valid = <span class="kw">true</span>;
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; <span class="dv">8</span> * N; i++) {
+    <span class="cf">if</span> (x[i] != y[i]) {
+      valid = <span class="kw">false</span>;
+      <span class="cf">break</span>;
+    }
+  }
+  <span class="cf">if</span> (valid) {
+    printf(<span class="st">&quot;</span><span class="sc">%s</span><span class="st"> is OK</span><span class="sc">\n</span><span class="st">&quot;</span>, type);
+  } <span class="cf">else</span> {
+    printf(<span class="st">&quot;</span><span class="sc">%s</span><span class="st"> is NG</span><span class="sc">\n</span><span class="st">&quot;</span>, type);
+  }
+}</code></pre></div>
+<p>全部まとめたコードはこちら。</p>
+<p><a href="simdcheck.cpp" class="uri">simdcheck.cpp</a></p>
+<p>実際に実行してテストしてみよう。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">g++</span> -mavx2 -O3 simdcheck.cpp
+$ <span class="ex">./a.out</span>
+<span class="ex">scalar</span> is OK
+<span class="ex">vector</span> is OK</code></pre></div>
+<p>正しく計算できているようだ。</p>
+<p>さて、これくらいのコードならコンパイラもSIMD化してくれる。で、問題はコンパイラがSIMD化したかどうかをどうやって判断するかである。 一つの方法は、コンパイラの吐く最適化レポートを見ることだ。インテルコンパイラなら<code>-qopt-report</code>で最適化レポートを見ることができる。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">icpc</span> -march=core-avx2 -O2 -c -qopt-report -qopt-report-file=report.txt func.cpp
+$ <span class="fu">cat</span> report.txt
+<span class="ex">Intel</span>(R) <span class="ex">Advisor</span> can now assist with vectorization and show optimization
+  <span class="ex">report</span> messages with your source code.
+<span class="kw">(</span><span class="ex">snip</span><span class="kw">)</span>
+<span class="ex">LOOP</span> BEGIN at func.cpp(5,3)
+   <span class="ex">remark</span> <span class="co">#15300: LOOP WAS VECTORIZED</span>
+<span class="ex">LOOP</span> END</code></pre></div>
+<p>実際にはもっとごちゃごちゃ出てくるのだが、とりあえず最後に「LOOP WAS VECTORIZED」とあり、SIMD化できたことがわかる。 しかし、どうSIMD化したのかはさっぱりわからない。<code>-qopt-report=5</code>として最適レポートのレベルを上げてみよう。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">icpc</span> -march=core-avx2 -O2 -c -qopt-report=5 -qopt-report-file=report5.txt func.cpp
+$ <span class="fu">cat</span> report5.txt
+<span class="ex">Intel</span>(R) <span class="ex">Advisor</span> can now assist with vectorization and show optimization
+  <span class="ex">report</span> messages with your source code.
+<span class="kw">(</span><span class="ex">snip</span><span class="kw">)</span>
+<span class="ex">LOOP</span> BEGIN at func.cpp(5,3)
+   <span class="ex">remark</span> <span class="co">#15388: vectorization support: reference c has aligned access   [ func.cpp(6,5) ]</span>
+   <span class="ex">remark</span> <span class="co">#15388: vectorization support: reference a has aligned access   [ func.cpp(6,5) ]</span>
+   <span class="ex">remark</span> <span class="co">#15388: vectorization support: reference b has aligned access   [ func.cpp(6,5) ]</span>
+   <span class="ex">remark</span> <span class="co">#15305: vectorization support: vector length 4</span>
+   <span class="ex">remark</span> <span class="co">#15399: vectorization support: unroll factor set to 4</span>
+   <span class="ex">remark</span> <span class="co">#15300: LOOP WAS VECTORIZED</span>
+   <span class="ex">remark</span> <span class="co">#15448: unmasked aligned unit stride loads: 2</span>
+   <span class="ex">remark</span> <span class="co">#15449: unmasked aligned unit stride stores: 1</span>
+   <span class="ex">remark</span> <span class="co">#15475: --- begin vector loop cost summary ---</span>
+   <span class="ex">remark</span> <span class="co">#15476: scalar loop cost: 6</span>
+   <span class="ex">remark</span> <span class="co">#15477: vector loop cost: 1.250</span>
+   <span class="ex">remark</span> <span class="co">#15478: estimated potential speedup: 4.800</span>
+   <span class="ex">remark</span> <span class="co">#15488: --- end vector loop cost summary ---</span>
+   <span class="ex">remark</span> <span class="co">#25015: Estimate of max trip count of loop=625</span>
+<span class="ex">LOOP</span> END</code></pre></div>
+<p>このレポートから以下のようなことがわかる。</p>
+<ul>
+<li>ymmレジスタを使ったSIMD化であり (vector length 4)</li>
+<li>ループを4倍展開しており(unroll factor set to 4)</li>
+<li>スカラーループのコストが6と予想され (scalar loop cost: 6)</li>
+<li>ベクトルループのコストが1.250と予想され (vector loop cost: 1.250)</li>
+<li>ベクトル化による速度向上率は4.8倍であると見積もられた (estimated potential speedup: 4.800)</li>
+</ul>
+<p>でも、こういう時にはアセンブリ見ちゃった方が早い。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">icpc</span> -march=core-avx2 -O2 -S func.cpp</code></pre></div>
+<p>コンパイラが吐いたアセンブリを、少し手で並び替えたものがこちら。</p>
+<div class="sourceCode"><pre class="sourceCode asm"><code class="sourceCode fasm">        xorl      %<span class="kw">eax</span>, %<span class="kw">eax</span>
+<span class="fu">..B1.2:</span>
+        <span class="bu">lea</span>       (,%<span class="kw">rax</span>,<span class="dv">8</span>), %<span class="kw">rdx</span>
+        vmovupd   a(,%<span class="kw">rax</span>,<span class="dv">8</span>), %ymm0
+        vmovupd   <span class="dv">32</span>+a(,%<span class="kw">rax</span>,<span class="dv">8</span>), %ymm2
+        vmovupd   <span class="dv">64</span>+a(,%<span class="kw">rax</span>,<span class="dv">8</span>), %ymm4
+        vmovupd   <span class="dv">96</span>+a(,%<span class="kw">rax</span>,<span class="dv">8</span>), %ymm6
+        vaddpd    b(,%<span class="kw">rax</span>,<span class="dv">8</span>), %ymm0, %ymm1
+        vaddpd    <span class="dv">32</span>+b(,%<span class="kw">rax</span>,<span class="dv">8</span>), %ymm2, %ymm3
+        vaddpd    <span class="dv">64</span>+b(,%<span class="kw">rax</span>,<span class="dv">8</span>), %ymm4, %ymm5
+        vaddpd    <span class="dv">96</span>+b(,%<span class="kw">rax</span>,<span class="dv">8</span>), %ymm6, %ymm7
+        vmovupd   %ymm1, c(%<span class="kw">rdx</span>)
+        vmovupd   %ymm3, <span class="dv">32</span>+c(%<span class="kw">rdx</span>)
+        vmovupd   %ymm5, <span class="dv">64</span>+c(%<span class="kw">rdx</span>)
+        vmovupd   %ymm7, <span class="dv">96</span>+c(%<span class="kw">rdx</span>)
+        addq<span class="bn">      $16, </span>%<span class="kw">rax</span>
+        cmpq<span class="bn">      $10000, </span>%<span class="kw">rax</span>
+        <span class="bu">jb</span>        ..B1.<span class="dv">2</span></code></pre></div>
+<p>先程、手でループを4倍展開してSIMD化したが、さらにそれを4倍展開していることがわかる。</p>
+<p>これ、断言しても良いが、こういうコンパイラの最適化について調べる時、コンパイラの最適化レポートとにらめっこするよりアセンブリ読んじゃった方が絶対に早い。 「アセンブリを読む」というと身構える人が多いのだが、どうせSIMD化で使われる命令ってそんなにないし、 最低でも「どんな種類のレジスタが使われているか」を見るだけでも「うまくSIMD化できてるか」がわかる。 ループアンロールとかそういうアルゴリズムがわからなくても、アセンブリ見てxmmだらけだったらSIMD化は(あまり)されてないし、ymmレジスタが使われていればAVX/AVX2を使ったSIMD化で、 zmmレジスタが使われていればAVX-512を使ったSIMD化で、<code>vmovupd</code>が出てればメモリからスムーズにデータがコピーされてそうだし、 <code>vaddpd</code>とか出てればちゃんとSIMDで足し算しているなとか、そのくらいわかれば実用的にはわりと十分だったりする。 そうやっていつもアセンブリを読んでいると、そのうち「アセンブリ食わず嫌い」が治って、コンパイラが何を考えたかだんだんわかるようになる……かもしれない。</p>
+<h2 id="余談x86における浮動小数点演算の扱い">余談：x86における浮動小数点演算の扱い</h2>
+<p>数値計算においては、浮動小数点演算が必須である。この浮動小数点数は、単精度なら32ビット、倍精度なら64ビットで表現される。 その表現方法は<a href="https://ja.wikipedia.org/wiki/IEEE_754">IEEE 754</a>という仕様で決まっている。 CPUは演算をレジスタで行うが、整数演算を行う汎用レジスタと、浮動小数点演算を行う浮動小数点レジスタは別々に用意されているのが一般的である。 そして、倍精度実数演算をサポートするCPUは64ビットの浮動小数点レジスタを持っていることが多いのだが、x86は例外で64ビットの浮動小数点レジスタが無い。ではどうするかというと、普通の浮動小数点演算に128ビットのXMMというSIMDレジスタを使う。これにはx86における浮動小数点演算のサポートの歴史的な事情がある。</p>
+<p>もともと、x86はハードウェアレベルで浮動小数点演算ができなかった。したがって、浮動小数点演算をやろうとすると、汎用レジスタでソフトウェア的に浮動小数点演算をエミュレートしてやる必要があり、極めて遅かった。そこで、浮動小数点演算をサポートするためにx87というコプロセッサが用意された。 コプロセッサとは、CPUの近くに外付けして機能拡張する装置で、コプロセッサに対応する命令が来ると、CPUからコプロセッサに処理が依頼される。 ユーザからはCPUの命令セットが拡張されたように見える。このx87コプロセッサは80ビットマシンであり、単精度(32ビット)でも倍精度(64ビット)でも、一度内部で80ビットに変換されてから計算され、演算結果をまた単精度なり倍精度なりに変換する。なお、<code>long double</code>型は、80ビットそのままで計算され、変換を伴わない。x86系の石で<code>long double</code>が80ビットなのはこういう事情による。</p>
+<p>x87コプロセッサは、x86の進化に合わせて一緒に進化していった。Intel 8086にはIntel 8087が、80186には80187が、80286には80287が、といった具合である。なのでx86と同様にx87と呼ばれる。x87はしばらく外付けのコプロセッサだったが、80486からx87がCPU内に内蔵されるようになった。</p>
+<p>さて、浮動小数点演算にはもう一本の歴史がある。SIMDである。CPUの処理能力が上がると、音声や動画のエンコード、デコードや、3D処理などの処理能力がもっとほしい、という要望が出てきた。そうした声に答える形でAMDが3DNow!というSIMD命令拡張を発表した。これはIntelによるMMXを拡張し、64ビットのMMXレジスタを使って単精度実数の演算を二つ同時にできるようにしたものだ。その後、IntelもSSEというSIMD命令拡張を作り、ここで128ビットであるXMMレジスタが導入された。当初、XMMレジスタは単精度実数の演算しかできなかったが、SSE2で倍精度実数を扱えるようになる。AMDは倍精度実数の計算にデフォルトでXMMレジスタを使うようになり、その後Intelもそうなったと思われる(そのあたりの前後関係はよく知らない)。</p>
+<p>そんなわけで、x86には浮動小数点レジスタとして、x87で導入された80ビットのレジスタと、SSEで導入された128ビットのXMMレジスタがあるが、「普通の」64ビットの浮動小数点レジスタはついに導入されなかった。現在のx86では、SIMDではない普段遣いの倍精度実数演算でも、SIMDレジスタであるXMMレジスタの下位64ビットを使って演算する。</p>
+<p>その後、SIMD命令拡張はAVX、AVX2、AVX-512と発展を続け、SIMD幅も256ビット、512ビットと増えていった。それに伴ってSIMDレジスタもYMM、ZMMと拡張されていく。YMMの下位128ビットがXMM、ZMMの下位256ビットがYMMになるのは、汎用レジスタAX、EAX、RAXに包含関係があるのと同様である。</p>
+<h2 id="もう少し実戦的なsimd化">もう少し実戦的なSIMD化</h2>
+<p>上記で触れたSIMD化は非常に単純なもので、コンパイラが自動でできるものだった。しかし、一般にはSIMD化はレジスタ内をシャッフルしたり、データ構造を考えたりといろいろ複雑である。 ここでは「もっとガチなSIMD化をしたい！」というコアなSIMDerのために、もう少しだけ実践的な例を挙げてみよう。</p>
+<p>磁場中の荷電粒子の運動を考える。磁場ベクトルを<span class="math inline">\(\vec{B}\)</span>、速度ベクトルを<span class="math inline">\(\vec{v}\)</span>、位置ベクトルを<span class="math inline">\(\vec{r}\)</span>とする。簡単のため、素電荷も質量も光速も1とする単位系を取ろう。 運動方程式はこんな感じになる。</p>
+<p><span class="math display">\[
+\dot{\vec{v}} = \vec{v} \times \vec{B}
+\]</span></p>
+<p><span class="math display">\[
+\dot{\vec{r}} = \vec{v}
+\]</span></p>
+<p>ここで、速度の時間微分を要素をあらわに書くとこうなる。</p>
+<p><span class="math display">\[
+\dot{v_x} = v_y B_z - v_z B_y
+\]</span></p>
+<p><span class="math display">\[
+\dot{v_y} = v_z B_x - v_x B_z
+\]</span></p>
+<p><span class="math display">\[
+\dot{v_z} = v_x B_y - v_y B_x
+\]</span></p>
+<p>磁場中の荷電粒子の運動は、磁場と平行な向きには等速直線運動、垂直な向きには円運動をするため、結果として螺旋を描いてすすむ。こんな感じ。</p>
+<div class="figure">
+<img src="magnetic/one.png" alt="magnetic/one.png" />
+<p class="caption">magnetic/one.png</p>
+</div>
+<p>さて、適当な方向に向いた磁場中に、ランダムな向きに初速を持った荷電粒子たちをばらまいた系を計算してみよう。なお、粒子同士の相互作用も無視する。 三次元シミュレーションなので、三次元ベクトルを構造体で表現する。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="kw">struct</span> vec {
+  <span class="dt">double</span> x, y, z;
+};</code></pre></div>
+<p>粒子数を<code>N</code>とし、位置ベクトル、速度ベクトルを構造体の配列にとる。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="at">const</span> <span class="dt">int</span> N = <span class="dv">100000</span>;
+vec r[N], v[N];</code></pre></div>
+<p>この時、一次のオイラー法で時間発展を書くとこんな感じになる。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> calc_euler() {
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; N; i++) {
+    <span class="dt">double</span> px = v[i].y * BZ - v[i].z * BY;
+    <span class="dt">double</span> py = v[i].z * BX - v[i].x * BZ;
+    <span class="dt">double</span> pz = v[i].x * BY - v[i].y * BX;
+    v[i].x += px * dt;
+    v[i].y += py * dt;
+    v[i].z += pz * dt;
+    r[i].x = r[i].x + v[i].x * dt;
+    r[i].y = r[i].y + v[i].y * dt;
+    r[i].z = r[i].z + v[i].z * dt;
+  }
+}</code></pre></div>
+<p>しかし、よく知られているように一次のオイラー法は非常に精度が悪い。あなたが物理を学んだのなら、「磁場は荷電粒子に仕事をしない」ということを知っているはずである。つまり、全エネルギーは保存しなければならない。粒子間相互作用がないため、エネルギーは運動エネルギーだけである。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">double</span> energy(<span class="dt">void</span>) {
+  <span class="dt">double</span> e = <span class="fl">0.0</span>;
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; N; i++) {
+    e += v[i].x * v[i].x;
+    e += v[i].y * v[i].y;
+    e += v[i].z * v[i].z;
+  }
+  <span class="cf">return</span> e * <span class="fl">0.5</span> / <span class="kw">static_cast</span>&lt;<span class="dt">double</span>&gt;(N);
+}</code></pre></div>
+<p>ちなみに、運動エネルギーなどは「一粒子あたり」の量にしておく(つまり平均エネルギーとする)と、粒子数の増減にエネルギーがよらなくなって便利である。時間発展はこんな感じにかけるだろう。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">  init();
+  <span class="dt">double</span> t = <span class="fl">0.0</span>;
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; <span class="dv">10000</span>; i++) {
+    calc_euler();
+    t += dt;
+    <span class="cf">if</span> ((i % <span class="dv">1000</span>) == <span class="dv">0</span>) {
+      <span class="bu">std::</span>cout &lt;&lt; t &lt;&lt; <span class="st">&quot; &quot;</span> &lt;&lt; energy() &lt;&lt; <span class="bu">std::</span>endl;
+    }
+  }</code></pre></div>
+<p>平均エネルギーの時間発展はこうなる。</p>
+<div class="figure">
+<img src="magnetic/energy.png" alt="magnetic/energy.png" />
+<p class="caption">magnetic/energy.png</p>
+</div>
+<p>1st-Eulerとあるのが1次のオイラー法である。保存するべきエネルギーがどんどん増えてしまっていることがわかる。</p>
+<p>さて、精度を上げる数値積分法はいくらでもあるが、ここでは簡単に二次のRunge-Kutta(RK)法を採用しよう。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> calc_rk2() {
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; N; i++) {
+    <span class="dt">double</span> px = v[i].y * BZ - v[i].z * BY;
+    <span class="dt">double</span> py = v[i].z * BX - v[i].x * BZ;
+    <span class="dt">double</span> pz = v[i].x * BY - v[i].y * BX;
+    <span class="dt">double</span> vcx = v[i].x + px * dt * <span class="fl">0.5</span>;
+    <span class="dt">double</span> vcy = v[i].y + py * dt * <span class="fl">0.5</span>;
+    <span class="dt">double</span> vcz = v[i].z + pz * dt * <span class="fl">0.5</span>;
+    <span class="dt">double</span> px2 = vcy * BZ - vcz * BY;
+    <span class="dt">double</span> py2 = vcz * BX - vcx * BZ;
+    <span class="dt">double</span> pz2 = vcx * BY - vcy * BX;
+    v[i].x += px2 * dt;
+    v[i].y += py2 * dt;
+    v[i].z += pz2 * dt;
+    r[i].x += v[i].x * dt;
+    r[i].y += v[i].y * dt;
+    r[i].z += v[i].z * dt;
+  }
+}</code></pre></div>
+<p>二次のRKは、まず1次のオイラー法で時間刻みの半分だけ系を仮想的に時間発展させ、その場所において再度時間微分を計算し、その微分係数をもとに現在時刻から時間発展させる方法である。一般にRunge-Kuttaというと4次の方法を指すが、ここでは手抜きして2次にする。また、座標の更新はどうせ同じなので1次のオイラーのままにする。</p>
+<p>こうして計算したエネルギーが先程の図の「2nd-RK」と記されたデータ点である。エネルギーがきっちり保存していることがわかるだろう。この関数<code>calc_rk2</code>をSIMD化して見ることにしよう。</p>
+<p>先に、SIMD化では、連続したデータを取ってくるのが重要であると書いた。いまはYMMレジスタを使うので、4つの要素を取ってきたい。しかし、三次元シミュレーションなので、各粒子は3要素の速度と3要素の位置を持っている。まずこれをなんとかしよう。</p>
+<p>具体的には、3要素のベクトルを4要素にしてしまう。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="kw">struct</span> vec {
+  <span class="dt">double</span> x, y, z, w; <span class="co">// wを増やした</span>
+};</code></pre></div>
+<p>こうすると、一命令で粒子の速度がごそっとレジスタに乗る。</p>
+<div class="figure">
+<img src="fig/load_pd.png" alt="fig/load_pd.png" />
+<p class="caption">fig/load_pd.png</p>
+</div>
+<p>上図の例では、ポインタ<code>&amp;v[i].x</code>が、i番目の粒子の速度ベクトルの先頭位置を示すため、</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="co">// vv &lt;- (w,z,y,x)</span>
+__m256d vv = _mm256_load_pd((<span class="dt">double</span> *)(&amp;(v[i].x)));</code></pre></div>
+<p>とすると、レジスタに3つのデータを一度に持ってくることができる(一要素は無駄になる)。</p>
+<p>次に、レジスタに載せたデータから微分を計算したいのだが、そのままではベクトル積の形にならない。 具体的にやりたいのはこんな計算であった。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">    <span class="dt">double</span> px = v[i].y * BZ - v[i].z * BY;
+    <span class="dt">double</span> py = v[i].z * BX - v[i].x * BZ;
+    <span class="dt">double</span> pz = v[i].x * BY - v[i].y * BX;</code></pre></div>
+<p>この計算をデータをレジスタに載せたままで実行するためには、レジスタ内で(x,y,z,w)と並んでいるデータを(y,z,x,w)という順番に並び替えなければならない。このようなレジスタ内の要素の並び替えをするためにシャッフル命令が用意されている。シャッフルのやり方については、例えば<a href="https://qiita.com/kaityo256/items/ee8afca236e0af21ad96">AVXの倍精度実数シャッフル系命令チートシート</a>を参照してほしいが、シャッフル後の要素の並び方を四進数で表現してやる。 たとえば(0,1,2,3)とあるレジスタを(1,2,0,3)の順番にしたければ、</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="at">const</span> <span class="dt">int</span> im_yzx = <span class="dv">64</span> * <span class="dv">3</span> + <span class="dv">16</span> * <span class="dv">0</span> + <span class="dv">4</span> * <span class="dv">2</span> + <span class="dv">1</span> * <span class="dv">1</span>;</code></pre></div>
+<p>という数字を引数に与えてやれば良い。上記の数を四進数表記すると3021になることに注意。 これを</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="co">// (w,x,z,y) &lt;- (w,z,y,x)</span>
+ __m256d vv_yzx = _mm256_permute4x64_pd(vv, im_yzx);</code></pre></div>
+<p>注：このあたり、左右どちらを下位に取るかいつも混乱する。レジスタは右に下位ビットを取るのが慣例であるため、その意味では(w,z,y,x)という順番で並んでいる。しかし、普通の数学の意味でのベクトルは最初の要素を左に書くのが慣例なので(x,y,z,w)と書きたくなる。そのあたり混乱しがちだが、適当に補って読んでほしい。</p>
+<div class="figure">
+<img src="fig/permute.png" alt="fig/permute.png" />
+<p class="caption">fig/permute.png</p>
+</div>
+<p>これによりレジスタの中身を適宜並び替えて、足したりかけたり引いたりすればよろしい。磁場については、使うベクトルが(z,x,y,0)と(z,x,y,0)のパターンしかないので、最初に宣言しておこう。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">  __m256d vb_zxy = _mm256_set_pd(<span class="fl">0.0</span>, BY, BX, BZ);
+  __m256d vb_yzx = _mm256_set_pd(<span class="fl">0.0</span>, BX, BZ, BY);</code></pre></div>
+<p>先程の図の中央に縦に並んだベクトルの計算は、実際のコードでは</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">__m256d vp = vv_yzx * vb_zxy - vv_zxy * vb_yzx;</code></pre></div>
+<p>と一行で書ける(SIMDがベクトル演算と呼ばれる所以である)。</p>
+<p>これを使って中点の微分係数を求めるのはさほど難しくなく、中点の微分係数がもとまったら、それを使って速度を更新するのも難しくないだろう。</p>
+<p>さて、速度ベクトルが、<code>__m256d vv</code>に保存されたとする。これはレジスタであるため、メモリに書き戻してやる必要がある。これはロードと同様にポインタ<code>&amp;v[i].x</code>が指す場所にストアしてやればよろしい。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="co">// (w,z,y,z) -&gt; v[i]</span>
+_mm256_store_pd((<span class="dt">double</span> *)(&amp;(v[i].x)), vv);</code></pre></div>
+<p>位置の更新も同様に、更新された速度を使って</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">    __m256d vr = _mm256_load_pd((<span class="dt">double</span> *)(&amp;(r[i].x)));
+    vr += vv * vdt;
+    _mm256_store_pd((<span class="dt">double</span> *)(&amp;(r[i].x)), vr);</code></pre></div>
+<p>とすれば良い。以上をまとめると、時間発展ルーチンのSIMD版はこんな感じにかける。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> calc_rk2_simd() {
+  __m256d vb_zxy = _mm256_set_pd(<span class="fl">0.0</span>, BY, BX, BZ);
+  __m256d vb_yzx = _mm256_set_pd(<span class="fl">0.0</span>, BX, BZ, BY);
+  __m256d vdt = _mm256_set_pd(<span class="fl">0.0</span>, dt, dt, dt);
+  __m256d vdt_h = _mm256_set_pd(<span class="fl">0.0</span>, dt * <span class="fl">0.5</span>, dt * <span class="fl">0.5</span>, dt * <span class="fl">0.5</span>);
+  <span class="at">const</span> <span class="dt">int</span> im_yzx = <span class="dv">64</span> * <span class="dv">3</span> + <span class="dv">16</span> * <span class="dv">0</span> + <span class="dv">4</span> * <span class="dv">2</span> + <span class="dv">1</span> * <span class="dv">1</span>;
+  <span class="at">const</span> <span class="dt">int</span> im_zxy = <span class="dv">64</span> * <span class="dv">3</span> + <span class="dv">16</span> * <span class="dv">1</span> + <span class="dv">4</span> * <span class="dv">0</span> + <span class="dv">1</span> * <span class="dv">2</span>;
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; N; i++) {
+    __m256d vv = _mm256_load_pd((<span class="dt">double</span> *)(&amp;(v[i].x)));
+    __m256d vr = _mm256_load_pd((<span class="dt">double</span> *)(&amp;(r[i].x)));
+    __m256d vv_yzx = _mm256_permute4x64_pd(vv, im_yzx);
+    __m256d vv_zxy = _mm256_permute4x64_pd(vv, im_zxy);
+    __m256d vp = vv_yzx * vb_zxy - vv_zxy * vb_yzx;
+    __m256d vc = vv + vp * vdt_h;
+    __m256d vp_yzx = _mm256_permute4x64_pd(vc, im_yzx);
+    __m256d vp_zxy = _mm256_permute4x64_pd(vc, im_zxy);
+    __m256d vp2 = vp_yzx * vb_zxy - vp_zxy * vb_yzx;
+    vv += vp2 * vdt;
+    vr += vv * vdt;
+    _mm256_store_pd((<span class="dt">double</span> *)(&amp;(v[i].x)), vv);
+    _mm256_store_pd((<span class="dt">double</span> *)(&amp;(r[i].x)), vr);
+  }
+}</code></pre></div>
+<p>19行が23行になっただけなので、さほどややこしいことはないと思う。増えた4行も、磁場ベクトルを作るところとシャッフルのインデックスの準備だけである。いきなりこのルーチンを作るとバグが入りやすいが、シリアルコードに埋め込む形でSIMD化をすすめ、各ステップごとにシリアルルーチンとSIMDレジスタの内容が一致することを確認しながらやればさほど難しいことはない。</p>
+<p>さて、これはSIMD化はしたが、演算順序その他は全く変えていないため、丸め誤差も含めて完全にシリアルコードと一致するはずである。それを確認するため、時間発展後に位置ベクトルのダンプを取ろう。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> dump() {
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; N; i++) {
+    <span class="bu">std::</span>cout &lt;&lt; r[i].x &lt;&lt; <span class="st">&quot; &quot;</span>;
+    <span class="bu">std::</span>cout &lt;&lt; r[i].y &lt;&lt; <span class="st">&quot; &quot;</span>;
+    <span class="bu">std::</span>cout &lt;&lt; r[i].z &lt;&lt; <span class="bu">std::</span>endl;
+  }
+}</code></pre></div>
+<p>時間発展後に座標をダンプして、その結果を比較しよう。シリアル版を<a href="magnetic/mag.cpp">mag.cpp</a>、SIMD版を<a href="magnetic/mag_simd.cpp">mag_simd.cpp</a>としておき、以下のようにコンパイル、実行、結果の比較をする。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">g++</span> -std=c++11 -O3 -mavx2 -mfma mag.cpp -o a.out
+$ <span class="ex">g++</span> -std=c++11 -O3 -mavx2 -mfma mag_simd.cpp -o b.out
+$ <span class="bu">time</span> ./a.out <span class="op">&gt;</span> a.txt
+<span class="ex">./a.out</span> <span class="op">&gt;</span> a.txt  4.58s user 0.27s system 99% cpu 4.876 total
+
+$ <span class="bu">time</span> ./b.out <span class="op">&gt;</span> b.txt
+<span class="ex">./b.out</span> <span class="op">&gt;</span> b.txt  2.54s user 0.29s system 99% cpu 2.849 total
+
+$ <span class="fu">diff</span> a.txt b.txt <span class="co"># 結果が一致</span></code></pre></div>
+<p>実行時間が4.58s → 2.54sと高速化され、かつ実行結果が一致していることがわかる。</p>
+<p>さて、この結果を見て「おお！まぁまぁSIMD化の効果あるじゃん！」と思うのは早計である。先程のデータ構造は、構造体の配列の形になっていた。このような構造を <strong>Array of Structure (AoS)</strong> と呼ぶ。逆に、同じデータを、配列の構造体で表現することもできる。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">double</span> rx[N], ry[N], rz[N];
+<span class="dt">double</span> vx[N], vy[N], vz[N];</code></pre></div>
+<p>ここでは配列を構造体にまとめていないが、このようなデータ構造を <strong>Structure of Array (SoA)</strong> と呼ぶ。AoSとSoA、どちらが良いかは場合によるのだが、SIMD化においてはSoAにしたほうが性能がでる場合が多い。</p>
+<p>先程のAoSのシリアルコードと全く同じ内容を、データ構造をSoAにして書いたものを<a href="magnetic/mag_soa.cpp">mag_soa.cpp</a>とする。例えば、時間発展ルーチンはこんな感じにかける。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> calc_rk2() {
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; N; i++) {
+    <span class="dt">double</span> px = vy[i] * BZ - vz[i] * BY;
+    <span class="dt">double</span> py = vz[i] * BX - vx[i] * BZ;
+    <span class="dt">double</span> pz = vx[i] * BY - vy[i] * BX;
+    <span class="dt">double</span> vcx = vx[i] + px * dt * <span class="fl">0.5</span>;
+    <span class="dt">double</span> vcy = vy[i] + py * dt * <span class="fl">0.5</span>;
+    <span class="dt">double</span> vcz = vz[i] + pz * dt * <span class="fl">0.5</span>;
+    <span class="dt">double</span> px2 = vcy * BZ - vcz * BY;
+    <span class="dt">double</span> py2 = vcz * BX - vcx * BZ;
+    <span class="dt">double</span> pz2 = vcx * BY - vcy * BX;
+    vx[i] += px2 * dt;
+    vy[i] += py2 * dt;
+    vz[i] += pz2 * dt;
+    rx[i] = rx[i] + vx[i] * dt;
+    ry[i] = ry[i] + vy[i] * dt;
+    rz[i] = rz[i] + vz[i] * dt;
+  }
+}</code></pre></div>
+<p><code>v[i].x</code>が<code>vx[i]</code>とかになっているだけで、そのまんまなのがわかるかと思う。これも実行して、結果を比較しよう。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">g++</span> -std=c++11 -O3 -mavx2 -mfma mag_soa.cpp -o c.out
+$ <span class="bu">time</span> ./c.out <span class="op">&gt;</span> c.txt
+<span class="ex">./c.out</span> <span class="op">&gt;</span> c.txt  1.20s user 0.28s system 98% cpu 1.493 total
+
+$ <span class="fu">diff</span> a.txt c.txt <span class="co"># 結果が一致</span></code></pre></div>
+<p>手でSIMD化した場合に比べて、2.54s → 1.20sと倍以上高速化されたことがわかる。もともとのシリアルコードが4.58sだったので、4倍近い。つまり、このコードはコンパイラによる自動SIMD化により4倍早くなったわけで、理想的なSIMD化ができたことがわかる。</p>
+<p>実際にコンパイラはこんなコードを吐いている。</p>
+<div class="sourceCode"><pre class="sourceCode asm"><code class="sourceCode fasm"><span class="fu">L10:</span>
+  vmovapd (%<span class="kw">rdi</span>,%<span class="kw">rax</span>), %ymm0
+  vmovapd (%<span class="kw">r9</span>,%<span class="kw">rax</span>), %ymm11
+  vmovapd (%<span class="kw">r8</span>,%<span class="kw">rax</span>), %ymm10
+  vmulpd  %ymm7, %ymm0, %ymm2
+  vmulpd  %ymm11, %ymm5, %ymm1
+  vfmsub231pd %ymm6, %ymm0, %ymm1
+  vmulpd  %ymm4, %ymm1, %ymm1
+  vmulpd  %ymm10, %ymm6, %ymm3
+  vfmadd132pd %ymm8, %ymm10, %ymm1
+  vfmsub231pd %ymm11, %ymm7, %ymm3
+  vfmsub231pd %ymm10, %ymm5, %ymm2
+  vmulpd  %ymm4, %ymm3, %ymm3
+  vmulpd  %ymm4, %ymm2, %ymm2
+  vfmadd132pd %ymm8, %ymm0, %ymm3
+  vfmadd132pd %ymm8, %ymm11, %ymm2
+  vmulpd  %ymm6, %ymm1, %ymm9
+  vfmsub231pd %ymm7, %ymm2, %ymm9
+  vmulpd  %ymm5, %ymm2, %ymm2
+  vfmadd132pd %ymm4, %ymm0, %ymm9
+  vfmsub231pd %ymm6, %ymm3, %ymm2
+  vmovapd %ymm9, (%<span class="kw">rdi</span>,%<span class="kw">rax</span>)
+  vfmadd132pd %ymm4, %ymm10, %ymm2
+  vfmadd213pd (%<span class="kw">rsi</span>,%<span class="kw">rax</span>), %ymm4, %ymm9
+  vmovapd %ymm2, (%<span class="kw">r8</span>,%<span class="kw">rax</span>)
+  vmulpd  %ymm7, %ymm3, %ymm0
+  vfmadd213pd (%<span class="kw">rdx</span>,%<span class="kw">rax</span>), %ymm4, %ymm2
+  vfmsub231pd %ymm5, %ymm1, %ymm0
+  vmovapd %ymm9, (%<span class="kw">rsi</span>,%<span class="kw">rax</span>)
+  vfmadd132pd %ymm4, %ymm11, %ymm0
+  vmovapd %ymm2, (%<span class="kw">rdx</span>,%<span class="kw">rax</span>)
+  vmovapd %ymm0, (%<span class="kw">r9</span>,%<span class="kw">rax</span>)
+  vfmadd213pd (%<span class="kw">rcx</span>,%<span class="kw">rax</span>), %ymm4, %ymm0
+  vmovapd %ymm0, (%<span class="kw">rcx</span>,%<span class="kw">rax</span>)
+  addq<span class="bn">  $32, </span>%<span class="kw">rax</span>
+  cmpq<span class="bn">  $800000, </span>%<span class="kw">rax</span>
+  <span class="bu">jne</span> L10</code></pre></div>
+<p>最内ループだけ抜き出したが、基本的に<code>ymm</code>レジスタだらけであり、理想的にSIMD化されていることがわかる。また、シャッフル命令も全く出ていないことがわかる。コンパイラはループを素直に4倍展開し、各レジスタに(x1, x2, x3, x4)のような形でデータを保持して計算している。ループカウンタは<code>%rax</code>で、毎回32ずつ増えており、800000になったら終了なので、このループは25000回転することがわかる。</p>
+<p>ちなみに、先程手でSIMD化したループのアセンブリはこうなっている。</p>
+<div class="sourceCode"><pre class="sourceCode asm"><code class="sourceCode fasm"><span class="fu">L13:</span>
+  vmovapd (%<span class="kw">rax</span>), %ymm2
+  addq<span class="bn">  $32, </span>%<span class="kw">rax</span>
+  addq<span class="bn">  $32, </span>%<span class="kw">rdx</span>
+  vpermpd<span class="bn"> $201, </span>%ymm2, %ymm0
+  vpermpd<span class="bn"> $210, </span>%ymm2, %ymm1
+  vmulpd  %ymm3, %ymm1, %ymm1
+  vfmsub132pd %ymm4, %ymm1, %ymm0
+  vfmadd132pd %ymm6, %ymm2, %ymm0
+  vpermpd<span class="bn"> $201, </span>%ymm0, %ymm1
+  vpermpd<span class="bn"> $210, </span>%ymm0, %ymm0
+  vmulpd  %ymm3, %ymm0, %ymm0
+  vfmsub231pd %ymm4, %ymm1, %ymm0
+  vfmadd132pd %ymm5, %ymm2, %ymm0
+  vmovapd %ymm0, -<span class="dv">32</span>(%<span class="kw">rax</span>)
+  vmovapd %ymm0, %ymm1
+  vfmadd213pd -<span class="dv">32</span>(%<span class="kw">rdx</span>), %ymm5, %ymm1
+  vmovapd %ymm1, -<span class="dv">32</span>(%<span class="kw">rdx</span>)
+  cmpq  %<span class="kw">rcx</span>, %<span class="kw">rax</span>
+  <span class="bu">jne</span> L13</code></pre></div>
+<p><code>vpermpd</code>がシャッフル命令である。ループボディがかなり小さいが、このループは100000回まわるため、25000回しかまわらないコンパイラによる自動SIMD化ルーチンには勝てない。大雑把な話、ループボディの計算コストが半分だが、回転数が4倍なので2倍負けた、という感じである。</p>
+<p>上記の例のように、「いま手元にあるコード」をがんばって「そのままSIMD化」して高速化しても、データ構造を変えるとコンパイラがあっさり自動SIMD化できて負けることがある。多くの場合「SIMD化」はデータ構造のグローバルな変更を伴う。先のコードのAoS版である<a href="md.cpp" class="uri">md.cpp</a>と、SoA版である<a href="md_soa.cpp" class="uri">md_soa.cpp</a>は、全く同じことをしているが <strong>全書き換え</strong> になっている。今回はコードが短いから良いが、10万行とかあるコードだと「やっぱりSoAの方が早いから全書き換えで！」と気軽には言えないだろう。また、デバイスによってデータ構造の向き不向きもある。例えば「CPUではAoSの方が早いが、GPGPUではSoAの方が早い」なんてこともざらにある。こういう場合には、ホットスポットルーチンに入る前にAoS←→SoAの相互変換をしたりすることも検討するが、もちろんその分オーバーヘッドもあるので面倒くさいところである。</p>
+<p>まぁ、以上のようにいろいろ面倒なことを書いたが、ちゃんと手を動かして上記を試してみた方には「SIMD化は(原理的には)簡単だ」ということには同意してもらえると思う。MPIもSIMD化も同じである。いろいろ考えることがあって面倒だが、やること自体は単純なので難しくはない。今回はシャッフル命令を取り上げたが、他にもマスク処理やgather/scatter、pack/unpackなど、SIMDには実に様々な命令がある。しかし、「そういう命令欲しいな」と思って調べたらたいがいある。あとは対応する組み込み関数を呼べばよい。要するに「やるだけ」である。ただし、MPI化は「やれば並列計算ができ、かつプロセスあたりの計算量を増やせばいくらでも並列化効率を上げられる」ことが期待されるのに対して、SIMD化は「やっても性能が向上するかはわからず、下手に手を出すよりコンパイラに任せた方が早い」なんてこともある。全くSIMD化されていないコードに対してSIMD化で得られるゲインは、256bitなら4倍、512ビットでも8倍程度しかなく、現実にはその半分も出れば御の字であろう。SIMD化はやってて楽しい作業であるが、手間とコストが釣り合うかどうかは微妙だな、というのが筆者の実感である。</p>
+</article>
+</body>
+</html>

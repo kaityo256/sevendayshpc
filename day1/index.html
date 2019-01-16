@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  </style>
+
+<style>
+  .markdown-body {
+    box-sizing: border-box;
+    min-width: 200px;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 45px;
+  }
+  img {width: 100%}
+
+  @media (max-width: 767px) {
+    .markdown-body {
+      padding: 15px;
+    }
+  }
+</style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://kaityo256.github.io/sevendayshpc/github-markdown.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<article class="markdown-body">
+<h1 id="day-1-環境構築">Day 1: 環境構築</h1>
+<p>スパコン上で実行されるプログラムは並列プログラムである。したがって「スパコンを使う」ということは、 狭義には「並列化されたプログラムを実行する」ということを意味する。したがって、誰かが作った並列プログラムをスパコン上で実行すれば、スパコンは使えることになる。 それはそれでOKなのだが、本稿のタイトルは「一週間でなれる！スパコンプログラマ」であるから、スパコン上で動くコードを開発できるようになることを目的とする。 それはすなわち、「並列プログラミングをする」ということである。「並列プログラミング」という字面を見ると「難しそう」という印象を持つかもしれない。 しかし、(世の中の多くの「一見難しそうなもの」がそうであるように)並列プログラミングはさほど難しくない。 「一週間でなれる！スパコンプログラマ」の初日は、まずローカルに並列プログラミング環境を構築し、並列プログラミングに触れてみるところからはじめてみよう。</p>
+<h2 id="mpiとは">MPIとは</h2>
+<p>一口に「並列化」といっても、様々な種類がありえる。一般に使われている並列プログラミングモデルは、「データ並列」「共有メモリ並列」「分散メモリ並列」の三種類であろう。 以後、プロセスやスレッドといった単語についてかなりいい加減な言葉遣いをするため、ちゃんと学びたい人はちゃんとした書籍を参考にされたい。特にWindowsとLinuxのプロセスの違いとか言い出すと話が長くなるので、ここでは説明しない。また、データ並列についてはとりあえずおいておく。</p>
+<p>「共有メモリ並列」とは、並列単位がメモリを共有する並列化方法である。 通常は並列単位としてスレッドを用いるので、ここでは「スレッド並列」と呼ぶ。 逆に「分散メモリ並列」とは、並列単位がメモリを共有しない並列化方法である。 通常は並列単位としてプロセスを用いるので、ここでは「プロセス並列」と呼ぶ。 また、「プロセス並列」と「スレッド並列」を両方行う「ハイブリッド並列」という並列化もある。</p>
+<p>まずはプロセスとスレッドの違いについて見てみよう。プロセスとは、OSから見た資源の管理単位である。 プロセスはOSから様々な権限を与えられるが、最も重要なことは「OSから独自のメモリ空間を割り当てられる」ことである。異なるプロセスは異なるメモリ空間を持っており、適切な権限がなければ他のプロセスのメモリを参照できない(そうしないとセキュリティ的に問題がある)。</p>
+<p>スレッドとはCPUの利用単位である。通常、一つのCPUコアを利用できるのは一度に一つのスレッドだけである(SMTなどはさておく)。各プロセスは最低一つのスレッドを持っており、プログラムの実行とは、スレッドがCPUコアを使いにいくとである。図解するとこんな感じになる。</p>
+<div class="figure">
+<img src="fig/process_thread.png" alt="fig/process_thread.png" />
+<p class="caption">fig/process_thread.png</p>
+</div>
+<p>「スレッド並列」では、一つのプロセスの中に複数のスレッドを立ち上げ、各スレッドが複数のCPUコアを使うことで性能向上をはかる。複数のスレッドが一つのメモリを共有するため、「共有メモリ並列」となる。例えばOpenMPでディレクティブを入れたり、<code>std::thread</code>などを使って明示的にスレッドを起動、制御することで並列化を行う。同じプロセス内のスレッドはメモリを共有するため、お互いに通信をする必要はないが、同時に同じところを書き換えたりしないようにプログラマの責任で排他制御を行う必要がある。コンパイラによっては自動並列化機能を持っているが、それで実現されるのはこのスレッド並列である。</p>
+<p>「プロセス並列」とは、複数のプロセスを立ち上げ、それぞれのプロセスに属すスレッドがCPUコアを使いにいくことで性能向上をはかる。プロセス並列はMPI(Message Passing Interface)というライブラリを使って行う。それぞれのプロセスは独自のメモリ空間を持っており、基本的にはお互いから見えないため、意味のある並列化を行うためには、必要に応じて通信を行わなければならない。</p>
+<p>さて、プロセス並列とスレッド並列では、一般的にはスレッド並列の方がとっつきやすいと言われている。 以下のような単純なループがあったとする。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="at">const</span> <span class="dt">int</span> SIZE = <span class="dv">10000</span>;
+<span class="dt">void</span> func(<span class="dt">double</span> a[SIZE], <span class="dt">double</span> b[SIZE])
+<span class="cf">for</span> (<span class="dt">int</span> i=<span class="dv">0</span>; i &lt; SIZE; i++) {
+  a[i] += b[i];
+}</code></pre></div>
+<p>これをOpenMPでスレッド並列化したければ、以下のようなディレクティブを入れるだけで良い。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="at">const</span> <span class="dt">int</span> SIZE = <span class="dv">10000</span>;
+<span class="pp">#pragma omp parallel for  </span><span class="co">// ← OpenMPによる並列化の指示</span>
+<span class="dt">void</span> func(<span class="dt">double</span> a[SIZE], <span class="dt">double</span> b[SIZE])
+<span class="cf">for</span> (<span class="dt">int</span> i=<span class="dv">0</span>; i &lt; SIZE; i++) {
+  a[i] += b[i];
+}</code></pre></div>
+<p>同じようなことをMPIでやろうとするとわりとごちゃごちゃ書かなければいけない上に、下手な書き方をするとオーバーヘッドが大きくなって効率が悪くなるかもしれない。しかし、スレッド並列はプロセスの中の並列化であり、一つのプロセスは複数のOSにまたがって存在できないため、複数のノード(ノードの説明については後述)を同時に使うことができない。</p>
+<p>逆にプロセス並列の場合は、各プロセスが独立したメモリを保持しているため、他のプロセスの保持するデータがほしければ通信を行う必要がある。この通信はユーザが関数呼び出しを使って明示的に行わなければならない。ただし、通信は別のハードにある別のOS上で実行中の別のプロセスとも行うことができるため、複数のノードを同時に使うことができる。</p>
+<div class="figure">
+<img src="fig/comparison.png" alt="fig/comparison.png" />
+<p class="caption">fig/comparison.png</p>
+</div>
+<p>上図に、簡単に「スレッド並列」と「プロセス並列」の違いをまとめた。本稿の目的は「スパコンプログラマ」になることであり、「スパコン」とは複数のノードを束ねたものであり、「スパコンプログラミング」とは複数のノードをまとめて使うことであるから、論理的必然としてスパコンプログラミングをするためにはプロセス並列が必要となる。というわけで、本稿では主にMPIを用いた分散メモリ並列を取り上げる。</p>
+<h2 id="余談mpiは難しいか">余談：MPIは難しいか</h2>
+<p>たまに「スレッド並列は簡単」「MPIは難しい」という声を聞く。しかし、それなりの期間スパコンと関わって思うのは、「どちらかといえばスレッド並列の方が難しい」「MPIは面倒くさいが難しくない」というのが実感である。</p>
+<p>確かにOpenMPなんかを使えば、一行いれるだけでスレッド並列化されて、簡単に数倍の性能が得られたりする。しかし、性能が出なかった時に「なぜ性能が出なかったのか」を調べるのはとても大変である。なぜならOpenMPを使うと「どのように並列化されたか」が隠蔽されてしまうからだ。基本的にはコンパイラが吐くレポートを見て、どのように並列化されたかを「想像」しながら調査をする必要がある。また、同じメモリを複数のスレッドが同時に触りにくるため、「タイミングによってはバグる」という問題を起こす。<strong>この手のマルチスレッドプログラミングのデバッグは一般に地獄である</strong>。少なくとも私はやりたくない。</p>
+<p>MPIはいろいろ書かなければならないことが多く、確かに面倒である。しかし、基本的には「書いた通り」に並列化される(ここ読んだプロが「そんなことない！」と怒っている顔が目に浮かぶが、まぁOpenMPと比較して、の話ですよ)。 また、各プロセスのメモリは各プロセスだけのものである。通信するにしても、自分が用意したバッファに他のプロセスが書き込んでくるため、「いつ」「どこに」「誰が」「どのくらい」書き込んでくるかがわかる。これはデバッグするのに非常に重要な情報である。</p>
+<p>そんなわけで、「どうせ並列化するなら、最初からMPIで書いてしまえばいいんじゃない？複数ノードを使えるようにもなるし」というのが私の見解である。MPIで必要となる関数も、初期化(<code>MPI_Init</code>)と後処理(<code>MPI_Finalize</code>)を除けば、相互通信(<code>MPI_Sendrecv</code>)と集団通信(<code>MPI_Allreduce</code>)の二つだけ知っていればたいがいのことはなんとかなる。それ以上にややこしいことをやりたくなったら、その時にまた調べれば良い。</p>
+<h2 id="mpiのインストール">MPIのインストール</h2>
+<p>スパコンを使う前に、まずはローカルPCでMPIによる並列プログラミングに慣れておこう。MPIの開発環境としては、Mac OSX、もしくはLinuxを強く推奨する(というか筆者はWindowsでの並列プログラミング環境の構築方法を知らない)。Linuxはなんでも良いが、とりあえずCentOSを想定する。本稿の読者なら、GCCくらいは既に利用可能な状況であろう。あとはMPIをインストールすれば並列プログラミング環境が整う。</p>
+<p>MacでHomebrewを使っているなら、</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">brew</span> install openmpi</code></pre></div>
+<p>で一発、CentOSなら、</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="fu">sudo</span> yum install openmpi-devel
+<span class="bu">export</span> <span class="va">PATH=$PATH</span>:/usr/lib64/openmpi/bin/</code></pre></div>
+<p>でおしまいである。ここで</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="fu">sudo</span> yum install openmpi</code></pre></div>
+<p>とすると、開発環境がインストールされないので注意。</p>
+<p>インストールがうまくいったかどうかは、MPI用コンパイラ<code>mpic++</code>にパスが通っているかどうかで確認できる。 実は、mpic++はインクルードパスやリンクの設定をユーザの代わりにやってくれるラッパーに過ぎず、実際のコンパイラは<code>clang++</code>、もしくは<code>g++</code>が使われる。</p>
+<p>例えばMacでは</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">mpic++</span> --version
+<span class="ex">Apple</span> LLVM version 10.0.0 (clang-1000.11.45.2)
+<span class="ex">Target</span>: x86_64-apple-darwin17.7.0
+<span class="ex">Thread</span> model: posix
+<span class="ex">InstalledDir</span>: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin</code></pre></div>
+<p>と、clang++にパスが通っていることがわかる。Linuxの場合はg++である。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">mpic++</span> --version
+<span class="ex">g++</span> (GCC) <span class="ex">4.8.5</span> 20150623 (Red Hat 4.8.5-28)
+<span class="ex">Copyright</span> (C) <span class="ex">2015</span> Free Software Foundation, Inc.
+<span class="ex">This</span> is free software<span class="kw">;</span> <span class="ex">see</span> the source for copying conditions.  There is NO
+<span class="ex">warranty</span><span class="kw">;</span> <span class="ex">not</span> even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</code></pre></div>
+<p>したがって、インクルードパスやリンクの設定を明示的にするならば、<code>mpic++</code>を呼び出す必要はない。 スパコンサイトによっては、環境変数でMPIのインクルードパスが設定されている場合もあるだろう。その場合は単に<code>g++</code>でも<code>icpc</code>でも、MPIを用いたコードがそのままコンパイルできる。ただし、リンクのために<code>-lmpi</code>の指定が(場合によっては<code>-lmpi_cxx</code>も)必要なので注意。</p>
+<h2 id="はじめてのmpi">はじめてのMPI</h2>
+<p>環境構築ができたら、こんなコードを書いて、<a href="hello.cpp" class="uri">hello.cpp</a>という名前で保存してみよう。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span>
+
+<span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv) {
+  MPI_Init(&amp;argc, &amp;argv);
+  printf(<span class="st">&quot;Hello MPI World!</span><span class="sc">\n</span><span class="st">&quot;</span>);
+  MPI_Finalize();
+}</code></pre></div>
+<p>以下のようにしてコンパイル、実行してみる。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">mpic++</span> hello.cpp
+$ <span class="ex">./a.out</span>
+<span class="ex">Hello</span> MPI World!</code></pre></div>
+<p>せっかくなので並列実行する前に、<code>mpic++</code>を使わずにコンパイルできることを確認してみよう。Macの場合、<code>g++</code>で先程の<code>hello.cpp</code>をコンパイルしようとすると「mpi.hが見つからないよ」と怒られる。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">g++</span> hello.cpp
+<span class="ex">hello.cpp</span>:2:10: fatal error: mpi.h: No such file or directory
+ <span class="co">#include &lt;mpi.h&gt;</span>
+          ^<span class="ex">~~~~~~</span>
+<span class="ex">compilation</span> terminated.</code></pre></div>
+<p>なので、コンパイラにその場所を教えてあげればよい。ヘッダファイルの場所だけ教えても「ライブラリが見つからないよ」と怒られるので、それも一緒に教えてあげよう。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">g++</span> hello.cpp -I/usr/local/opt/open-mpi/include -L/usr/local/opt/open-mpi/lib -lmpi  -lmpi_cxx</code></pre></div>
+<p>問題なくコンパイルできた。ちなみに筆者の手元のCentOSでは、</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">g++</span> test.cpp -I/usr/include/openmpi-x86_64 -L/usr/lib64/openmpi/lib -lmpi -lmpi_cxx</code></pre></div>
+<p>でコンパイルできた。環境によってパスは異なるが、インクルードパスとライブラリパス、そしてライブラリ<code>-lmpi</code>(環境によっては<code>-lmpi_cxx</code>も)を指定すれば<code>mpic++</code>を使わなくてもコンパイルできる。「<code>mpic++</code>はラッパに過ぎず、ヘッダとライブラリを正しく指定すればどんなコンパイラでも使える」と知っていると、MPI関連でトラブルが起きた時にたまに役に立つので覚えておきたい。</p>
+<p>さて、並列実行してみよう。並列実行には<code>mpirun</code>の引数に実行プログラムと並列数を指定する。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">mpirun</span> -np 2 ./a.out
+<span class="ex">Hello</span> MPI World!
+<span class="ex">Hello</span> MPI World!</code></pre></div>
+<p>メッセージが二行表示された。プログラムの実行の際、こんなことが起きている。</p>
+<ol style="list-style-type: decimal">
+<li><code>mpirun</code>が<code>-np 2</code>を見て、プロセスを2つ立ち上げる。</li>
+<li><code>MPI_Init</code>が通信環境を初期化する</li>
+<li>各プロセスが、それぞれ<code>Hello MPI World</code>を実行する。</li>
+<li><code>MPI_Finalize</code>が通信環境を終了する。</li>
+</ol>
+<p>複数のプロセスが立ち上がり、なにか処理をしているのだから、これは立派な並列プログラムである。しかし、このままでは、全てのプロセスが同じ処理しかできない。そこで、MPIは立ち上げたプロセスに <strong>ランク(rank)</strong> という通し番号を振り、それを使って並列処理をする。</p>
+<h2 id="ランク">ランク</h2>
+<p>MPIでは、起動したプロセスに通し番号が振られる。その通し番号のことを <strong>ランク(rank)</strong> と呼ぶ。 ランクの取得には<code>MPI_Comm_rank</code>関数を使う。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">int</span> rank;
+MPI_Comm_rank(MPI_COMM_WORLD, &amp;rank);</code></pre></div>
+<p>これを実行すると変数<code>rank</code>にランク番号が入る。N並列している場合、ランクは0からN-1までである。 試してみよう。</p>
+<p><a href="rank.cpp" class="uri">rank.cpp</a></p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span>
+
+<span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv) {
+  MPI_Init(&amp;argc, &amp;argv);
+  <span class="dt">int</span> rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &amp;rank);
+  printf(<span class="st">&quot;Hello! My rank is </span><span class="sc">%d\n</span><span class="st">&quot;</span>, rank);
+  MPI_Finalize();
+}</code></pre></div>
+<p>実行するとこうなる。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">mpic++</span> rank.cpp  
+$ <span class="ex">mpirun</span> -np 4 ./a.out
+<span class="ex">--------------------------------------------------------------------------</span>
+<span class="ex">There</span> are not enough slots available in the system to satisfy the 4 slots
+<span class="ex">that</span> were requested by the application:
+  <span class="ex">./a.out</span>
+
+<span class="ex">Either</span> request fewer slots for your application, or make more slots available
+<span class="kw">for</span> <span class="ex">use.</span>
+<span class="ex">--------------------------------------------------------------------------</span></code></pre></div>
+<p>おっと、エラーが出た。このエラーは「予め定義されたスロット数よりプロセス数が多いよ」というもので、 筆者の環境ではMacでは出るが、Linuxではでない。このエラーが出た場合は<code>mpirun</code>に <code>--oversubscribe</code>オプションをつける。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">mpirun</span> --oversubscribe -np 4 ./a.out
+<span class="ex">Hello</span>! My rank is 0
+<span class="ex">Hello</span>! My rank is 2
+<span class="ex">Hello</span>! My rank is 1
+<span class="ex">Hello</span>! My rank is 3</code></pre></div>
+<p>無事にそれぞれのプロセスで異なるランク番号が表示された。</p>
+<p>MPIプログラムでは、全く同じソースコードのレプリカが作成される。違いはこのランクだけである。 したがって、プログラマはこのランク番号によって処理を変えることで、並列処理を書く。 どんな書き方をしても自由である。例えば4並列実行する場合、</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span>
+
+<span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv) {
+  MPI_Init(&amp;argc, &amp;argv);
+  <span class="dt">int</span> rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &amp;rank);
+  <span class="cf">if</span> (rank == <span class="dv">0</span>) {
+    <span class="co">// Rank 0の処理</span>
+  } <span class="cf">else</span> <span class="cf">if</span> (rank == <span class="dv">1</span>) {
+    <span class="co">// Rank 1の処理</span>
+  } <span class="cf">else</span> <span class="cf">if</span> (rank == <span class="dv">2</span>) {
+    <span class="co">// Rank 2の処理</span>
+  } <span class="cf">else</span> <span class="cf">if</span> (rank == <span class="dv">3</span>) {
+    <span class="co">// Rank 3の処理</span>
+  }
+  MPI_Finalize();
+}</code></pre></div>
+<p>みたいな書き方をしても良い。この場合、ランク0から3まで全く関係のない仕事をさせることができる。 まぁ、普通はこういう書き方をせずに、後で説明する「サンプル並列」「パラメタ並列」や、「領域分割」をすることが多いが、 「そうすることが多い」というだけで、「そうしなければならない」ということではない。 まとめると、</p>
+<ul>
+<li>MPIは、複数のプロセスを起動する</li>
+<li>それぞれのプロセスには、「ランク」という一意な通し番号が振られる。</li>
+<li>MPIプログラムは、ランクの値によって処理を変えることで、プロセスごとに異なる処理をする</li>
+</ul>
+<p>こんな感じになる。これがMPIプログラムのすべてである。なお、複数のノードにまたがってMPIプロセスを 立ち上げた場合でも、ランク番号は一意に振られる。例えば、ノードあたり4プロセス、10ノードで実行した場合、 全体で40プロセスが起動されるが、それぞれに0から39までのランク番号が振られる。 その番号が、各ノードにどのように割当られるかは設定に依るので注意。</p>
+<h2 id="標準出力について">標準出力について</h2>
+<p>さて、端末で</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">mpirun</span> -np 4 ./a.out</code></pre></div>
+<p>などとしてMPIプログラムを実行したとする。この場合は4プロセス立ち上がり、それぞれにPIDが与えられ、固有のメモリ空間を持つ。しかし、これらのプロセスは標準出力は共有している。 したがって、「せーの」で標準出力に出力しようとしたら競合することになる。 この時、例えば他のプロセスが出力している時に他のプロセスが書き込んだり、出力が混ざったりしないように、 後ろで交通整理が行われる。そもそも画面になにかを表示する、というのはわりと奥が深いのだが、 そのあたりの話は <a href="https://github.com/tanakamura">tanakamura</a> さんの <a href="https://tanakamura.github.io/pllp/docs/">実践的低レベルプログラミング</a> とかを読んでほしい。</p>
+<p>さて、とにかく今は標準出力というリソースは一つしかないのに、4つのプロセスがそこを使う。 この時、「あるひとかたまりの処理については、一つのプロセスが独占して使う」ようにすることで 競合が起きないようにする。 「ひとかたまりの処理」とは、例えば「<code>printf</code>で出力を始めてから終わるまで」である。</p>
+<p>例えば先程の<a href="rank.cpp" class="uri">rank.cpp</a>の例では、</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">printf(<span class="st">&quot;Hello! My rank is </span><span class="sc">%d\n</span><span class="st">&quot;</span>, rank);</code></pre></div>
+<p>という命令があった。ここでは、まず出力すべき文字列、例えば <code>Hello! My rank is 0</code>を作る。そして、せーので書き出す。 イメージとしては</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">puts(<span class="st">&quot;Hello! My rank is 0&quot;</span>);
+puts(<span class="st">&quot;Hello! My rank is 1&quot;</span>);
+puts(<span class="st">&quot;Hello! My rank is 2&quot;</span>);
+puts(<span class="st">&quot;Hello! My rank is 3&quot;</span>);</code></pre></div>
+<p>という4つの命令が「ランダムな順番で」に実行される。 しかし、順番が入れ替わっても</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">puts(<span class="st">&quot;Hello! My rank is 0&quot;</span>);
+puts(<span class="st">&quot;Hello! My rank is 2&quot;</span>);
+puts(<span class="st">&quot;Hello! My rank is 1&quot;</span>);
+puts(<span class="st">&quot;Hello! My rank is 3&quot;</span>);</code></pre></div>
+<p>とかになるだけで、さほど表示は乱れない。</p>
+<p>さて、同様なプログラムを<code>std::cout</code>で書いてみよう。</p>
+<p>こんな感じになると思う。</p>
+<p><a href="rank_stream.cpp" class="uri">rank_stream.cpp</a></p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span>
+
+<span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv) {
+  MPI_Init(&amp;argc, &amp;argv);
+  <span class="dt">int</span> rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &amp;rank);
+  <span class="bu">std::</span>cout &lt;&lt; <span class="st">&quot;Hello! My rank is &quot;</span> &lt;&lt; rank &lt;&lt; <span class="bu">std::</span>endl;
+  MPI_Finalize();
+}</code></pre></div>
+<p>さて、この場合は、プロセスの切り替わりタイミング(標準出力の占有期限)が<code>&lt;&lt;</code>で切り替わる可能性がある。</p>
+<p>イメージとしては、</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="bu">std::</span>cout &lt;&lt; <span class="st">&quot;Hello! My rank is &quot;</span>;
+<span class="bu">std::</span>cout &lt;&lt; <span class="st">&quot;0&quot;</span>;
+<span class="bu">std::</span>cout &lt;&lt; <span class="bu">std::</span>endl;
+<span class="bu">std::</span>cout &lt;&lt; <span class="st">&quot;Hello! My rank is &quot;</span>;
+<span class="bu">std::</span>cout &lt;&lt; <span class="st">&quot;1&quot;</span>;
+<span class="bu">std::</span>cout &lt;&lt; <span class="bu">std::</span>endl;
+<span class="bu">std::</span>cout &lt;&lt; <span class="st">&quot;Hello! My rank is &quot;</span>;
+<span class="bu">std::</span>cout &lt;&lt; <span class="st">&quot;2&quot;</span>;
+<span class="bu">std::</span>cout &lt;&lt; <span class="bu">std::</span>endl;
+<span class="bu">std::</span>cout &lt;&lt; <span class="st">&quot;Hello! My rank is &quot;</span>;
+<span class="bu">std::</span>cout &lt;&lt; <span class="st">&quot;3&quot;</span>;
+<span class="bu">std::</span>cout &lt;&lt; <span class="bu">std::</span>endl;</code></pre></div>
+<p>という命令が「ランダムな順番で」に実行される可能性がある。</p>
+<p>すると、例えば</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">mpirun</span> -np 4 ./a.out
+<span class="ex">Hello</span>! My rank isHello! My rank is
+<span class="ex">0</span>
+<span class="ex">1</span>
+<span class="ex">Hello</span>! My rank is 3
+
+<span class="ex">Hello</span>! My rank is 2</code></pre></div>
+<p>のように表示が乱れる可能性がある。 これが乱れるかどうかは、システムのバッファリングがどうなっているかに依存し、 システムのバッファリングがどうなっているかは、MPIの実装に依存する。</p>
+<p>参考→<a href="https://qiita.com/angel_p_57/items/d3ae52f57467b9180dfd">MPIにおける各プロセスの連携と標準出力のバッファリング</a></p>
+<p>つまり、手元で表示が乱れなくても、別のマシンでは表示が乱れる可能性がある。なので、もし標準出力を使いたいなら、一度<code>std::stringstream</code>にまとめてから一度に書き出すか、素直に<code>printf</code>を使うほうが良いと思う。</p>
+<p>なお、MPIのデバッグ目的に標準出力を使うのは良いが、例えば結果の出力や計算の進捗の出力に使うのはあまりおすすめできない。そのあたりはジョブスケジューラを用いたジョブの実行のあたりで説明すると思う。</p>
+<p>ちなみに、Open MPIには「各ランクごとの標準出力を、別々のファイルに吐き出す」というオプションがある。</p>
+<p>参考：<a href="https://qiita.com/nariba/items/2277c2eb428886eae80d">MPIプログラムのデバッグ</a></p>
+<p>例えば、先程の例では、</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">mpirun</span> --output-filename hoge -np 4 ./a.out</code></pre></div>
+<p>とすると、Linuxでは標準出力の代わりに<code>hoge.1.X</code>というファイルがプロセスの数だけ作成され、そこに保存される。中身はこんな感じ。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="fu">ls</span> hoge.*  
+<span class="ex">hoge.1.0</span>  hoge.1.1  hoge.1.2  hoge.1.3
+
+$ <span class="fu">cat</span> hoge.1.0
+<span class="ex">Hello</span>! My rank is 0
+
+$ <span class="fu">cat</span> hoge.1.1
+<span class="ex">Hello</span>! My rank is 1</code></pre></div>
+<p>Macで同様なことをすると、以下のようにディレクトリが掘られる。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">mpiexec</span> --output-filename hoge -np 4 --oversubscribe ./a.out
+<span class="ex">Hello</span>! My rank is 0
+<span class="ex">Hello</span>! My rank is 1
+<span class="ex">Hello</span>! My rank is 2
+<span class="ex">Hello</span>! My rank is 3
+
+$ <span class="ex">tree</span> hoge
+<span class="ex">hoge</span>
+└── <span class="ex">1</span>
+    ├── <span class="ex">rank.0</span>
+    │   ├── <span class="ex">stderr</span>
+    │   └── <span class="ex">stdout</span>
+    ├── <span class="ex">rank.1</span>
+    │   ├── <span class="ex">stderr</span>
+    │   └── <span class="ex">stdout</span>
+    ├── <span class="ex">rank.2</span>
+    │   ├── <span class="ex">stderr</span>
+    │   └── <span class="ex">stdout</span>
+    └── <span class="ex">rank.3</span>
+        ├── <span class="ex">stderr</span>
+        └── <span class="ex">stdout</span></code></pre></div>
+<p>標準出力にも出力した上で、各ディレクトリに、各プロセスの標準出力と標準エラー出力が保存される。覚えておくと便利な時があるかもしれない。</p>
+<h2 id="gdbによるmpiプログラムのデバッグ">GDBによるMPIプログラムのデバッグ</h2>
+<p>本稿の読者の中には普段からgdbを使ってプログラムのデバッグを行っている人がいるだろう。 並列プログラムのデバッグは一般に極めて面倒だが、とりあえずgdbを使ったMPIプログラムのデバッグ方法を知っていると将来何かの役に立つかもしれない。 あと、これは筆者だけかもしれないが、ソース読んだりするより、gdb経由でプログラムの振る舞いを解析したほうがなんかいろいろ理解しやすかったりする。 というわけで、gdbでMPIプロセスにアタッチする方法を紹介する。普段からgdbを使っていなければこの節は読み飛ばしてかまわない。</p>
+<p>gdbでデバッグできるのは一度に一つのプロセスのみである。しかし、MPIプログラムは複数のプロセスを起動する。 したがって、</p>
+<ul>
+<li>起動されたすべてのプロセスについてgdbをアタッチする</li>
+<li>特定のプロセス一つだけにgdbをアタッチする</li>
+</ul>
+<p>の二通りの方法が考えられる。ここでは後者の方法を採用する。なお、両方の方法が<a href="https://www.open-mpi.org/faq/?category=debugging">Open MPIのFAQ: Debugging applications in parallel</a>に記載されているので興味のある方は参照されたい。</p>
+<p>gdbは、プロセスIDを使って起動中のプロセスにアタッチする機能がある。そこで、まずMPIプログラムを実行し、その後で gdbで特定のプロセスにアタッチする。しかし、gdbでアタッチするまで、MPIプログラムには特定の場所で待っていてほしい。 というわけで、</p>
+<ul>
+<li>故意に無限ループに陥るコードを書いておく</li>
+<li>MPIプログラムを実行する</li>
+<li>gdbで特定のプロセスにアタッチする</li>
+<li>gdbで変数をいじって無限ループを脱出させる</li>
+<li>あとは好きなようにデバッグする</li>
+</ul>
+<p>という方針でいく。なお、なぜかMac OSではMPIプロセスへのgdbのアタッチがうまくいかなかったので、以下はCentOSで実行している。</p>
+<p>こんなコードを書く。</p>
+<p><a href="gdb_mpi.cpp" class="uri">gdb_mpi.cpp</a></p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;sys/types.h&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;unistd.h&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span>
+
+<span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv) {
+  MPI_Init(&amp;argc, &amp;argv);
+  <span class="dt">int</span> rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &amp;rank);
+  printf(<span class="st">&quot;Rank </span><span class="sc">%d</span><span class="st">: PID </span><span class="sc">%d\n</span><span class="st">&quot;</span>, rank, getpid());
+  fflush(stdout);
+  <span class="dt">int</span> i = <span class="dv">0</span>;
+  <span class="dt">int</span> sum = <span class="dv">0</span>;
+  <span class="cf">while</span> (i == rank) {
+    sleep(<span class="dv">1</span>);
+  }
+  MPI_Allreduce(&amp;rank, &amp;sum, <span class="dv">1</span>, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  printf(<span class="st">&quot;</span><span class="sc">%d\n</span><span class="st">&quot;</span>, sum);
+  MPI_Finalize();
+}</code></pre></div>
+<p><code>MPI_Allreduce</code>はまだ説明していないが、全プロセスで変数の総和を取る関数である。 このコードは、自分のPIDを出力してから、ランク0番のプロセスだけ無限ループに陥る。 このコードを<code>-g</code>つきでコンパイルし、とりあえず4プロセスで実行してみよう。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">mpic++</span> -g gdb_mpi.cpp
+$ <span class="ex">mpirun</span> -np 4 ./a.out
+<span class="ex">Rank</span> 2: PID 3646
+<span class="ex">Rank</span> 0: PID 3644
+<span class="ex">Rank</span> 1: PID 3645
+<span class="ex">Rank</span> 3: PID 3647</code></pre></div>
+<p>4プロセス起動して、そこでランク0番だけ無限ループしているので、他のプロセスが待ちの状態になる。 この状態でランク0番にアタッチしよう。もう一枚端末を開いてgdbを起動、ランク0のPID(実行の度に異なるが、今回は3644)にアタッチする。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="fu">gdb</span>
+<span class="kw">(</span><span class="fu">gdb</span><span class="kw">)</span> <span class="ex">attach</span> 3644
+<span class="ex">Attaching</span> to process 3644
+<span class="ex">Reading</span> symbols from /path/to/a.out...done.
+<span class="kw">(</span><span class="ex">snip</span><span class="kw">)</span>
+<span class="kw">(</span><span class="fu">gdb</span><span class="kw">)</span></code></pre></div>
+<p>この状態で、バックトレースを表示してみる。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="kw">(</span><span class="fu">gdb</span><span class="kw">)</span> <span class="ex">bt</span>
+<span class="co">#0  0x00007fc229e2156d in nanosleep () from /lib64/libc.so.6</span>
+<span class="co">#1  0x00007fc229e21404 in sleep () from /lib64/libc.so.6</span>
+<span class="co">#2  0x0000000000400a04 in main (argc=1, argv=0x7ffe6cfd0d88) at gdb_mpi.cpp:15</span></code></pre></div>
+<p>sleep状態にあるので、<code>main</code>関数から<code>sleep</code>が、<code>sleep</code>から<code>nanosleep</code>が呼ばれていることがわかる。 ここから<code>main</code>に戻ろう。<code>finish</code>を二回入力する。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="kw">(</span><span class="fu">gdb</span><span class="kw">)</span> <span class="ex">finish</span>
+<span class="ex">Run</span> till exit from <span class="co">#0  0x00007fc229e2156d in nanosleep () from /lib64/libc.so.6</span>
+<span class="ex">0x00007fc229e21404</span> in sleep () <span class="ex">from</span> /lib64/libc.so.6
+<span class="kw">(</span><span class="fu">gdb</span><span class="kw">)</span> <span class="ex">finish</span>
+<span class="ex">Run</span> till exit from <span class="co">#0  0x00007fc229e21404 in sleep () from /lib64/libc.so.6</span>
+<span class="ex">main</span> (argc=1, argv=0x7ffe6cfd0d88) <span class="ex">at</span> gdb_mpi.cpp:14
+<span class="ex">14</span>    while (i == rank) <span class="kw">{</span></code></pre></div>
+<p><code>main</code>関数まで戻ってきた。この後、各ランク番号<code>rank</code>の総和を、変数<code>sum</code>に入力するので、 <code>sum</code>にウォッチポイントを設定しよう。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="kw">(</span><span class="fu">gdb</span><span class="kw">)</span> <span class="ex">watch</span> sum
+<span class="ex">Hardware</span> watchpoint 1: sum</code></pre></div>
+<p>現在は変数<code>i</code>の値が<code>0</code>で、このままでは無限ループするので、変数の値を書き換えてから続行(continue)してやる。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="kw">(</span><span class="fu">gdb</span><span class="kw">)</span> <span class="kw">set</span> <span class="ex">var</span> i = 1
+<span class="kw">(</span><span class="fu">gdb</span><span class="kw">)</span> <span class="ex">c</span>
+<span class="ex">Continuing.</span>
+<span class="ex">Hardware</span> watchpoint 1: sum
+
+<span class="ex">Old</span> value = 0
+<span class="ex">New</span> value = 1
+<span class="ex">0x00007fc229eaa676</span> in __memcpy_ssse3 () <span class="ex">from</span> /lib64/libc.so.6</code></pre></div>
+<p>ウォッチポイントにひっかかった。この状態でバックトレースを表示してみよう。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="kw">(</span><span class="fu">gdb</span><span class="kw">)</span> <span class="ex">bt</span>
+<span class="co">#0  0x00007fc229eaa676 in __memcpy_ssse3 () from /lib64/libc.so.6</span>
+<span class="co">#1  0x00007fc229820185 in opal_convertor_unpack ()</span>
+   <span class="ex">from</span> /opt/openmpi-2.1.1_gcc-4.8.5/lib/libopen-pal.so.20
+<span class="co">#2  0x00007fc21e9afbdf in mca_pml_ob1_recv_frag_callback_match ()</span>
+   <span class="ex">from</span> /opt/openmpi-2.1.1_gcc-4.8.5/lib/openmpi/mca_pml_ob1.so
+<span class="co">#3  0x00007fc21edca942 in mca_btl_vader_poll_handle_frag ()</span>
+   <span class="ex">from</span> /opt/openmpi-2.1.1_gcc-4.8.5/lib/openmpi/mca_btl_vader.so
+<span class="co">#4  0x00007fc21edcaba7 in mca_btl_vader_component_progress ()</span>
+   <span class="ex">from</span> /opt/openmpi-2.1.1_gcc-4.8.5/lib/openmpi/mca_btl_vader.so
+<span class="co">#5  0x00007fc229810b6c in opal_progress ()</span>
+   <span class="ex">from</span> /opt/openmpi-2.1.1_gcc-4.8.5/lib/libopen-pal.so.20
+<span class="co">#6  0x00007fc22ac244b5 in ompi_request_default_wait_all ()</span>
+   <span class="ex">from</span> /opt/openmpi-2.1.1_gcc-4.8.5/lib/libmpi.so.20
+<span class="co">#7  0x00007fc22ac68955 in ompi_coll_base_allreduce_intra_recursivedoubling ()</span>
+   <span class="ex">from</span> /opt/openmpi-2.1.1_gcc-4.8.5/lib/libmpi.so.20
+<span class="co">#8  0x00007fc22ac34633 in PMPI_Allreduce ()</span>
+   <span class="ex">from</span> /opt/openmpi-2.1.1_gcc-4.8.5/lib/libmpi.so.20
+<span class="co">#9  0x0000000000400a2c in main (argc=1, argv=0x7ffe6cfd0d88) at gdb_mpi.cpp:17</span></code></pre></div>
+<p>ごちゃごちゃっと関数呼び出しが連なってくる。MPIは規格であり、様々な実装があるが、今表示されているのはOpen MPIの実装である。内部で<code>ompi_coll_base_allreduce_intra_recursivedoubling</code>とか、それっぽい関数が呼ばれていることがわかるであろう。興味のある人は、<a href="https://www.open-mpi.org/source/">OpenMPIのソース</a>をダウンロードして、上記と突き合わせてみると楽しいかもしれない。</p>
+<p>さて、続行してみよう。二回continueするとプログラムが終了する。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="kw">(</span><span class="fu">gdb</span><span class="kw">)</span> <span class="ex">c</span>
+<span class="ex">Continuing.</span>
+<span class="ex">Hardware</span> watchpoint 1: sum
+
+<span class="ex">Old</span> value = 1
+<span class="ex">New</span> value = 6
+<span class="ex">0x00007fc229eaa676</span> in __memcpy_ssse3 () <span class="ex">from</span> /lib64/libc.so.6
+<span class="kw">(</span><span class="fu">gdb</span><span class="kw">)</span> <span class="ex">c</span>
+<span class="ex">Continuing.</span>
+[<span class="ex">Thread</span> 0x7fc227481700 (LWP 3648) <span class="ex">exited</span>]
+[<span class="ex">Thread</span> 0x7fc226c80700 (LWP 3649) <span class="ex">exited</span>]
+
+<span class="ex">Watchpoint</span> 1 deleted because the program has left the block in
+<span class="fu">which</span> its expression is valid.
+<span class="ex">0x00007fc229d7e445</span> in __libc_start_main () <span class="ex">from</span> /lib64/libc.so.6</code></pre></div>
+<p><code>mpirun</code>を実行していた端末も、以下のような表示をして終了するはずである。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">mpic++</span> -g gdb_mpi.cpp
+$ <span class="ex">mpirun</span> -np 4 ./a.out
+<span class="ex">Rank</span> 2: PID 3646
+<span class="ex">Rank</span> 0: PID 3644
+<span class="ex">Rank</span> 1: PID 3645
+<span class="ex">Rank</span> 3: PID 3647
+<span class="ex">6</span>
+<span class="ex">6</span>
+<span class="ex">6</span>
+<span class="ex">6</span></code></pre></div>
+<p>ここではgdbでMPIプロセスにアタッチするやり方だけを説明した。ここを読むような人はgdbを使いこなしているであろうから、アタッチの仕方さえわかれば、後は好きなようにデバッグできるであろう。 ただし、私の経験では、並列プログラミングにおいてgdbを使ったデバッグは最終手段であり、できるだけ細かくきちんとテストを書いて、そもそもバグが入らないようにしていくことが望ましい。</p>
+</article>
+</body>
+</html>

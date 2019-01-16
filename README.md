@@ -113,7 +113,7 @@ SIMD化について。
 * 余談：x86における浮動小数点演算の扱い
 * もう少し実戦的なSIMD化
 
-## [おわりに](conclusion.md) [［pdf］](conclusion.pdf)
+## [おわりに](conclusion/README.md) [［pdf］](conclusion/README.pdf)
 
 ## 謝辞
 
@@ -135,3 +135,5 @@ This article and pictures are licensed under a [Creative Commons Attribution 4.0
 本リポジトリに含まれるプログラムは、[MITライセンス](https://opensource.org/licenses/MIT)で提供する。
 
 The source codes in this repository are licensed under [the MIT License](https://opensource.org/licenses/MIT).
+
+なお、HTML版の作成に際し、CSSとして[github-markdown-css](https://github.com/sindresorhus/github-markdown-css)を利用しています。

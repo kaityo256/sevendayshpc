@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  </style>
+
+<style>
+  .markdown-body {
+    box-sizing: border-box;
+    min-width: 200px;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 45px;
+  }
+  img {width: 100%}
+
+  @media (max-width: 767px) {
+    .markdown-body {
+      padding: 15px;
+    }
+  }
+</style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://kaityo256.github.io/sevendayshpc/github-markdown.css" type="text/css" />
+  <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_CHTML-full" type="text/javascript"></script>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<article class="markdown-body">
+<h1 id="day-3-自明並列">Day 3 : 自明並列</h1>
+<h2 id="自明並列またの名を馬鹿パラとは">自明並列、またの名を馬鹿パラとは</h2>
+<p>例えば、100個の画像データがあるが、それらを全部リサイズしたい、といったタスクを考える。 それぞれのタスクには依存関係が全くないので、全部同時に実行してもなんの問題もない。 したがって、100並列で実行すれば100倍早くなる。 このように、並列タスク間で依存関係や情報のやりとりが発生しない並列化のことを自明並列と呼ぶ。 英語では、Trivial Parallelization(自明並列)とか、Embarrassingly parallel(馬鹿パラ)などと表現される。 「馬鹿パラ」とは「馬鹿でもできる並列化」の略で(諸説あり)、その名の通り簡単に並列化できるため、 文字通り馬鹿にされることも多いのだが、並列化効率が100%であり、最も効率的に計算資源を利用していることになるため、 その意義は大きい。 なにはなくとも、まず馬鹿パラができないことには非自明並列もできないわけだし、馬鹿パラができるだけでも、できない人に比べて 圧倒的な攻撃力を持つことになる。 ここでは、まず馬鹿パラのやり方を見てみよう。</p>
+<h2 id="自明並列の例1-円周率">自明並列の例1: 円周率</h2>
+<p>まず、自明並列でよく出てくる例として、サンプリング数を並列化で稼ぐ方法を見てみよう。とりあえず定番の、 モンテカルロ法で円周率を計算してみる。</p>
+<p>こんなコードを書いて、<a href="calc_pi.cpp" class="uri">calc_pi.cpp</a>という名前で保存してみよう。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;random&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;algorithm&gt;</span>
+
+<span class="at">const</span> <span class="dt">int</span> TRIAL = <span class="dv">100000</span>;
+
+<span class="dt">double</span> calc_pi(<span class="at">const</span> <span class="dt">int</span> seed) {
+  <span class="bu">std::</span>mt19937 mt(seed);
+  <span class="bu">std::</span>uniform_real_distribution&lt;<span class="dt">double</span>&gt; ud(<span class="fl">0.0</span>, <span class="fl">1.0</span>);
+  <span class="dt">int</span> n = <span class="dv">0</span>;
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; TRIAL; i++) {
+    <span class="dt">double</span> x = ud(mt);
+    <span class="dt">double</span> y = ud(mt);
+    <span class="cf">if</span> (x * x + y * y &lt; <span class="fl">1.0</span>) n++;
+  }
+  <span class="cf">return</span> <span class="fl">4.0</span> * <span class="kw">static_cast</span>&lt;<span class="dt">double</span>&gt;(n) / <span class="kw">static_cast</span>&lt;<span class="dt">double</span>&gt;(TRIAL);
+}
+
+<span class="dt">int</span> main(<span class="dt">void</span>) {
+  <span class="dt">double</span> pi = calc_pi(<span class="dv">0</span>);
+  printf(<span class="st">&quot;</span><span class="sc">%f\n</span><span class="st">&quot;</span>, pi);
+}</code></pre></div>
+<p>ここで、<code>main</code>関数から呼ばれる関数<code>calc_pi(const int seed)</code>が、わざとらしく乱数の種だけ受け取る形になっていることに注意。</p>
+<p>普通にコンパイル、実行してみる。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">g++</span> calc_pi.cpp
+$ <span class="ex">./a.out</span>
+<span class="ex">3.145000</span></code></pre></div>
+<p>100000回の試行の結果として、円周率の推定値「3.145000」が得られた。これを並列化してみよう。 並列化手順は簡単である。</p>
+<ol style="list-style-type: decimal">
+<li><code>mpi.h</code>をインクルードする</li>
+<li>main関数の最初と最後に<code>MPI_Init</code>と、<code>MPI_Finalize</code>をつける。ただし<code>MPI_Init</code>が引数に<code>argc</code>と<code>argv</code>を要求するので、<code>main</code>関数の引数をちゃんと書く。</li>
+<li><code>MPI_Comm_rank</code>関数で、ランク番号を得る。</li>
+<li>ランク番号を乱数の種に使う</li>
+<li>そのまま<code>calc_pi</code>を呼ぶ。</li>
+</ol>
+<p>以上の修正をしたコードを<a href="calc_pi_mpi.cpp" class="uri">calc_pi_mpi.cpp</a>という名前で作成する。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;random&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;algorithm&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span>
+
+<span class="at">const</span> <span class="dt">int</span> TRIAL = <span class="dv">100000</span>;
+
+<span class="dt">double</span> calc_pi(<span class="at">const</span> <span class="dt">int</span> seed) {
+  <span class="bu">std::</span>mt19937 mt(seed);
+  <span class="bu">std::</span>uniform_real_distribution&lt;<span class="dt">double</span>&gt; ud(<span class="fl">0.0</span>, <span class="fl">1.0</span>);
+  <span class="dt">int</span> n = <span class="dv">0</span>;
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; TRIAL; i++) {
+    <span class="dt">double</span> x = ud(mt);
+    <span class="dt">double</span> y = ud(mt);
+    <span class="cf">if</span> (x * x + y * y &lt; <span class="fl">1.0</span>) n++;
+  }
+  <span class="cf">return</span> <span class="fl">4.0</span> * <span class="kw">static_cast</span>&lt;<span class="dt">double</span>&gt;(n) / <span class="kw">static_cast</span>&lt;<span class="dt">double</span>&gt;(TRIAL);
+}
+
+<span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv) {
+  MPI_Init(&amp;argc, &amp;argv);
+  <span class="dt">int</span> rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &amp;rank);
+  <span class="dt">double</span> pi = calc_pi(rank);
+  printf(<span class="st">&quot;</span><span class="sc">%d</span><span class="st">: </span><span class="sc">%f\n</span><span class="st">&quot;</span>, rank, pi);
+  MPI_Finalize();
+}</code></pre></div>
+<p>ついでに、円周率の推定値を表示するときに自分のランク番号も表示するようにしてみた。 実行結果はこの通り。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">mpirun</span> -np 4 --oversubscribe ./a.out
+<span class="ex">0</span>: 3.145000
+<span class="ex">1</span>: 3.142160
+<span class="ex">3</span>: 3.144200
+<span class="ex">2</span>: 3.146720
+
+$ <span class="ex">mpirun</span> -np 4 --oversubscribe ./a.out
+<span class="ex">0</span>: 3.145000
+<span class="ex">2</span>: 3.146720
+<span class="ex">3</span>: 3.144200
+<span class="ex">1</span>: 3.142160</code></pre></div>
+<p>ただし、<code>--oversubscribe</code>は、論理コア以上の並列実行を許可するオプションである。 この実行結果から、</p>
+<ol style="list-style-type: decimal">
+<li>実行するたびに出力順序が異なる</li>
+<li>しかし、同じランクに対応する推定値は変わらない</li>
+</ol>
+<p>ことがわかる。</p>
+<p>ちゃんと並列計算されているか、timeコマンドで調べてみよう。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">./a.out</span>
+<span class="ex">0</span>: 3.145000
+<span class="ex">./a.out</span>  0.04s user 0.01s system 57% cpu 0.086 total
+
+$ <span class="bu">time</span> mpirun -np 4 --oversubscribe ./a.out
+<span class="ex">2</span>: 3.146720
+<span class="ex">3</span>: 3.144200
+<span class="ex">1</span>: 3.142160
+<span class="ex">0</span>: 3.145000
+<span class="ex">mpirun</span> -np 4 --oversubscribe ./a.out  0.24s user 0.08s system 240% cpu 0.135 total</code></pre></div>
+<p>シリアル実行の場合はCPUの利用率が57%だったのが、4並列の場合には240%と、100%を超えたのがわかるだろう。 この例では実行が早く終わりすぎて分かりづらいが、<code>TRIAL</code>の値を大きくして実行に時間がかかるようにして、 実行中にtopしてみると、ちゃんと並列実行されていることがわかる。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">PID</span>    COMMAND      %CPU TIME     #TH   #WQ  #PORT MEM    PURG   CMPRS  PGRP
+<span class="ex">45163</span>  a.out        92.1 00:12.44 3/1   0    15    2612K  0B     0B     45163
+<span class="ex">45165</span>  a.out        91.8 00:12.48 3/1   0    15    2620K  0B     0B     45165
+<span class="ex">45164</span>  a.out        91.5 00:12.42 3/1   0    15    2608K  0B     0B     45164
+<span class="ex">45162</span>  a.out        89.1 00:12.47 3/1   0    15    2620K  0B     0B     45162</code></pre></div>
+<p>4並列実行したので、45162から45165まで4つのプロセスが起動され、実行していることがわかる。 このように、なにか統計平均を取りたい時、並列化によってサンプル数を稼ぐ並列化を<strong>サンプル並列</strong>と呼ぶ。</p>
+<h2 id="自明並列テンプレート">自明並列テンプレート</h2>
+<p>先程の並列プログラム<a href="calc_pi_mpi.cpp" class="uri">calc_pi_mpi.cpp</a>のmain関数はこうなっていた。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv) {
+  MPI_Init(&amp;argc, &amp;argv);
+  <span class="dt">int</span> rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &amp;rank);
+  <span class="dt">double</span> pi = calc_pi(rank);
+  printf(<span class="st">&quot;</span><span class="sc">%d</span><span class="st">: </span><span class="sc">%f\n</span><span class="st">&quot;</span>, rank, pi);
+  MPI_Finalize();
+}</code></pre></div>
+<p>実際のプログラムは<code>calc_pi(rank)</code>という関数だけで、これはランク(MPIプロセスの通し番号)を受け取って、その番号によって動作を変える関数である。 したがって、自明並列プログラムのテンプレートはこんな感じになる。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span>
+
+<span class="dt">void</span> func(<span class="at">const</span> <span class="dt">int</span> rank){
+  <span class="co">// ここを埋める</span>
+}
+
+<span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv) {
+  MPI_Init(&amp;argc, &amp;argv);
+  <span class="dt">int</span> rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &amp;rank);
+  func(rank);
+  MPI_Finalize();
+}</code></pre></div>
+<p>後は関数<code>func</code>の中身を書き換えるだけで、なんでも並列化できる。ファイル処理でもレンダリングでも機械学習でもなんでも。 「これくらい、MPI使わなくてもスレッドでもできる」とか言う人がいるかもしれない。 しかし、OpenMPや<code>std::thread</code>を使ったマルチスレッドプログラミングと、MPIを用いたマルチプロセスプログラミングには、 「ノードをまたげるかまたげないか」という大きな違いが存在する。一般に<strong>マルチスレッドプログラミングはノードをまたぐことができない</strong>。 したがって、一つのプログラムが専有できる計算資源は1ノードまでである。しかし、MPIを使った場合は何ノードでも使える。 先程の円周率のコードは、あなたが望むなら数万ノードで実行することだってできる。 つまり、このコードがかけた時点で、誰がなんと言おうとあなたはスパコンプログラマだ。 「一週間でなれる！スパコンプログラマ」と題した本稿だが、三日目にしてもうスパコンプログラマになることができた。</p>
+<h2 id="自明並列の例2-多数のファイル処理">自明並列の例2: 多数のファイル処理</h2>
+<p>自明並列の例として、大量のファイル処理を考えよう。たとえば一つあたり5分で終わるファイルが1000個あったとする。 普通にやれば5000分かかる。手元に8コアのマシンがあり、うまく並列化できたとしても625分。10時間以上かかってしまう こういう時、手元にMPI並列ができるスパコンなりクラスタがあれば、あっという間に処理ができる。 例えば8コアのCPUが2ソケット載ったノードが10ノード使えるとしよう。うまく並列化できれば30分ちょっとで終わってしまう。 こういう「大量のファイル処理」は、スパコン使いでなくてもよく出てくるシチュエーションなので、自明並列で対応できるようにしたい。</p>
+<p>さて、簡単のため、ファイルが連番で<code>file000.dat</code>...<code>file999.dat</code>となっているとしよう。 これをN並列する時には、とりあえずNで割ってあまりが自分のランク番号と同じやつを処理すればよい。 このように、異なる情報をバラバラに処理する並列化を<strong>パラメタ並列</strong>と呼ぶ。 例えば100個のファイルを16並列で処理する場合にはこんな感じになるだろう。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span>
+
+<span class="dt">void</span> process_file(<span class="at">const</span> <span class="dt">int</span> index, <span class="at">const</span> <span class="dt">int</span> rank) {
+  printf(<span class="st">&quot;Rank=</span><span class="sc">%03d</span><span class="st"> File=</span><span class="sc">%03d\n</span><span class="st">&quot;</span>, rank, index);
+}
+
+<span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv) {
+  MPI_Init(&amp;argc, &amp;argv);
+  <span class="dt">int</span> rank;
+  <span class="at">const</span> <span class="dt">int</span> procs = <span class="dv">16</span>;
+  MPI_Comm_rank(MPI_COMM_WORLD, &amp;rank);
+  <span class="at">const</span> <span class="dt">int</span> max_file = <span class="dv">100</span>;
+  <span class="cf">for</span> (<span class="dt">int</span> i = rank; i &lt; max_file; i += procs) {
+    process_file(i, rank);
+  }
+  MPI_Finalize();
+}</code></pre></div>
+<p>さて、ファイル数はともかく、プロセス数がハードコーディングされているのが気になる。 MPIのプログラムは、実行時にプロセス数を自由に指定することができる。 実行するプロセス数を変えるたびにコンパイルし直すのは面倒だ。 というわけで、実行時に総プロセス数を取得する関数<code>MPI_Comm_size</code>が用意されている。 使い方は<code>MPI_Comm_rank</code>と同じで、</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">int</span> procs;
+MPI_Comm_size(MPI_COMM_WORLD, &amp;procs)</code></pre></div>
+<p>とすれば、<code>procs</code>にプロセス数が入る。これを使うと、先程のコードは こんな感じにかける。</p>
+<p><a href="processfiles.cpp" class="uri">processfiles.cpp</a></p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span>
+
+<span class="dt">void</span> process_file(<span class="at">const</span> <span class="dt">int</span> index, <span class="at">const</span> <span class="dt">int</span> rank) {
+  printf(<span class="st">&quot;Rank=</span><span class="sc">%03d</span><span class="st"> File=</span><span class="sc">%03d\n</span><span class="st">&quot;</span>, rank, index);
+}
+
+<span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv) {
+  MPI_Init(&amp;argc, &amp;argv);
+  <span class="dt">int</span> rank;
+  <span class="dt">int</span> procs;
+  MPI_Comm_rank(MPI_COMM_WORLD, &amp;rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &amp;procs);
+  <span class="at">const</span> <span class="dt">int</span> max_file = <span class="dv">100</span>;
+  <span class="cf">for</span> (<span class="dt">int</span> i = rank; i &lt; max_file; i += procs) {
+    process_file(i, rank);
+  }
+  MPI_Finalize();
+}</code></pre></div>
+<p>あとは<code>process_file</code>の中身を適当に書けばファイル処理が<strong>ノードをまたいで</strong>並列化される。 ノードをまたがなくて良い、つまり共有メモリの範囲内で良いのなら、 MPIでプログラムを書かなくても例えば<a href="https://qiita.com/kaityo256/items/c147679157d9d3fe036e">makefileの並列処理機能</a>を使って処理することもできる。 しつこいが、MPIを使うメリットは並列プログラムがノードをまたぐことができることにある。</p>
+<h2 id="自明並列の例3-統計処理">自明並列の例3: 統計処理</h2>
+<p>最初に、馬鹿パラで円周率を求めた。N並列ならN個の円周率の推定値が出てくるので、後でそれを統計処理すれば良い。しかし、せっかくなので統計処理もMPIでやってしまおう。各プロセスで円周率の推定値<span class="math inline">\(x_i\)</span>が求まったとする。平均値は</p>
+<p><span class="math display">\[
+\bar{x} = \frac{1}{N} \sum x_i
+\]</span></p>
+<p>と求まる。また、不偏分散<span class="math inline">\(\sigma^2\)</span>は</p>
+<p><span class="math display">\[
+\sigma^2 = \frac{1}{n-1} \sum (x_i)^2 - \frac{n}{n-1} \bar{x}^2
+\]</span></p>
+<p>である。以上から、円周率の推定値<span class="math inline">\(x_i\)</span>の総和と、<span class="math inline">\(x_i^2\)</span>の総和が求められれば、期待値と標準偏差が求められる。</p>
+<p>MPIにおける総和演算は<code>MPI_Allreduce</code>関数で実行できる。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">double</span> pi =  calc_pi(rank);
+<span class="dt">double</span> pi_sum = <span class="fl">0.0</span>;
+MPI_Allreduce(&amp;pi, &amp;pi_sum, <span class="dv">1</span>, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);</code></pre></div>
+<p>第一引数から、「和を取りたい変数」「和を受け取りたい変数」「変数の数」「変数の型」「やりたい演算」「コミュニケータ」の順番で指定する。ここでは一つの変数のみ総和演算を行っているが、配列を渡して一気に複数のデータについて総和を取ることもできる。また、総和だけでなく積や論理演算も実行できる。</p>
+<p>円周率の推定値<code>pi</code>と、その自乗<code>pi2 = pi*pi</code>について総和を取り、定義通りに期待値と標準偏差を求めるコードが<a href="calc_pi_reduce.cpp" class="uri">calc_pi_reduce.cpp</a>である。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;random&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;algorithm&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;cmath&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span>
+
+<span class="at">const</span> <span class="dt">int</span> TRIAL = <span class="dv">100000</span>;
+
+<span class="dt">double</span> calc_pi(<span class="at">const</span> <span class="dt">int</span> seed) {
+  <span class="bu">std::</span>mt19937 mt(seed);
+  <span class="bu">std::</span>uniform_real_distribution&lt;<span class="dt">double</span>&gt; ud(<span class="fl">0.0</span>, <span class="fl">1.0</span>);
+  <span class="dt">int</span> n = <span class="dv">0</span>;
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; TRIAL; i++) {
+    <span class="dt">double</span> x = ud(mt);
+    <span class="dt">double</span> y = ud(mt);
+    <span class="cf">if</span> (x * x + y * y &lt; <span class="fl">1.0</span>) n++;
+  }
+  <span class="cf">return</span> <span class="fl">4.0</span> * <span class="kw">static_cast</span>&lt;<span class="dt">double</span>&gt;(n) / <span class="kw">static_cast</span>&lt;<span class="dt">double</span>&gt;(TRIAL);
+}
+
+<span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv) {
+  MPI_Init(&amp;argc, &amp;argv);
+  <span class="dt">int</span> rank;
+  <span class="dt">int</span> procs;
+  MPI_Comm_rank(MPI_COMM_WORLD, &amp;rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &amp;procs);
+  <span class="dt">double</span> pi = calc_pi(rank);
+  <span class="dt">double</span> pi2 = pi * pi;
+  <span class="dt">double</span> pi_sum = <span class="fl">0.0</span>;
+  <span class="dt">double</span> pi2_sum = <span class="fl">0.0</span>;
+  printf(<span class="st">&quot;</span><span class="sc">%f\n</span><span class="st">&quot;</span>, pi);
+  MPI_Allreduce(&amp;pi, &amp;pi_sum, <span class="dv">1</span>, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(&amp;pi2, &amp;pi2_sum, <span class="dv">1</span>, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  <span class="dt">double</span> pi_ave = pi_sum / procs;
+  <span class="dt">double</span> pi_var = pi2_sum / (procs - <span class="dv">1</span>) - pi_sum * pi_sum / procs / (procs - <span class="dv">1</span>);
+  <span class="dt">double</span> pi_stdev = sqrt(pi_var);
+  MPI_Barrier(MPI_COMM_WORLD);
+  <span class="cf">if</span> (rank == <span class="dv">0</span>) {
+    printf(<span class="st">&quot;pi = </span><span class="sc">%f</span><span class="st"> +- </span><span class="sc">%f\n</span><span class="st">&quot;</span>, pi_ave, pi_stdev);
+  }
+  MPI_Finalize();
+}</code></pre></div>
+<p>最後に呼んでいる<code>MPI_Barrier</code>は、「ここで全プロセス待ち合わせをしなさい」という命令である。<code>MPI_Allreduce</code>は全プロセスで情報を共有するが、一番最後にランク0番が代表して統計情報を表示している。以下が実行例である。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">mpic++</span> calc_pi_reduce.cpp
+$ <span class="ex">mpirun</span> --oversubscribe -np 4  ./a.out
+<span class="ex">3.144200</span>
+<span class="ex">3.142160</span>
+<span class="ex">3.146720</span>
+<span class="ex">3.145000</span>
+<span class="ex">pi</span> = 3.144520 +- 0.001892
+
+$ <span class="ex">mpirun</span> --oversubscribe -np 8  ./a.out
+<span class="ex">3.145000</span>
+<span class="ex">3.142160</span>
+<span class="ex">3.144200</span>
+<span class="ex">3.144080</span>
+<span class="ex">3.139560</span>
+<span class="ex">3.146720</span>
+<span class="ex">3.139320</span>
+<span class="ex">3.136040</span>
+<span class="ex">pi</span> = 3.142135 +- 0.003565</code></pre></div>
+<p>4並列では4つの推定値、8並列では8つの推定値が出てきて、最後に平均と標準偏差が表示されている。各自、エクセルかGoogle Spreadsheetに値を突っ込んでみて、平均と標準偏差が正しく計算できていることを確かめられたい。ちなみに、並列数が多いほうが標準偏差が小さくなることが期待されるが、乱数の初期値の与え方が悪かったのか、データが偏ってしまった。そのあたりが気になる方は、適当に修正してほしい。</p>
+<h2 id="並列化効率">並列化効率</h2>
+<p>並列化した際、並列化しなかった場合に比べてどれくらい効果的に並列化されたかを知りたくなる。 その効率を示すのが並列化効率である。 いや、別にあなたが知りたくなくても、並列化していると「並列化効率は？」と聞いてくる人は絶対に出てくる。 個人的には、最初は並列化効率とかあまり気にせずに楽しくやるのが良いと思うのだが、一応並列化効率についての 知識もあったほうが良いだろう。</p>
+<p>さて、並列化は、計算資源をたくさん突っ込むことで、同じタスクをより早く終わらせるか、より大きなタスクを実行することである。 計算資源を増やした時に、どれだけ効率が良くなかったを示す指標を「スケーリング」という。 N倍の計算資源を突っ込んだ時に、同じタスクは理想的には1/Nの時間で終わってほしい。 このようなスケーリングを「ストロングスケーリング」と呼ぶ。 逆に、計算資源あたりのタスク(計算規模)を固定した場合、N倍の計算資源を突っ込んでも、同じ時間で計算が終わってほしい。 このようなスケーリングを「ウィークスケーリング」と呼ぶ。一般に、ストロングスケーリングの効率を上げる方がウィークスケーリングの効率を上げるより難しい。</p>
+<div class="figure">
+<img src="fig/scaling.png" alt="fig/scaling.png" />
+<p class="caption">fig/scaling.png</p>
+</div>
+<p>まず、ストロングスケーリングの効率を定義しよう。 並列化単位はプロセスでもスレッドでも良いが、とりあえずプロセス並列を考えることにする(スレッド並列でも全く同様に並列化効率を定義できる)。 並列化前、つまり1プロセスで実行した時、あるタスクが<span class="math inline">\(T_1\)</span>の時間で終わったとしよう。 同じサイズのタスクを、<span class="math inline">\(N\)</span>プロセスで計算して、計算時間が<span class="math inline">\(T_N\)</span>になったとする。 この時、並列化効率<span class="math inline">\(\alpha\)</span>は</p>
+<p><span class="math display">\[
+\alpha = \frac{T_1}{N T_N}
+\]</span></p>
+<p>で定義される。例えば、1プロセスで10秒で終わるジョブが、10プロセスで1秒で終われば並列化効率1(つまり100%)、 10プロセスで2秒で終わったら、並列化効率0.5(つまり50%)である。</p>
+<p>ウィークスケーリングでは、「プロセスあたり」のタスクを固定する。 したがって、並列数を増やす時、解くべきタスクのサイズも比例して大きくする。 例えばタスクのサイズを10倍にして、並列数も10倍にした場合、理想的には計算時間が変わらないで欲しい。 なので、そういう場合に並列化効率が1となるように定義する。 あるタスクを1プロセスで実行した時、あるタスクが<span class="math inline">\(T_1\)</span>の時間で終わったとしよう。 その<span class="math inline">\(N\)</span>倍のサイズのタスクを、<span class="math inline">\(N\)</span>プロセスで計算した時に、計算時間が<span class="math inline">\(T_N\)</span>となったとする。 この時、並列化効率<span class="math inline">\(\alpha\)</span>は</p>
+<p><span class="math display">\[
+\alpha = \frac{T_1}{T_N}
+\]</span></p>
+<p>で定義される。例えば、1プロセスで12秒で終わったタスクがあったとして、10倍のタスクを10プロセスで計算した場合に 16秒かかったとすると、並列化効率は12/16 = 0.75、つまり75%となる。</p>
+<p>まぁ要するに並列化した後の実行時間<span class="math inline">\(T_N\)</span>が小さいほど嬉しい(＝並列化効率が高い)のであるから、 <span class="math inline">\(T_N\)</span>が分母にある、とおぼえておけば間違いない。ストロングスケーリングにはファクター<span class="math inline">\(N\)</span>がつき、 ウィークスケーリングにはファクターがつかないが、これも理想的な状況を考えればどっちがどっちだか すぐ思い出せるであろう。</p>
+<h2 id="サンプル並列とパラメタ並列の違い">サンプル並列とパラメタ並列の違い</h2>
+<p>Day3では、馬鹿パラとして「サンプル並列」と「パラメタ並列」を紹介した。 「サンプル並列」とは、計算資源を統計平均を稼ぐのに利用する並列化で、 「パラメタ並列」とは、計算資源を異なるパラメータを処理するのに利用する並列化である。 ここでは「パラメタ並列」としてファイル処理の例をあげたが、例えば なにかの温度依存性を調べたい時、温度をパラメータとして、温度10点を10並列する、みたいな計算が 典型的なパラメタ並列である。</p>
+<p>「サンプル並列」も「パラメタ並列」もウィークスケーリングに属し、それぞれのタスクの計算時間に 大きなばらつきがあったりしなければ、かなり大規模な計算をしても理想的な並列化効率が出せる。 ただし、「パラメタ並列」は、100倍の計算資源を突っ込めば100倍のパラメータを処理できるのに対して、 「サンプル並列」は100倍の計算資源を突っ込んでも、統計精度は10倍にしかならない。 これは、サンプリングによる精度の向上が、サンプル数の平方根でしか増えないからだ。 したがって、いかに並列化効率が100%に近くても、サンプル平均に大規模な計算資源を突っ込むのはあまり効率がよくない。 なにかの精度を一桁上げたいからといって100倍の計算資源を突っ込む前に、もう少し効率的な方法がないか調べた方が良い。 また、パラメタ並列でも、複数のパラメタを組み合わせると、調べるべき点数が非常に増える。 この時、それらすべてを、詳細にパラメタ並列で調べるのはあまり効率がよくない。 ただ、とりあえず雑に「あたり」をつけるのにパラメタ並列は向いているので、それで だいたい調べるべき場所を確認した後、なにか別の方法でそこを詳細に調べるのが良いであろう。</p>
+</article>
+</body>
+</html>

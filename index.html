@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  </style>
+
+<style>
+  .markdown-body {
+    box-sizing: border-box;
+    min-width: 200px;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 45px;
+  }
+  img {width: 100%}
+
+  @media (max-width: 767px) {
+    .markdown-body {
+      padding: 15px;
+    }
+  }
+</style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://kaityo256.github.io/sevendayshpc/github-markdown.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<article class="markdown-body">
+<h1 id="一週間でなれるスパコンプログラマ">一週間でなれる！スパコンプログラマ</h1>
+<p><a href="README.pdf">PDF版</a></p>
+<h2 id="はじめに">はじめに</h2>
+<p>世の中にはスーパーコンピューター、略してスパコンというものがある。こういうすごそうな名前があるものの例にもれず、「スパコンとはなにか」という定義は曖昧である。人によって「何がスパコンか」の定義は違うと思うが、とりあえずここではCPUとメモリを積んだ「ノード」がたくさんあり、それらが高速なネットワークでつながっていて、大きなファイルシステムを持っているもの、と思っておけば良いと思う。</p>
+<p>スパコンは名前に「スーパー」とついているだけに、「なんかすごそうなもの」「使うのが難しいもの」という印象を持つ人もいるだろう。しかし、スパコンを使うのに要求される技術そのものは非常に単純かつ簡単である。自分の経験として、プログラミングの素養がある学生であれば、詳しい人に一ヶ月もレクチャーを受ければ普通にスパコンにジョブを投げ始める。そのくらいスパコンを使うのは簡単なことである。しかし、スパコンは、「使いはじめる」のは簡単であるものの、「使い倒す」のはかなり難しい。経験的に、並列数が十進法で一桁増えるごとに、本質的に異なる難しさに直面する。例えば百並列で走ったコードが千並列で走らなかったり、千並列で走ったコードが一万並列でコケたりする。そのあたりの奥の深さは面白いものの、本稿では扱わない。</p>
+<p>この記事では、近くにスパコンに詳しい人がいない人のために、「とりあえず7日間でスパコンを使えるようになる」ことを目指す。 より正確には、「7日間程度かければ、誰でもスパコンプログラマになれそうだな」と思ってもらうことを目指す。</p>
+<h2 id="day-0-なぜスパコンを使うのか">Day 0 : なぜスパコンを使うのか</h2>
+<p>そもそも、なぜスパコンを使うのか？それは、そこにスパコンがあるからだ。 この日本語で書かれた文章を読んでいるということは、あなたは高確率で日本人であろう。おめでとう。あなたは世界有数のスパコンを使うことができる。なぜなら日本はスパコン大国だからだ。Top500のサイトに行くと、世界の性能トップ500に入るスパコンの、国の内訳を見ることができる。2018年6月時点で、トップは中国の206サイト、二位がアメリカの124サイト、日本は36サイトで三位に入っている。最近の中国の躍進は目覚ましいのだが、そこはさておく。Top500に入るスパコン数は世界三位で、しかも何度も世界一位となるスパコンを保持している日本は、世界有数のスパコン大国と言ってよいだろう。</p>
+<p>個人的な経験で、こんなことがあった。とある海外の方と共同研究をしていた時、共同研究者に「こんな計算をしてみたらどうだろう」と提案してみた。 すると彼に「そういうことができたら面白いとは思うけど、計算が重すぎて無理だよ」と言われたので「いや、うちのスパコンでやったら一日仕事だ」と言ったらえらく驚いていた。これは、単に「日本は計算資源に恵まれている」という話にとどまらず、<strong>人の想像力の上限は、普段使っている計算資源の規模で決まる</strong>ということを示唆する。これは極めて重要だと思う。</p>
+<p>普通、スパコンを使うのは、「まずローカルなPCで計算をして、それで計算が苦しくなってから、次のステップアップとしてスパコンを検討する」といった順番となるだろう。その時も、まず「これくらいの規模のスパコンを使ったら、これくらいの計算ができる」という事前の検討をしてからスパコンの利用申請をするであろう。つまり「テーマ(目的)が先、スパコン(手段)が後」となる。それは全くもって正しいのであるが、私個人の意見としては、「やることが決まってなくても、どのくらいの計算が必要かわからなくても、まずスパコンを使ってしまう」方がいろいろ良いと思う。普段からローカルPCでしか計算していない人は、なにか研究テーマを検討する際に、スパコンが必要となるテーマを無意識に却下してしまう。逆に、普段からスパコンを使いなれていると、想像力の上限が引き上げられ、普通のPCでは計算できないような選択肢を検討できる。つまり「スパコン(手段)が先、テーマ(目的)は後」である。そもそもスパコンを使うのはさほど難しくないのだし、いろいろ検討する前に、ささっと使い始めてみよう。</p>
+<h3 id="注意">注意</h3>
+<p>並列プログラミングに限らないことだが、なにかを始めようとすると、ちょっと先にそれを始めていた人がなんやかんや言ってくることだろう。「並列化効率ガー」「そもそも実行効率が悪いコードを並列化するなんて云々」とか「最初から通信の最適化を考慮云々」とか、そういうことを言ってくる人が必ず湧くが、とりあえず二年くらいは無視してかまわない。なにはともあれスパコンを使えるようになること、チューニング不足の遅いコードであろうが並列化効率が悪かろうが、とりあえずそれなりのノード数で走るコードを書いて実行してみること、まずはそこを目指そう。それなりのノード数で走るコードが書ける、それだけで十分強力な武器になる。</p>
+<div class="figure">
+<img src="day1/fig/myjob.png" alt="day1/fig/myjob.png" />
+<p class="caption">day1/fig/myjob.png</p>
+</div>
+<h2 id="day-1-環境構築-pdf">Day 1 : <a href="day1/index.html">環境構築</a> <a href="day1/README.pdf">［pdf］</a></h2>
+<p>とりえあず手元のPCでMPIが使える環境を整え、簡単なMPIプログラミングを試してみる。</p>
+<ul>
+<li>MPIとは</li>
+<li>余談：MPIは難しいか</li>
+<li>MPIのインストール</li>
+<li>はじめてのMPI</li>
+<li>ランク</li>
+<li>標準出力について</li>
+<li>GDBによるMPIプログラムのデバッグ</li>
+</ul>
+<h2 id="day-2-スパコンの使い方-pdf">Day 2 : <a href="day2/index.html">スパコンの使い方</a> <a href="day2/README.pdf">［pdf］</a></h2>
+<p>スパコンを使うときに知っておきたいこと。ジョブの投げ方など。</p>
+<ul>
+<li>はじめに</li>
+<li>スパコンとは</li>
+<li>余談：BlueGene/Lのメモリエラー</li>
+<li>スパコンのアカウントの取得方法</li>
+<li>ジョブの実行の仕組み</li>
+<li>ジョブスクリプトの書き方</li>
+<li>フェアシェア</li>
+<li>バックフィル</li>
+<li>チェーンジョブ</li>
+<li>ステージング</li>
+<li>並列ファイルシステム</li>
+</ul>
+<h2 id="day-3-自明並列-pdf">Day 3 : <a href="day3/index.html">自明並列</a> <a href="day3/README.pdf">［pdf］</a></h2>
+<p>自明並列、通称「馬鹿パラ」のやり方について。</p>
+<ul>
+<li>自明並列、またの名を馬鹿パラとは</li>
+<li>自明並列の例1: 円周率</li>
+<li>自明並列テンプレート</li>
+<li>自明並列の例2: 多数のファイル処理</li>
+<li>自明並列の例3: 統計処理</li>
+<li>並列化効率</li>
+<li>サンプル並列とパラメタ並列の違い</li>
+</ul>
+<h2 id="day-4-領域分割による非自明並列-pdf">Day 4 : <a href="day4/index.html">領域分割による非自明並列</a> <a href="day4/README.pdf">［pdf］</a></h2>
+<p>非自明並列の例として、一次元熱伝導方程式方程式を領域分割してみる。</p>
+<ul>
+<li>非自明並列</li>
+<li>一次元拡散方程式 (シリアル版)</li>
+<li>一次元拡散方程式 (並列版)</li>
+<li>余談： EagerプロトコルとRendezvousプロトコル</li>
+</ul>
+<h2 id="day-5-二次元反応拡散方程式-pdf">Day 5 : <a href="day5/index.html">二次元反応拡散方程式</a> <a href="day5/README.pdf">［pdf］</a></h2>
+<p>本格的なMPIプログラムの例として、二次元反応拡散方程式を領域分割してみる。</p>
+<ul>
+<li>シリアル版</li>
+<li>並列化ステップ1: 通信の準備など</li>
+<li>並列化ステップ2: データの保存</li>
+<li>並列化ステップ2: のりしろの通信</li>
+<li>並列化ステップ3: 並列コードの実装</li>
+<li>余談：MPIの面倒くささ</li>
+</ul>
+<h2 id="day-6-ハイブリッド並列-pdf">Day 6 : <a href="day6/index.html">ハイブリッド並列</a> <a href="day6/README.pdf">［pdf］</a></h2>
+<p>プロセス並列とスレッド並列の併用によるハイブリッド並列化について。 特にスレッド並列で気をつけたいことなど。</p>
+<ul>
+<li>ハイブリッド並列とは</li>
+<li>仮想メモリとTLB</li>
+<li>余談：TLBミスについて</li>
+<li>NUMA</li>
+<li>OpenMPの例</li>
+<li>性能評価</li>
+<li>余談：ロックの話</li>
+<li>ハイブリッド並列の実例</li>
+</ul>
+<h2 id="day-7-simd化-pdf">Day 7 : <a href="day7/index.html">SIMD化</a> <a href="day7/README.pdf">［pdf］</a></h2>
+<p>SIMD化について。</p>
+<ul>
+<li>はじめに</li>
+<li>SIMDとは</li>
+<li>SIMDレジスタを触ってみる</li>
+<li>余談：アセンブリ言語？アセンブラ言語？</li>
+<li>簡単なSIMD化の例</li>
+<li>余談：x86における浮動小数点演算の扱い</li>
+<li>もう少し実戦的なSIMD化</li>
+</ul>
+<h2 id="おわりに-pdf"><a href="conclusion/index.html">おわりに</a> <a href="conclusion/README.pdf">［pdf］</a></h2>
+<h2 id="謝辞">謝辞</h2>
+<p>この記事は、<a href="https://github.com/tanakamura">tanakamura</a> さんの <a href="https://tanakamura.github.io/pllp/docs/">実践的低レベルプログラミング</a>に影響されて書き始めたものです。 angel_p_57さんにMPIにおけるバッファリングについて教えていただきました。fujita_d_hさんにはBlueGene/LのL1エラー訂正について議論していただきました。n_IMRCさんには、行列積におけるTLBミスの論文を教えていただきました。まだこの記事が書きかけだったときにたくさん星をつけてくださった皆様、Twitterなどで感想を寄せてくださった皆様、ありがとうございます。 みなさんのポジティブな反応がなければ書き続けられませんでした。</p>
+<p>本稿を読んでスパコンを使ってみよう、と思う人が一人でも増えたなら幸いです。</p>
+<h2 id="ライセンス">ライセンス</h2>
+<p>Copyright (C) 2018 Hiroshi Watanabe</p>
+<p>この文章と絵(pptxファイルを含む)はクリエイティブ・コモンズ 4.0 表示 (CC-BY 4.0)で提供する。</p>
+<p>This article and pictures are licensed under a <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.</p>
+<p>本リポジトリに含まれるプログラムは、<a href="https://opensource.org/licenses/MIT">MITライセンス</a>で提供する。</p>
+<p>The source codes in this repository are licensed under <a href="https://opensource.org/licenses/MIT">the MIT License</a>.</p>
+<p>なお、HTML版の作成に際し、CSSとして<a href="https://github.com/sindresorhus/github-markdown-css">github-markdown-css</a>を利用しています。</p>
+</article>
+</body>
+</html>
