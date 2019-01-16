@@ -1,4 +1,4 @@
-# 一週間でなれる！スパコンプログラマ
+# [一週間でなれる！スパコンプログラマ](https://kaityo256.github.io/sevendayshpc/)
 
 [PDF版](README.pdf)
 
