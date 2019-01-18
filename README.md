@@ -1,6 +1,10 @@
 # [一週間でなれる！スパコンプログラマ](https://kaityo256.github.io/sevendayshpc/)
 
-[PDF版](README.pdf)
+リポジトリはこちら。
+
+[https://github.com/kaityo256/sevendayshpc](https://github.com/kaityo256/sevendayshpc)
+
+[一括PDF版](sevendayshpc.pdf)
 
 ## はじめに
 
@@ -27,7 +31,7 @@
 
 ![day1/fig/myjob.png](day1/fig/myjob.png)
 
-## Day 1 : [環境構築](day1/README.md) [［pdf］](day1/README.pdf)
+## Day 1 : [環境構築](day1/README.md) 
 
 とりえあず手元のPCでMPIが使える環境を整え、簡単なMPIプログラミングを試してみる。
 
@@ -39,7 +43,7 @@
 * 標準出力について
 * GDBによるMPIプログラムのデバッグ
 
-## Day 2 : [スパコンの使い方](day2/README.md) [［pdf］](day2/README.pdf)
+## Day 2 : [スパコンの使い方](day2/README.md)
 
 スパコンを使うときに知っておきたいこと。ジョブの投げ方など。
 
@@ -55,7 +59,7 @@
 * ステージング
 * 並列ファイルシステム
 
-## Day 3 : [自明並列](day3/README.md) [［pdf］](day3/README.pdf)
+## Day 3 : [自明並列](day3/README.md)
 
 自明並列、通称「馬鹿パラ」のやり方について。
 
@@ -67,7 +71,7 @@
 * 並列化効率
 * サンプル並列とパラメタ並列の違い
 
-## Day 4 : [領域分割による非自明並列](day4/README.md) [［pdf］](day4/README.pdf)
+## Day 4 : [領域分割による非自明並列](day4/README.md)
 
 非自明並列の例として、一次元熱伝導方程式方程式を領域分割してみる。
 
@@ -76,7 +80,7 @@
 * 一次元拡散方程式 (並列版)
 * 余談： EagerプロトコルとRendezvousプロトコル
 
-## Day 5 : [二次元反応拡散方程式](day5/README.md) [［pdf］](day5/README.pdf)
+## Day 5 : [二次元反応拡散方程式](day5/README.md)
 
 本格的なMPIプログラムの例として、二次元反応拡散方程式を領域分割してみる。
 
@@ -87,8 +91,7 @@
 * 並列化ステップ3: 並列コードの実装
 * 余談：MPIの面倒くささ
 
-## Day 6 : [ハイブリッド並列](day6/README.md) [［pdf］](day6/README.pdf)
-
+## Day 6 : [ハイブリッド並列](day6/README.md)
 プロセス並列とスレッド並列の併用によるハイブリッド並列化について。
 特にスレッド並列で気をつけたいことなど。
 
@@ -101,7 +104,7 @@
 * 余談：ロックの話
 * ハイブリッド並列の実例
 
-## Day 7 : [SIMD化](day7/README.md) [［pdf］](day7/README.pdf)
+## Day 7 : [SIMD化](day7/README.md) 
 
 SIMD化について。
 
@@ -113,7 +116,7 @@ SIMD化について。
 * 余談：x86における浮動小数点演算の扱い
 * もう少し実戦的なSIMD化
 
-## [おわりに](conclusion/README.md) [［pdf］](conclusion/README.pdf)
+## [おわりに](conclusion/README.md) 
 
 ## 謝辞
 

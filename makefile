@@ -1,5 +1,8 @@
 MD=$(shell ls day?/README.md *.md)
-all: $(MD:%.md=%.pdf) clean_intermediate
+all: sevendayshpc.pdf
+sevendayshpc.pdf: $(MD:%.md=%.pdf)
+	pdftk README.pdf day1/README.pdf day2/README.pdf day3/README.pdf day4/README.pdf day5/README.pdf day6/README.pdf day7/README.pdf conclusion/README.pdf cat output sevendayshpc.pdf
+
 PANDOCOPT=-s -V documentclass=ltjarticle -V geometry:margin=1in
 
 .SUFFIXES: .md .tex. pdf
