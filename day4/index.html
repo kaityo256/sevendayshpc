@@ -99,7 +99,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p>ある関数の二回微分がゼロなので、解は二次関数か一次関数で与えられることがわかりますね。 ちなみに一般の時刻における解はフーリエ変換で求められる。理工系の大学生であれば二年生くらいまでで習っているはずなので 各自復習されたい。</p>
 <p>さて、この偏微分方程式を数値的に解くために空間を<span class="math inline">\(L\)</span>分割して差分化しよう。 時間については一次のオイラー法、空間については中央差分を取ると、時間刻みを<span class="math inline">\(h\)</span>、 <span class="math inline">\(n\)</span>ステップ目に<span class="math inline">\(i\)</span>番目のサイトの温度を<span class="math inline">\(T_i^{n}\)</span>として、</p>
 <p><span class="math display">\[
-T_i^{n+1} = T_i^{n} + \frac{T_{i+1}^n - 2 T_{i}^n T_{i-1}^n}{2h}
+T_i^{n+1} = T_i^{n} + \frac{T_{i+1}^n - 2 T_{i}^n + T_{i-1}^n}{2h}
 \]</span></p>
 <p>で得られる。例えば時間ステップ<span class="math inline">\(n\)</span>の温度を<code>std::vector&lt;double&gt; lattice</code>で表すと、上記の式をそのままコードに落とすと</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">  <span class="bu">std::</span>copy(lattice.begin(), lattice.end(), orig.begin());
