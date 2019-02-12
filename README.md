@@ -1,8 +1,8 @@
 # [一週間でなれる！スパコンプログラマ](https://kaityo256.github.io/sevendayshpc/)
 
-リポジトリはこちら。
+[リポジトリ(kaityo256/sevendayshpc)](https://github.com/kaityo256/sevendayshpc)
 
-[https://github.com/kaityo256/sevendayshpc](https://github.com/kaityo256/sevendayshpc)
+[HTML版](https://kaityo256.github.io/sevendayshpc/)
 
 [一括PDF版](sevendayshpc.pdf)
 
