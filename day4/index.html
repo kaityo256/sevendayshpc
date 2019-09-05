@@ -97,25 +97,25 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 \kappa \frac{\partial^2 T}{\partial x^2} = 0
 \]</span></p>
 <p>ある関数の二回微分がゼロなので、解は二次関数か一次関数で与えられることがわかりますね。 ちなみに一般の時刻における解はフーリエ変換で求められる。理工系の大学生であれば二年生くらいまでで習っているはずなので 各自復習されたい。</p>
-<p>さて、この偏微分方程式を数値的に解くために空間を<span class="math inline">\(L\)</span>分割して差分化しよう。 時間については一次のオイラー法、空間については中央差分を取ると、時間刻みを<span class="math inline">\(h\)</span>、 <span class="math inline">\(n\)</span>ステップ目に<span class="math inline">\(i\)</span>番目のサイトの温度を<span class="math inline">\(T_i^{n}\)</span>として、</p>
+<p>さて、この偏微分方程式を数値的に解くために空間を<span class="math inline">\(L\)</span>分割して差分化しよう。時間については一次のオイラー法、空間については中央差分を取る。時間刻みを<span class="math inline">\(h\)</span>、空間刻みを<span class="math inline">\(1\)</span>、<span class="math inline">\(n\)</span>ステップ目における<span class="math inline">\(i\)</span>番目のサイトの温度を<span class="math inline">\(T_i^{n}\)</span>とすると、同じ場所の次のステップの温度<span class="math inline">\(T_i^{n+1}\)</span>は、</p>
 <p><span class="math display">\[
-T_i^{n+1} = T_i^{n} + \frac{T_{i+1}^n - 2 T_{i}^n + T_{i-1}^n}{2h}
+T_i^{n+1} = T_i^{n} + h(T_{i+1}^n - 2 T_{i}^n + T_{i-1}^n)
 \]</span></p>
-<p>で得られる。例えば時間ステップ<span class="math inline">\(n\)</span>の温度を<code>std::vector&lt;double&gt; lattice</code>で表すと、上記の式をそのままコードに落とすと</p>
+<p>と表現される。例えば時間ステップ<span class="math inline">\(n\)</span>の温度を<code>std::vector&lt;double&gt; lattice</code>で表すと、上記の式をそのままコードに落とすと</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">  <span class="bu">std::</span>copy(lattice.begin(), lattice.end(), orig.begin());
   <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">1</span>; i &lt; L - <span class="dv">1</span>; i++) {
-    lattice[i] += (orig[i - <span class="dv">1</span>] - <span class="fl">2.0</span> * orig[i] + orig[i + <span class="dv">1</span>]) * <span class="fl">0.5</span> * h;
+    lattice[i] += h * (orig[i - <span class="dv">1</span>] - <span class="fl">2.0</span> * orig[i] + orig[i + <span class="dv">1</span>]);
   }</code></pre></div>
 <p>と書ける。らくちんですね。これだと両端(<code>lattice[0]</code>と<code>lattice[L-1]</code>)が更新されないので、周期境界条件を課しておく。以上を、1ステップ時間を進める関数<code>onestep</code>として実装しよう。</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> onestep(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;lattice, <span class="at">const</span> <span class="dt">double</span> h) {
   <span class="at">static</span> <span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; orig(L);
   <span class="bu">std::</span>copy(lattice.begin(), lattice.end(), orig.begin());
   <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">1</span>; i &lt; L - <span class="dv">1</span>; i++) {
-    lattice[i] += (orig[i - <span class="dv">1</span>] - <span class="fl">2.0</span> * orig[i] + orig[i + <span class="dv">1</span>]) * <span class="fl">0.5</span> * h;
+    lattice[i] += h * (orig[i - <span class="dv">1</span>] - <span class="fl">2.0</span> * orig[i] + orig[i + <span class="dv">1</span>]);
   }
   <span class="co">// For Periodic Boundary</span>
-  lattice[<span class="dv">0</span>] += (orig[L - <span class="dv">1</span>] - <span class="fl">2.0</span> * lattice[<span class="dv">0</span>]  + orig[<span class="dv">1</span>]) * <span class="fl">0.5</span> * h;
-  lattice[L - <span class="dv">1</span>] += (orig[L - <span class="dv">2</span>] - <span class="fl">2.0</span> * lattice[L - <span class="dv">1</span>] + orig[<span class="dv">0</span>]) * <span class="fl">0.5</span> * h;
+  lattice[<span class="dv">0</span>] += h * (orig[L - <span class="dv">1</span>] - <span class="fl">2.0</span> * lattice[<span class="dv">0</span>]  + orig[<span class="dv">1</span>]);
+  lattice[L - <span class="dv">1</span>] += h * (orig[L - <span class="dv">2</span>] - <span class="fl">2.0</span> * lattice[L - <span class="dv">1</span>] + orig[<span class="dv">0</span>]);
 }</code></pre></div>
 <p>これで数値計算部分はおしまい。ついでに、系の状態をファイルにダンプする関数も書いておこう。</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> dump(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;data) {
@@ -272,7 +272,7 @@ $ <span class="ex">mpirun</span> -np 8 ./a.out
 
   <span class="co">//あとはシリアル版と同じ</span>
   <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">1</span>; i &lt; size - <span class="dv">1</span>; i++) {
-    lattice[i] += (orig[i - <span class="dv">1</span>] - <span class="fl">2.0</span> * orig[i] + orig[i + <span class="dv">1</span>]) * <span class="fl">0.5</span> * h;
+    lattice[i] += h * (orig[i - <span class="dv">1</span>] - <span class="fl">2.0</span> * orig[i] + orig[i + <span class="dv">1</span>]);
   }
 }</code></pre></div>
 <p>コードのコメントの通りで、難しいことはないと思う。<code>MPI_Sendrecv</code>で「データを送るプロセス」と「データを受け取るプロセス」が違うことに注意。 クリスマスパーティのプレゼント交換の時のように、みんなで輪になって、右の人にプレゼントを渡し、左の人からプレゼントを受け取る、みたいなイメージである。 もちろん「右に渡して右から受け取る」という通信方式でも良いが、「右に渡して左から受け取る」方がコードが楽だし、筆者の経験ではそっちの方が早かった。</p>

@@ -1,7 +1,7 @@
 #include <cstdio>
-#include <vector>
-#include <iostream>
 #include <fstream>
+#include <iostream>
+#include <vector>
 
 const int L = 128;
 const int STEP = 100000;
@@ -11,11 +11,11 @@ void onestep(std::vector<double> &lattice, const double h) {
   static std::vector<double> orig(L);
   std::copy(lattice.begin(), lattice.end(), orig.begin());
   for (int i = 1; i < L - 1; i++) {
-    lattice[i] += (orig[i - 1] - 2.0 * orig[i] + orig[i + 1]) * 0.5 * h;
+    lattice[i] += h * (orig[i - 1] - 2.0 * orig[i] + orig[i + 1]);
   }
   // For Periodic Boundary
-  lattice[0] += (orig[L - 1] - 2.0 * lattice[0]  + orig[1]) * 0.5 * h;
-  lattice[L - 1] += (orig[L - 2] - 2.0 * lattice[L - 1] + orig[0]) * 0.5 * h;
+  lattice[0] += h * (orig[L - 1] - 2.0 * lattice[0] + orig[1]);
+  lattice[L - 1] += h * (orig[L - 2] - 2.0 * lattice[L - 1] + orig[0]);
 }
 
 void dump(std::vector<double> &data) {
@@ -57,6 +57,6 @@ void uniform_heating(std::vector<double> &lattice) {
 
 int main() {
   std::vector<double> lattice(L, 0.0);
-  uniform_heating(lattice);
-  //fixed_temperature(lattice);
+  //uniform_heating(lattice);
+  fixed_temperature(lattice);
 }

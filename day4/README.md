@@ -46,20 +46,18 @@ $$
 ちなみに一般の時刻における解はフーリエ変換で求められる。理工系の大学生であれば二年生くらいまでで習っているはずなので
 各自復習されたい。
 
-さて、この偏微分方程式を数値的に解くために空間を$L$分割して差分化しよう。
-時間については一次のオイラー法、空間については中央差分を取ると、時間刻みを$h$、
-$n$ステップ目に$i$番目のサイトの温度を$T_i^{n}$として、
+さて、この偏微分方程式を数値的に解くために空間を$L$分割して差分化しよう。時間については一次のオイラー法、空間については中央差分を取る。時間刻みを$h$、空間刻みを$1$、$n$ステップ目における$i$番目のサイトの温度を$T_i^{n}$とすると、同じ場所の次のステップの温度$T_i^{n+1}$は、
 
 $$
-T_i^{n+1} = T_i^{n} + \frac{T_{i+1}^n - 2 T_{i}^n + T_{i-1}^n}{2h}
+T_i^{n+1} = T_i^{n} + h(T_{i+1}^n - 2 T_{i}^n + T_{i-1}^n)
 $$
 
-で得られる。例えば時間ステップ$n$の温度を`std::vector<double> lattice`で表すと、上記の式をそのままコードに落とすと
+と表現される。例えば時間ステップ$n$の温度を`std::vector<double> lattice`で表すと、上記の式をそのままコードに落とすと
 
 ```cpp
   std::copy(lattice.begin(), lattice.end(), orig.begin());
   for (int i = 1; i < L - 1; i++) {
-    lattice[i] += (orig[i - 1] - 2.0 * orig[i] + orig[i + 1]) * 0.5 * h;
+    lattice[i] += h * (orig[i - 1] - 2.0 * orig[i] + orig[i + 1]);
   }
 ```
 
@@ -70,11 +68,11 @@ void onestep(std::vector<double> &lattice, const double h) {
   static std::vector<double> orig(L);
   std::copy(lattice.begin(), lattice.end(), orig.begin());
   for (int i = 1; i < L - 1; i++) {
-    lattice[i] += (orig[i - 1] - 2.0 * orig[i] + orig[i + 1]) * 0.5 * h;
+    lattice[i] += h * (orig[i - 1] - 2.0 * orig[i] + orig[i + 1]);
   }
   // For Periodic Boundary
-  lattice[0] += (orig[L - 1] - 2.0 * lattice[0]  + orig[1]) * 0.5 * h;
-  lattice[L - 1] += (orig[L - 2] - 2.0 * lattice[L - 1] + orig[0]) * 0.5 * h;
+  lattice[0] += h * (orig[L - 1] - 2.0 * lattice[0]  + orig[1]);
+  lattice[L - 1] += h * (orig[L - 2] - 2.0 * lattice[L - 1] + orig[0]);
 }
 ```
 
@@ -290,7 +288,7 @@ void onestep(std::vector<double> &lattice, double h, int rank, int procs) {
 
   //あとはシリアル版と同じ
   for (int i = 1; i < size - 1; i++) {
-    lattice[i] += (orig[i - 1] - 2.0 * orig[i] + orig[i + 1]) * 0.5 * h;
+    lattice[i] += h * (orig[i - 1] - 2.0 * orig[i] + orig[i + 1]);
   }
 }
 ```

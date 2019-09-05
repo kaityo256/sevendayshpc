@@ -1,8 +1,8 @@
 #include <cstdio>
-#include <vector>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <mpi.h>
+#include <vector>
 
 const int L = 128;
 const int STEP = 100000;
@@ -22,7 +22,7 @@ void dump(std::vector<double> &data) {
 
 void dump_mpi(std::vector<double> &local, int rank, int procs) {
   static std::vector<double> global(L);
-  MPI_Gather(&(local[1]), L / procs, MPI_DOUBLE, global.data(), L / procs, MPI_DOUBLE, 0,  MPI_COMM_WORLD);
+  MPI_Gather(&(local[1]), L / procs, MPI_DOUBLE, global.data(), L / procs, MPI_DOUBLE, 0, MPI_COMM_WORLD);
   if (rank == 0) {
     dump(global);
   }
@@ -34,7 +34,7 @@ void onestep(std::vector<double> &lattice, double h, int rank, int procs) {
   std::copy(lattice.begin(), lattice.end(), orig.begin());
   // ここから通信のためのコード
   const int left = (rank - 1 + procs) % procs; // 左のランク番号
-  const int right = (rank + 1) % procs; // 右のランク番号
+  const int right = (rank + 1) % procs;        // 右のランク番号
   MPI_Status st;
   // 右端を右に送って、左端を左から受け取る
   MPI_Sendrecv(&(lattice[size - 2]), 1, MPI_DOUBLE, right, 0, &(orig[0]), 1, MPI_DOUBLE, left, 0, MPI_COMM_WORLD, &st);
@@ -43,7 +43,7 @@ void onestep(std::vector<double> &lattice, double h, int rank, int procs) {
 
   //あとはシリアル版と同じ
   for (int i = 1; i < size - 1; i++) {
-    lattice[i] += (orig[i - 1] - 2.0 * orig[i] + orig[i + 1]) * 0.5 * h;
+    lattice[i] += h * (orig[i - 1] - 2.0 * orig[i] + orig[i + 1]);
   }
 }
 
