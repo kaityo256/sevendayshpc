@@ -294,7 +294,7 @@ $ <span class="ex">mpirun</span> -np 8 ./a.out
     <span class="cf">if</span> ((i % DUMP) == <span class="dv">0</span>) dump_mpi(lattice, rank, procs);
   }
 }</code></pre></div>
-<p>シリアル版とほぼ同じだが、「両端の温度を固定」する時に、左端はランク0番が、右端は<code>procs-1</code>版が担当しているので、そこだけif文が入る。 あとは<code>dump</code>を<code>dump_mpi</code>に変えるだけ。</p>
+<p>シリアル版とほぼ同じだが、「両端の温度を固定」する時に、左端はランク0番が、右端は<code>procs-1</code>番が担当しているので、そこだけif文が入る。 あとは<code>dump</code>を<code>dump_mpi</code>に変えるだけ。</p>
 <p>次に、温度の固定条件。</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> fixed_temperature(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;lattice, <span class="dt">int</span> rank, <span class="dt">int</span> procs) {
   <span class="at">const</span> <span class="dt">double</span> h = <span class="fl">0.01</span>;
