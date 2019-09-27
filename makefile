@@ -5,7 +5,7 @@ all: sevendayshpc.pdf clean_intermediate
 sevendayshpc.pdf: $(MD:%.md=%.pdf)
 	pdftk README.pdf day1/README.pdf day2/README.pdf day3/README.pdf day4/README.pdf day5/README.pdf day6/README.pdf day7/README.pdf conclusion/README.pdf cat output sevendayshpc.pdf
 
-PANDOCOPT=-s -V documentclass=ltjarticle -V geometry:margin=1in
+PANDOCOPT=-s -V documentclass=ltjarticle -V geometry:margin=1in --highlight-style tango
 
 .SUFFIXES: .md .tex. pdf
 
