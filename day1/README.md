@@ -125,7 +125,7 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 環境構築ができたら、こんなコードを書いて、[hello.cpp](hello.cpp)という名前で保存してみよう。
 
-```c++
+```cpp
 #include <cstdio>
 #include <mpi.h>
 
