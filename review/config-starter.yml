@@ -1,0 +1,115 @@
+# coding: utf-8
+
+## Starter独自設定
+starter:
+
+  ## 出力のターゲット。環境変数 $STARTER_TARGET で上書き可能。
+  ## * pbook: 印刷用のモノクロPDFを出力。printing bookの略。
+  ## * ebook: 電子用のカラーPDFを出力。electric bookの略。
+  ## * tablet: タブレット用のカラーPDFを出力。
+  target: pbook
+
+  ## ドラフトモード。trueなら画像を読み込むかわりに枠を表示する。
+  ## 図やスクリーンショットが多くてコンパイルに時間がかかるときに便利。
+  draft: false
+
+  ## 本文のフォント（注：実験的）
+  ## （Notoフォントが前提なので、Docker環境が必要。MacTeXでは使わないこと）
+  fontfamily_ja: mincho    # (日本語) mincho: 明朝体, gothic: ゴシック体
+  fontfamily_en: roman     # (英数字) roman: ローマン体, sansserif: サンセリフ体
+  fontweight_ja: normal    # (日本語) normal: 通常, light: 細字
+  fontweight_en: normal    # (英数字) normal: 通常, light: 細字
+
+  ## 章 (Chapter) タイトルの装飾
+  ## （none: なし、underline: 下線、boldlines: 上下に太線）
+  chapter_decoration: boldlines
+
+  ## 章 (Chapter) タイトルの左寄せ/右寄せ/中央揃え
+  ## （left: 左寄せ、right: 右寄せ、center: 中央揃え）
+  chapter_align: center
+
+  ## 章 (Chapter) タイトルを1行にする（章番号とタイトルとの間で改行しない）
+  chapter_oneline: false
+
+  ## 節 (Section) ごとに改ページするか
+  ## （ただし各章の最初の節は改ページしない）
+  section_newpage: false
+
+  ## ページ先頭なら節や項のタイトルの前にスペースを入れない
+  section_notopmargin: true
+
+  ## 節 (Section) タイトルの装飾
+  ## （none: なし、underline: 下線、grayback: 灰色の背景色）
+  section_decoration: grayback
+
+  ## 項 (Subsection) タイトルの装飾
+  ## （none: なし、symbol: 先頭にクローバー）
+  subsection_decoration: symbol
+
+  ## プログラムやターミナルのキャプションを小さくするか？
+  caption_small: true
+
+  ## キャプションの見映えをよくするか？
+  caption_pretty: true
+
+  ## キャプション直後での改ページを防ぐために、最低限必要とする高さ
+  ## （もしキャプション直後での改ページが発生するなら値を増やす。
+  ##   もし十分なスペースがあるのに改ページされるなら値を減らす。）
+  caption_needspace: 4.8zh        # 全角文字4.8個分の高さ（実験で得た境界値）
+
+  ## プログラム（//list）のフォントサイズ
+  program_fontsize: small  # 'normal' or 'small'
+
+  ## ターミナル（//cmd, //terminal）のフォントサイズ
+  terminal_fontsize: small  # 'normal' or 'small'
+
+  ## プログラム用（//list）の等幅フォント。
+  ##  * lmodern … LaTeXのデフォルト。1とl、0とOが見分けにくい。太字が目立たない。
+  ##  * lmodern-lighttt … lmodernを細字にしたもの。太字が目立つ。
+  ##  * courier … 文字が細いので太字が目立つ。1とl、0とOが見分けにくい。文字幅が広い。
+  ##  * beramono … 1とl、0とOが見分けやすい。「'」と「`」が見分けにくい。
+  ##  * inconsolata … 1とl、0とOが見分けやすい。文字幅が少し狭い。
+  ##  * inconsolata-narrow … inconsolataの文字幅をさらに狭めたもの。英数字と日本語の文字幅が約1:2。
+  program_ttfont: beramono
+
+  ## ターミナル用（//terminal、//cmd）の等幅フォント。
+  ## 使用できるフォント名はプログラム用と同じ。
+  ## ただしinconsolataとinconsolata-narrow、lmodernとlmodern-lightttは互いに排他的。
+  ## たとえばプログラム用でinconsolataを使いつつターミナル用でinconsolata-narrowを
+  ## 使う、といったことはできない（どちらもinconsolata-narrowになる）。
+  terminal_ttfont: inconsolata
+
+  ## プログラム（//list）の表示幅をほんの少しだけ広げる。
+  ## 折返し記号が右端まで届かず、あともう1文字入りそうなときに使う。
+  ## 詳細は https://twitter.com/_kauplan/status/1162167825407963137
+  program_widen:   0.0mm         # 0.3mmとか
+
+  ## ターミナル（//terminal, //cmd）の表示幅をほんの少しだけ広げる。
+  ## 折返し記号が右端まで届かず、あともう1文字入りそうなときに使う。
+  ## 詳細は https://twitter.com/_kauplan/status/1162167825407963137
+  terminal_widen:  0.0mm         # 0.3mmとか
+
+  ## プログラム（//list）を枠で囲むか？
+  program_border: false
+
+  ## ターミナル（//terminal, //cmd）を枠で囲むか？
+  terminal_border: false
+
+  ## 文章中の「@<code>{...}」の背景色を薄いグレーにするか？
+  inlinecode_gray: false
+
+  ## 奥付 (Colophon) に「powered by Re:VIEW Starter」と入れるか？
+  colophon_poweredby: true
+
+  ## 画像が現在位置に入りきらず次ページに送られたとき、後続のテキストを現在位置に
+  ## 流し込むかどうか。流し込まないと現在位置に大きなスペースができてしまう。
+  ## またLaTeXの位置指定(t:top, b:bottom, p:posision)も指定可能。
+  image_position: H    # 現在位置にスペースが空く（要float.sty）
+  #image_position: h   # 現在位置に後続テキストを流し込む
+
+  ## 十分なスペースがあるのに節や項のタイトル直前で改ページされるのを避ける。
+  ## （LaTeXのデフォルトでは、ページ最下部の段落が最初の1行だけになるのを嫌う。
+  ##   そのため、節(Section)のタイトル直後が1行だけで改ページされるくらいなら
+  ##   節タイトルの直前で改ページすることをLaTeXは選ぶ。
+  ##   このせいで、十分な空きがあるのに節タイトル前で改ページされることがある。）
+  page_clubline: true      # trueなら改ページを避ける

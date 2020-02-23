@@ -1,0 +1,31 @@
+PREDEF:
+  - preface.re
+
+CHAPS:
+  - day1.re
+  - day2.re
+  - day3.re
+  - day4.re
+  - day5.re
+  - day6.re
+  - day7.re
+
+APPENDIX:
+
+POSTDEF:
+  - postface.re
+
+##
+## ■Tips
+## 第I部、第II部、…のように「部」を使うには、「CHAPS:」を次のようにする。
+##
+##   CHAPS:
+##     - 部タイトル:
+##         - chap01.re
+##         - chap02.re
+##     - 部タイトル:
+##         - chap03.re
+##         - chap04.re
+##
+## 「部タイトル」の最後に半角の「:」をつけることに注意。
+##

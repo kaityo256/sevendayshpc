@@ -1,0 +1,62 @@
+<% # -*- coding: utf-8 -*-
+
+prev_page = @prev ? "#{@prev.id}.#{@book.config['htmlext']}" : nil
+next_page = @next ? "#{@next.id}.#{@book.config['htmlext']}" : nil
+
+%>
+<!doctype html>
+<html lang="<%=h @language %>">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title><%=h @title %> | <%=h @book.config.name_of("booktitle")%></title>
+<% @stylesheets.each do |style| %>
+    <link rel="stylesheet" type="text/css" href="css/<%=h style %>" />
+<% end if @stylesheets.present? %>
+<% if next_page %>
+    <link rel="next" title="<%=h @next_title %>" href="<%=h next_page %>">
+<% end %>
+<% if prev_page %>
+    <link rel="prev" title="<%=h @prev_title %>" href="<%=h prev_page %>">
+<% end %>
+    <meta name="generator" content="Re:VIEW Starter">
+  </head>
+  <body<%= @body_ext %>>
+    <div class="page-outer">
+<% if @chapter %>
+      <nav class="side-content">
+        <a class="nav-title" href="index.html"><%=h @book.config.name_of("booktitle") %></a>
+<%= @toc %>
+      </nav>
+<% end %>
+      <div class="page-inner">
+        <header class="page-header">
+        </header>
+        <main class="page-main">
+<% if @chapter %>
+<%= @body %>
+<% else %>
+          <h1><%=h @book.config.name_of("booktitle") %></h1>
+<%= @toc %>
+<% end %>
+        </main>
+        <nav class="page-navi">
+<% if prev_page %>
+          <a href="<%=h prev_page %>" class="page-prev">&#9664;</a>
+<% end %>
+<% if next_page %>
+          <a href="<%=h next_page %>" class="page-next">&#9654;</a>
+<% end %>
+        </nav>
+        <footer>
+<% if @book.config["copyright"].present? %>
+          <p class="copyright"><%=h @config["copyright"] %></p>
+<% end %>
+        </footer>
+      </div>
+    </div>
+<% @javascripts.each do |script| %>
+    <script src="<%=h script %>"></script>
+<% end if @javascripts.present? %>
+  </body>
+</html>

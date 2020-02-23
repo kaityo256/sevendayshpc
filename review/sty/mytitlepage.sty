@@ -1,0 +1,103 @@
+%%%
+%%% タイトルページ（大扉）のデザイン
+%%%
+
+\usepackage{afterpage}                  % for '\afterpage'
+\usepackage[pagecolor=none]{pagecolor}  % for '\newpagecolor'
+
+%% 背景色を指定
+%\definecolor{starter@titlepagecolor}{gray}{0.90}  % 薄いグレー
+\colorlet{starter@titlepagecolor}{white}           % 白
+
+\newcommand{\mytitlepage}{%
+  \newpagecolor{starter@titlepagecolor} % このページの背景色を指定する
+  \afterpage{\restorepagecolor}         % 次のページからは背景色をなくす
+
+  \thispagestyle{empty}% ページ番号やヘッダーを入れない
+  \centering           % 中央寄せ
+  %\raggedright        % 左寄せ
+  %\raggedleft         % 右寄せ
+  %\addtolength{\oddsidemargin}{-2zw}% 右余白を調整する（右寄せの場合）
+
+  \vspace*{5zw}        % 縦方向のスペース（ページの先頭なので「*」が必要）
+
+  %% フォントを変更
+  \sffamily            % サンセリフ体（英語）
+  \gtfamily            % ゴシック体（日本語）
+
+  %% タイトル
+  {
+    \HUGE              % フォントサイズをかなり大きく
+    \bfseries          % 太字（日本語と英語）
+    \@ifundefined{ebseries}{}{\ebseries}% 極太字（日本語のみ、未定義なら無視）
+    \@title            % タイトル（複数行可）
+    \par               % 段落を区切る（デザイン崩れを防ぐため）
+  }
+
+  %% サブタイトル
+  \ifx\@subtitle\empty\else
+    \vspace{1zw}       % 縦方向に少しスペースを空ける
+    {
+      \Large           % フォントサイズを大きめに
+      {\rmfamily ---}~ % ローマン体で「--」
+      \@subtitle       % サブタイトル
+      ~{\rmfamily ---} % ローマン体で「--」
+      \par             % 段落を区切る（デザイン崩れを防ぐため）
+    }
+  \fi
+
+  %% フォントを変更
+  %\mcfamily           % 明朝体（日本語）
+  %\rmfamily           % ローマン体（英語）
+  \normalfont          % デフォルトの書体
+
+  %% 著者
+  \ifx\@author\empty\else
+    \vspace{8zw}       % 縦方向のスペース
+    {
+      \LARGE           % フォントサイズを大きく
+      \@author         % 著者
+      \par             % 段落を区切る（デザイン崩れを防ぐため）
+    }
+  \fi
+
+  %% 日付、バージョン、イベント名
+  \vfill               % 縦方向のスペース
+  {
+    \Large             % フォントサイズを大きめに
+    \ifx\@pubevent\empty\else
+      \@pubevent\par   % イベント名（config.ymlの「pubevent_name:」で指定）
+    \fi
+    \ifx\@latestpubhistory\empty
+      \@date           % 日付（config.ymlの「date:」で指定）
+    \else
+      \@latestpubhistory % 日付とバージョン（config.ymlの「history:」で指定）
+    \fi
+    \par               % 段落を区切る（デザイン崩れを防ぐため）
+  }
+
+  \vspace{4zw}         % 縦方向のスペース
+
+}
+
+
+%%%
+%%% タイトルページ（大扉）の、次のページ
+%%%
+\newcommand{\mytitlenextpage}{{%
+  \thispagestyle{empty}       % ページ番号やヘッダーをなくす
+  \setlength{\parindent}{0pt} % 段落先頭のインデントをなくす
+  \vspace*{\fill}      % 縦方向の長いスペース（ページ先頭なので「*」が必要）
+  \small               % フォントを小さく
+
+  {\gtfamily\bfseries ■免責}\\
+  本書は情報の提供のみを目的としています。\\
+  本書の内容を実行・適用・運用したことで何が起きようとも、それは実行・適用・運用した人自身の責任であり、著者や関係者はいかなる責任も負いません。\\
+
+  {\gtfamily\bfseries ■商標}\\
+  本書に登場するシステム名や製品名は、関係各社の商標または登録商標です。\\
+  また本書では、{\texttrademark}、{\textregistered}、{\textcopyright}などのマークは省略しています。\\
+
+  %%% 挿絵を入れる場合
+  %\includegraphics[width=0.7\textwidth]{images/illust.png}
+}}

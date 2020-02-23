@@ -1,0 +1,76 @@
+%%%
+%%% 奥付 (colophon)
+%%%
+
+\newcommand{\mycolophon}{%
+
+  \reviewcolophon                % 奥付が最終ページになるよう調整する
+
+  \thispagestyle{empty}          % ページ番号やヘッダーをなくす
+  \setlength{\parindent}{0pt}    % インデント幅をゼロに
+
+  \vspace*{\fill}                % 縦方向に伸びるスペース（ページ先頭なので「*」が必要）
+
+  {
+    \Large                       % 文字を大きく
+    \gtfamily\sffamily           % ゴシック体、サンセリフ体
+    \bfseries                    % 太字
+    \@title                      % タイトル
+    \par                         % 段落を区切る（デザイン崩れを防ぐため）
+  }
+
+  \ifx\@subtitle\empty\else
+    {
+      \gtfamily\sffamily         % ゴシック体、サンセリフ体
+      %{\rmfamily ---  }
+      \@subtitle                 % サブタイトル
+      %{\rmfamily  ---}
+      \par                       % 段落を区切る（デザイン崩れを防ぐため）
+    }
+  \fi
+
+  \rule{\textwidth}{1pt}         % 罫線
+
+  \vspace{1mm}                   % 縦方向のスペース
+
+  %%% 発行履歴（config.ymlの「history:」で編集できる）
+  \colophonpubhistory
+  %%% または
+  %\begin{tabular}{ll}
+  %  20XX年XX月XX日（技術書典X） & ver 1.0 \\
+  %  20XX年XX月XX日              & ver 1.1 \\
+  %\end{tabular}
+  \vspace{7mm}                   % 縦方向のスペース
+
+  %%% 著者、印刷所など
+  \begin{tabular}{ll}            % 表
+    \colophonokuduke
+  \end{tabular}
+  %%% または
+  %\begin{tabular}{ll}
+  %  著　者  & 〈著者名〉\\
+  %          & \hyperref{https://twitter.com/〈Twitter〉}{@〈Twitter〉} \\
+  %          & \url{〈URL〉} \\
+  %  印刷所  & 〈印刷業者〉 \\
+  %\end{tabular}
+  \vspace{2mm}                   % 縦方向のスペース
+
+  \rule{\textwidth}{1pt}         % 罫線
+
+  %%% 著作権表示
+  \colophonrights
+  %%% または
+  %{\textcopyright} 20XX 〈著者名〉 all rights reserved.
+
+  %%% 「powered by Re:VIEW Starter」の表示（消去可）
+  {
+    \ifx\starter@colophon@poweredby\empty\else
+      \raggedleft                % 右寄せ
+      \scriptsize                % 文字を小さく
+      \slshape                   % 斜体（スラント体）
+      \textcolor{darkgray}{(powered by Re:VIEW Starter)}
+      \par                       % これがないと右寄せされない
+    \fi
+  }
+
+}

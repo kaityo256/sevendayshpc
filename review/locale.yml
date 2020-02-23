@@ -1,0 +1,4 @@
+# -*- coding: utf-8 -*-
+locale: ja
+#chapter_postfix: "　"
+chapter_postfix: ""

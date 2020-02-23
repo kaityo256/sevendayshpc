@@ -143,7 +143,7 @@ $$
 
 計算結果はこんな感じになる。
 
-![uniform.png](uniform.png)
+![uniform.png](fig/uniform.png)
 
 時間がたつにつれて温度が上がっていき、定常状態に近づいていくのがわかる。
 
@@ -166,7 +166,7 @@ void fixed_temperature(std::vector<double> &lattice) {
 
 計算結果はこんな感じ。
 
-![fixed.png](fixed.png)
+![fixed.png](fig/fixed.png)
 
 時間がたつにつれて、定常状態である直線になる。ちなみに、定常状態で温度勾配が直線になる現象は[フーリエの法則](https://ja.wikipedia.org/wiki/%E7%86%B1%E4%BC%9D%E5%B0%8E#%E3%83%95%E3%83%BC%E3%83%AA%E3%82%A8%E3%81%AE%E6%B3%95%E5%89%87)という名前がついている。あのフーリエ変換のフーリエさんである。もともとフーリエは熱伝導の問題を解くためにフーリエ級数を編み出したのであった。
 

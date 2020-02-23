@@ -1,0 +1,396 @@
+@charset "utf-8";
+
+
+/*
+ *  Starter
+ */
+body {
+	line-height: 150%;
+	font-family: serif;
+	font-size: 16px;
+}
+.page-outer {
+	max-width: 1000px;
+	margin: 0 auto;
+	padding: 10px;
+	position: relative;
+}
+.page-inner {
+	margin-right: 200px;
+}
+
+
+
+nav.side-content {
+	width: 200px;
+	float: right;
+	border: solid 1px #08c;
+	font-size: small;
+	position: fixed;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	overscroll-behavior-y: contain;
+	overflow-y: auto;
+}
+nav.side-content > .nav-title {
+	display: block;
+	font-size: large;
+	font-weight: bold;
+	font-family: sans-serif;
+	border: none;
+	border-width: 0px;
+	margin: 30px 0;
+	padding: 0;
+	color: #08c;
+	text-align: center;
+	text-decoration: none;
+}
+nav.side-content > .nav-title:hover {
+	text-decoration: underline;
+}
+ul.toc {
+	padding: 0 0 0 15px;
+}
+li.toc-part {
+	margin-top: 20px;
+	margin-left: -15px;
+	font-family: sans-serif;
+	font-weight: bold;
+	list-style-type: none;
+}
+li.toc-chapter {
+	font-family: sans-serif;
+	font-weight: normal;
+	list-style-type: disc;
+}
+li.toc-section {
+	font-family: serif;
+	font-weight: normal;
+	list-style-type: circle;
+}
+
+
+
+h1, h2, h3, h4, h5 {
+	font-family: sans-serif;
+	font-weight: bold;
+}
+h1 {
+	border: solid #08c;
+	border-width: 15px 0;
+	padding: 40px 0;
+	margin: 20px 0 40px 0;
+	text-align: center;
+}
+h1 > span.secno {
+	margin-right: 1rem;
+}
+h2 {
+	background: #eef;
+	padding: 10px 0;
+	margin: 60px 0 30px 0;
+}
+h2 > span.secno {
+	background: #08c;
+	padding: 10px 20px;
+	color: #fff;
+	margin: 0 20px 0 0;
+}
+h3 {
+	margin: 40px 0 5px 0;
+}
+h3:before {
+	content: "\2663  "; /* &hearts; */
+	color: #08c;
+}
+h4 {
+	font-size: large;
+}
+h5 {
+	font-size: medium;
+	margin: 10px 0 10px 0;
+}
+h5:before {
+	content: "\25A0";  /* ■ */
+}
+
+
+
+pre, code, tt, kdb, var, samp {
+	/* font-family: monospace, serif; /* not work. why? */
+	font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+	font-size: 0.875;
+}
+pre.list, pre.emlist {
+	background: #eee;
+	padding: 3px 6px;
+	margin: 0;
+	border: solid 1px #ddd;
+	border-radius: 2px;
+	word-break: break-all;
+	white-space: pre-wrap;
+	line-height: 150%;
+}
+code.inline-code {
+	background: #eee;
+	padding: 2px 4px;
+}
+h1 > code.inline-code, h2 > code.inline-code, h3 > code.inline-code, h4 > code.inline-code, h5 > code.inline-code {
+	background: none;
+}
+.toc code.inline-code {
+	background: none;
+}
+div.cmd-code > pre {
+	background: #111;
+	color: #fff;
+	border: solid 1px #000;
+}
+div.list-code, div.emlist-code, div.listnum-code, div.emlistnum-code, div.cmd-code, div.source-code {
+	margin: 15px 0;
+}
+pre > em.lineno {
+	color: #999;
+	font-family: monospace;
+	display: inline-block;
+	width: 6rem;
+	margin-left: -6rem;
+	text-align: right;
+}
+pre > em.linenowidth {
+	color: #999;
+	font-family: monospace;
+}
+pre > .startereolmark:after {
+	content: "\21B5";
+	color: #ccc;
+}
+div.cmd-code > pre > .startereolmark:after {
+	color: #444;
+}
+
+
+
+.caption {
+	margin: 0 0 5px 0;
+	display: inline-block;
+}
+.caption:before {
+	content: '\25BC  ';  /* ▼ */
+	color: #777;
+}
+div.image > .caption:before {
+	content: '\25B2  ';   /* ▲ */
+}
+
+
+
+ul {
+	padding-left: 3rem;
+}
+ul > li {
+	margin: 4px 0;
+}
+
+
+
+ol {
+	padding-left: 3rem;
+}
+ol.ol-none {
+	list-style-type: none;
+	padding-left: 3rem;
+}
+.li-mark {
+	margin-left: -3rem;
+	display: inline-block;
+	min-width: 2.5rem;
+	padding-right: 0.5rem;
+	text-align: right;
+}
+
+
+
+div.abstract {
+	margin: 30px 70px;
+}
+
+
+
+div.column {
+	border: solid 1px #08c;
+	margin: 50px 0;
+	padding: 10px 20px;
+}
+div.column > h2, div.column > h3 {
+	margin: 0 0 10px 0;
+	background: none;
+}
+div.column > h2:before, div.column > h3:before {
+	content: "【コラム】"
+}
+
+
+
+div.note {
+	margin: 40px 50px;
+	border: dotted #08c;
+	border-width: 5px 0;
+}
+div.note > h5 {
+	margin: 15px 0;
+	font-size: large;
+}
+div.note > h5:before {
+	content: "";
+}
+
+
+
+div.table {
+	margin: 30px auto;
+	text-align: center;
+}
+
+div.table > table {
+	margin: auto auto;
+	border-collapse: collapse;
+}
+div.table > table td, div.table > table th {
+	border: solid 1px #ccc;
+	padding: 2px 4px;
+}
+div.table > table th {
+	font-family: sans-serif;
+	font-weight: bold;
+	background: #ddd;
+}
+
+
+
+strong {
+	font-family: sans-serif;
+	font-weight: bold;
+}
+em {
+	font-family: sans-serif;
+	font-weight: normal;
+	font-style: normal;
+}
+dt {
+	font-family: sans-serif;
+	font-weight: bold;
+}
+
+
+
+div.image {
+	margin: 30px 0;
+	text-align: center;
+}
+div.image > img {
+}
+div.image > img[border=on], div.image > img.border {
+	border: solid 1px #ccc;
+}
+.image-bordered {
+	border: solid 1px #ccc;
+}
+
+
+
+div.footnote-list {
+	font-size: small;
+	margin: 30px 0 30px 100px;
+}
+div.footnote {
+}
+p.footnote {
+	margin: 10px 0;
+}
+.footnote-mark {
+	display: inline-block;
+	margin-left: -6rem;
+	width: 5.5rem;
+	padding-right: 0.5rem;
+	text-align: right;
+}
+
+.noteref {
+	font-size: x-small;
+	vertical-align: top;
+	position: relative;
+	top: -0.2rem;
+}
+
+
+
+.sampleoutput {
+	margin: 15px 0;
+}
+.sampleoutput-inner {
+	border: solid 1px #ccc;
+	border-radius: 2px;
+	padding: 10px;
+}
+
+
+.img		{ max-width: 100%; }
+
+.width-010per	{ max-width:  10%; }
+.width-015per	{ max-width:  15%; }
+.width-020per	{ max-width:  20%; }
+.width-025per	{ max-width:  25%; }
+.width-030per	{ max-width:  30%; }
+.width-035per	{ max-width:  35%; }
+.width-040per	{ max-width:  40%; }
+.width-045per	{ max-width:  45%; }
+.width-050per	{ max-width:  50%; }
+.width-055per	{ max-width:  55%; }
+.width-060per	{ max-width:  60%; }
+.width-065per	{ max-width:  65%; }
+.width-070per	{ max-width:  70%; }
+.width-075per	{ max-width:  75%; }
+.width-080per	{ max-width:  80%; }
+.width-085per	{ max-width:  85%; }
+.width-090per	{ max-width:  90%; }
+.width-095per	{ max-width:  95%; }
+.width-100per	{ max-width: 100%; }
+
+.width-033per	{ max-width:  33%; }
+.width-066per	{ max-width:  66%; }
+.width-067per	{ max-width:  67%; }
+
+
+
+.weak {
+	color: #999;
+}
+.cursor {
+	color: #000;
+	background: #fff;
+}
+.review-signature {
+	display: none;
+}
+.center {
+	text-align: center;
+}
+.left {
+	text-align: left;
+}
+.right {
+	text-align: right;
+}
+.blockquote {
+	border: solid #999;
+	border-width: 0 0 0 5px;
+	padding-left: 15px;
+}
+.balloon {
+	color: #999;
+}
+.balloon:before {
+	content: "←";
+}

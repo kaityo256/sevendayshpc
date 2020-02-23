@@ -1,0 +1,54 @@
+%%
+%% これはreviewstarterが独自で用意した、本文の幅を指定するための
+%% スタイルファイル。このファイルは、layouts/layout.tex.erbから
+%% 自動生成されたLaTeXファイルから読み込まれる。
+%% そのため、config.ymlで読み込み指定する必要がない。
+%%
+%% 【同人誌や印刷物用のPDFなら】
+%%  ・サイズはB5またはA5を使う（レポートや論文ではないのでA4は使わない）。
+%%  ・フォントサイズは、B5なら10pt、A5なら9ptがお勧め（8ptは少し小さい）。
+%%  ・1行あたりの文字数は、B5なら42〜45文字、A5なら37〜40文字がお勧め。
+%%  ・ノド（見開きで内側）の余白は片側20mm（見開きで合計40mm）をとること。
+%%    （一見、余白が広すぎるように見えるがそれ以下だと印刷物が読みにくい）
+%%  ・小口（見開きで外側）の余白は最低でも片側で10mm必要。
+%%    （それ以下だとページめくりの指で本文の文字が隠れて読みにくい）
+%%  ・文字数を増やすなら、8ptにするよりノド20mmのまま小口の余白を狭くする。
+%%    （つまり右ページと左ページで左右の余白を変える）
+%%  ・ページ数が少ない場合を除き、右起こし（右ページ始まり）にする。
+%%    そうするにはconfig.ymlで「texdocumentclass:」に"openright"を含め、
+%%    そうしたくないときは"openany"を含める。
+%%  ・ページに左右があるので、「texdocumentclass:」に"twoside"を指定する。
+%%
+%% 【電子書籍向けのPDFなら】
+%%  ・サイズはA5がお勧め（B5だとタブレットで見づらい）。
+%%  ・フォントサイズは10pt、1行あたり40〜42文字が読みやすい。
+%%  ・印刷物と違い、余白は狭いほうがよい（全角1文字か2文字分）。
+%%  ・小さいフォントサイズにしてページ数を減らす必要はない。
+%%  ・右起こし（右ページ始まり）にする必要はない。
+%%  ・ページに左右がないので、「texdocumentclass:」に"oneside"を指定する。
+%%
+
+%% 本文の幅を設定
+\setlength{\textwidth}{44zw}  % 全角44文字
+\setlength{\fullwidth}{\textwidth}  % ヘッダの幅を本文と同じにする
+%% 左右の余白幅を設定
+\setlength{\oddsidemargin}{\paperwidth}      % 紙の幅から
+\addtolength{\oddsidemargin}{-\textwidth}    % 本文の幅を引いて
+\setlength{\oddsidemargin}{.5\oddsidemargin} % 半分にする
+\addtolength{\oddsidemargin}{-\inv@mag in}   % 1インチ分ずらす
+\setlength{\evensidemargin}{\oddsidemargin}  % 偶数ページも同じ
+%% 奇数・偶数ページで余白幅を変える場合
+%% （ただし pbook (printing book) の場合だけ）
+\newcommand\if@pbook{         % \starter@target の値が pbook かどうかを調べる
+  \def\@tempa{pbook}
+  \ifx\starter@target\@tempa  % \starter@target は layouts/layout.tex.erb の先頭で定義される
+}
+\if@pbook
+  \addtolength{\oddsidemargin}{1.5zw}   % 奇数ページで1.5文字分広げる
+  \addtolength{\evensidemargin}{-1.5zw} % 偶数ページで1.5文字分狭める
+\fi
+
+%% 天（ページ上部）の余白を狭め、そのぶん本文の高さに加える
+\addtolength{\topmargin}{-11mm}
+\addtolength{\textheight}{11mm}
+\addtolength{\headsep}{1mm}
