@@ -35,7 +35,8 @@ day7.md: ../day7/README.md
 	ruby post.rb $*.post > $*.re
 
 sevendayshpc.pdf: config.yml $(RE)
-	docker run -it --rm -v C:\\Users\\watanabe\\Desktop\\github\\sevendayshpc\\review:/work kauplan/review2.5 /bin/bash -c "cd /work;rake pdf"
+	docker run --rm -v `pwd`/:/work kauplan/review2.5 /bin/bash -c "cd /work; rake pdf"
+	#docker run -it --rm -v C:\\Users\\watanabe\\Desktop\\github\\sevendayshpc\\review:/work kauplan/review2.5 /bin/bash -c "cd /work;rake pdf"
 
 
 clean:
