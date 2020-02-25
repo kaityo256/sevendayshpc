@@ -92,9 +92,74 @@ void dump(std::vector<double> &data) {
 }
 ```
 
-あとは適当な条件を与えれば時間発展させることができる。ここでは、「一様加熱」と「温度固定」の二通りを試してみよう。コードはこちら。
+あとは適当な条件を与えれば時間発展させることができる。ここでは、「一様加熱」と「温度固定」の二通りを試してみよう。以下のコードを`thermal.cpp`という名前で保存、実行してみよう。
 
-[thermal.cpp](thermal.cpp)
+```cpp
+#include <cstdio>
+#include <fstream>
+#include <iostream>
+#include <vector>
+
+const int L = 128;
+const int STEP = 100000;
+const int DUMP = 1000;
+
+void onestep(std::vector<double> &lattice, const double h) {
+  static std::vector<double> orig(L);
+  std::copy(lattice.begin(), lattice.end(), orig.begin());
+  for (int i = 1; i < L - 1; i++) {
+    lattice[i] += h * (orig[i - 1] - 2.0 * orig[i] + orig[i + 1]);
+  }
+  // For Periodic Boundary
+  lattice[0] += h * (orig[L - 1] - 2.0 * lattice[0] + orig[1]);
+  lattice[L - 1] += h * (orig[L - 2] - 2.0 * lattice[L - 1] + orig[0]);
+}
+
+void dump(std::vector<double> &data) {
+  static int index = 0;
+  char filename[256];
+  sprintf(filename, "data%03d.dat", index);
+  std::cout << filename << std::endl;
+  std::ofstream ofs(filename);
+  for (int i = 0; i < data.size(); i++) {
+    ofs << i << " " << data[i] << std::endl;
+  }
+  index++;
+}
+
+void fixed_temperature(std::vector<double> &lattice) {
+  const double h = 0.01;
+  const double Q = 1.0;
+  for (int i = 0; i < STEP; i++) {
+    onestep(lattice, h);
+    lattice[L / 4] = Q;
+    lattice[3 * L / 4] = -Q;
+    if ((i % DUMP) == 0) dump(lattice);
+  }
+}
+
+void uniform_heating(std::vector<double> &lattice) {
+  const double h = 0.2;
+  const double Q = 1.0;
+  for (int i = 0; i < STEP; i++) {
+    onestep(lattice, h);
+    for (auto &s : lattice) {
+      s += Q * h;
+    }
+    lattice[0] = 0.0;
+    lattice[L - 1] = 0.0;
+    if ((i % DUMP) == 0) dump(lattice);
+  }
+}
+
+int main() {
+  std::vector<double> lattice(L, 0.0);
+  //uniform_heating(lattice);
+  fixed_temperature(lattice);
+}
+```
+
+実行結果は以下のようになる。
 
 ![fig/thermal.png](fig/thermal.png)
 
@@ -188,9 +253,7 @@ void fixed_temperature(std::vector<double> &lattice) {
 とりあえずメモリに問題なければ「3. 一度まとめてから吐く」が楽なので、今回はこれを採用しよう。メモリが厳しかったり、数万プロセスの計算とかする時にはなにか工夫してくださいまし。
 
 さて、「一度まとめてから吐く」ためには、「各プロセスにバラバラにあるデータを、どこかのプロセスに一括して持ってくる」必要があるのだが、MPIには
-そのものずばり`MPI_Gather`という関数がある。使い方は以下のサンプルを見たほうが早いと思う。
-
-[gather.cpp](gather.cpp)
+そのものずばり`MPI_Gather`という関数がある。使い方はサンプルを見たほうが早い。以下を`gather.cpp`という名前で保存、実行しよう。
 
 ```cpp
 #include <cstdio>
@@ -343,11 +406,104 @@ void fixed_temperature(std::vector<double> &lattice, int rank, int procs) {
 }
 ```
 
-これも一様加熱と同じで、「温度を固定している場所がどのプロセスが担当するどの場所か」を調べる必要があるが、それを考えるのはさほど難しくないだろう。
+これも一様加熱と同じで、「温度を固定している場所がどのプロセスが担当するどの場所か」を調べる必要があるが、それを考えるのはさほど難しくないだろう。そんなわけで完成した並列コードを`thermal_mpi.cpp`という名前で保存しよう。
 
-そんなわけで完成した並列コードがこちら。
+```cpp
+#include <cstdio>
+#include <fstream>
+#include <iostream>
+#include <mpi.h>
+#include <vector>
 
-[thermal_mpi.cpp](thermal_mpi.cpp)
+const int L = 128;
+const int STEP = 100000;
+const int DUMP = 1000;
+
+void dump(std::vector<double> &data) {
+  static int index = 0;
+  char filename[256];
+  sprintf(filename, "data%03d.dat", index);
+  std::cout << filename << std::endl;
+  std::ofstream ofs(filename);
+  for (unsigned int i = 0; i < data.size(); i++) {
+    ofs << i << " " << data[i] << std::endl;
+  }
+  index++;
+}
+
+void dump_mpi(std::vector<double> &local, int rank, int procs) {
+  static std::vector<double> global(L);
+  MPI_Gather(&(local[1]), L / procs, MPI_DOUBLE, global.data(), L / procs, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  if (rank == 0) {
+    dump(global);
+  }
+}
+
+void onestep(std::vector<double> &lattice, double h, int rank, int procs) {
+  const int size = lattice.size();
+  static std::vector<double> orig(size);
+  std::copy(lattice.begin(), lattice.end(), orig.begin());
+  // ここから通信のためのコード
+  const int left = (rank - 1 + procs) % procs; // 左のランク番号
+  const int right = (rank + 1) % procs;        // 右のランク番号
+  MPI_Status st;
+  // 右端を右に送って、左端を左から受け取る
+  MPI_Sendrecv(&(lattice[size - 2]), 1, MPI_DOUBLE, right, 0, &(orig[0]), 1, MPI_DOUBLE, left, 0, MPI_COMM_WORLD, &st);
+  // 左端を左に送って、右端を右から受け取る
+  MPI_Sendrecv(&(lattice[1]), 1, MPI_DOUBLE, left, 0, &(orig[size - 1]), 1, MPI_DOUBLE, right, 0, MPI_COMM_WORLD, &st);
+
+  //あとはシリアル版と同じ
+  for (int i = 1; i < size - 1; i++) {
+    lattice[i] += h * (orig[i - 1] - 2.0 * orig[i] + orig[i + 1]);
+  }
+}
+
+void uniform_heating(std::vector<double> &lattice, int rank, int procs) {
+  const double h = 0.2;
+  const double Q = 1.0;
+  for (int i = 0; i < STEP; i++) {
+    onestep(lattice, h, rank, procs);
+    for (auto &s : lattice) {
+      s += Q * h;
+    }
+    if (rank == 0) {
+      lattice[1] = 0.0;
+    }
+    if (rank == procs - 1) {
+      lattice[lattice.size() - 2] = 0.0;
+    }
+    if ((i % DUMP) == 0) dump_mpi(lattice, rank, procs);
+  }
+}
+
+void fixed_temperature(std::vector<double> &lattice, int rank, int procs) {
+  const double h = 0.01;
+  const double Q = 1.0;
+  const int s = L / procs;
+  for (int i = 0; i < STEP; i++) {
+    onestep(lattice, h, rank, procs);
+    if (rank == (L / 4 / s)) {
+      lattice[L / 4 - rank * s + 1] = Q;
+    }
+    if (rank == (3 * L / 4 / s)) {
+      lattice[3 * L / 4 - rank * s + 1] = -Q;
+    }
+    if ((i % DUMP) == 0) dump_mpi(lattice, rank, procs);
+  }
+}
+
+int main(int argc, char **argv) {
+  MPI_Init(&argc, &argv);
+  int rank, procs;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &procs);
+  const int mysize = L / procs + 2;
+  std::vector<double> local(mysize);
+  uniform_heating(local, rank, procs);
+  //fixed_temperature(local, rank, procs);
+  MPI_Finalize();
+}
+```
 
 せっかく並列化したので、高速化したかどうか調べてみよう。一様加熱の計算をさせてみる。
 

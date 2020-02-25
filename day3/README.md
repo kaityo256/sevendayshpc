@@ -19,7 +19,7 @@
 まず、自明並列でよく出てくる例として、サンプリング数を並列化で稼ぐ方法を見てみよう。とりあえず定番の、
 モンテカルロ法で円周率を計算してみる。
 
-こんなコードを書いて、[calc_pi.cpp](calc_pi.cpp)という名前で保存してみよう。
+こんなコードを書いて、`calc_pi.cpp`という名前で保存してみよう。
 
 ```cpp
 #include <cstdio>
@@ -65,7 +65,7 @@ $ ./a.out
 4. ランク番号を乱数の種に使う
 5. そのまま`calc_pi`を呼ぶ。
 
-以上の修正をしたコードを[calc_pi_mpi.cpp](calc_pi_mpi.cpp)という名前で作成する。
+以上の修正をしたコードを`calc_pi_mpi.cpp`という名前で作成する。
 
 ```cpp
 #include <cstdio>
@@ -154,7 +154,7 @@ PID    COMMAND      %CPU TIME     #TH   #WQ  #PORT MEM    PURG   CMPRS  PGRP
 
 ## 自明並列テンプレート
 
-先程の並列プログラム[calc_pi_mpi.cpp](calc_pi_mpi.cpp)のmain関数はこうなっていた。
+先程の並列プログラム`calc_pi_mpi.cpp`のmain関数はこうなっていた。
 
 ```cpp
 int main(int argc, char **argv) {
@@ -242,9 +242,7 @@ MPI_Comm_size(MPI_COMM_WORLD, &procs)
 ```
 
 とすれば、`procs`にプロセス数が入る。これを使うと、先程のコードは
-こんな感じにかける。
-
-[processfiles.cpp](processfiles.cpp)
+こんな感じにかける(`processfiles.cpp`)。
 
 ```cpp
 #include <cstdio>
@@ -299,7 +297,7 @@ MPI_Allreduce(&pi, &pi_sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
 第一引数から、「和を取りたい変数」「和を受け取りたい変数」「変数の数」「変数の型」「やりたい演算」「コミュニケータ」の順番で指定する。ここでは一つの変数のみ総和演算を行っているが、配列を渡して一気に複数のデータについて総和を取ることもできる。また、総和だけでなく積や論理演算も実行できる。
 
-円周率の推定値`pi`と、その自乗`pi2 = pi*pi`について総和を取り、定義通りに期待値と標準偏差を求めるコードが[calc_pi_reduce.cpp](calc_pi_reduce.cpp)である。
+円周率の推定値`pi`と、その自乗`pi2 = pi*pi`について総和を取り、定義通りに期待値と標準偏差を求めるコードが以下の`calc_pi_reduce.cpp`である。
 
 ```cpp
 #include <cstdio>
