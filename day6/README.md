@@ -36,9 +36,7 @@ OSの管理下で動くプロセスから見える「メモリ」は、それを
 
 などが挙げられる。なお、Windowsでは「ハードディスクにスワップする領域の上限」のことを「仮想メモリ」と呼んでいるようなので注意。
 
-実際に、プロセスごとに固有の仮想メモリが与えられているのを見てみよう。こんなコードを書いてみる。
-
-[vmem.cpp](vmem.cpp)
+実際に、プロセスごとに固有の仮想メモリが与えられているのを見てみよう。こんなコード(`vmem.cpp`)を書いてみる。
 
 ```cpp
 #include <cstdio>
@@ -214,7 +212,11 @@ flat-MPIをやっている場合は、各プロセスごとに独立な論理メ
 
 * Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz 12コア x 2ソケット
 
-まず、シリアルコードとしてDay 4で使ったGray Scottモデルの計算を使おう。純粋に計算のみをカウントするため、途中のファイル出力を削除し、また実行時間を測定するようにしたのが[gs.cpp](gs.cpp)である。ただし、デバッグのために最終結果だけファイルに出力している。コンパイルして`perf`でプロファイルをとってみよう。まず、`perf record`で記録を取る。
+まず、シリアルコードとしてDay 4で使ったGray Scottモデルの計算を使おう。純粋に計算のみをカウントするため、途中のファイル出力を削除し、また実行時間を測定するようにしたものが`gs.cpp`である。
+
+[https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs.cpp)
+
+ただし、デバッグのために最終結果だけファイルに出力している。コンパイルして`perf`でプロファイルをとってみよう。まず、`perf record`で記録を取る。
 
 ```sh
 $ g++ -O3 -mavx2 -std=c++11 -fopenmp gs.cpp -o gs.out
@@ -265,7 +267,7 @@ void calc(vd &u, vd &v, vd &u2, vd &v2) {
 
 まずは内側のループにディレクティブを入れてみよう。`#pragma omp parallel for`というディレクティブを対象ループの直前に入れるだけでよい。
 
-[gs_omp1.cpp](gs_omp1.cpp)
+[https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp1.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp1.cpp)
 
 ```cpp
 void calc(vd &u, vd &v, vd &u2, vd &v2) {
@@ -306,7 +308,7 @@ diff conf000.org conf000.dat
 
 次に、外側を並列化してみよう。
 
-[gs_omp2.cpp](gs_omp2.cpp)
+[https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp2.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp2.cpp)
 
 ```cpp
 void calc(vd &u, vd &v, vd &u2, vd &v2) {
@@ -582,7 +584,10 @@ const auto e = std::chrono::system_clock::now();
 const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(e - s).count();
 ```
 
-これで`elapsed`にミリ秒単位の値が入る。このようにして作ったハイブリッド版の反応拡散方程式ソルバが[gs_hybrid.cpp](gs_hybrid.cpp)である。
+これで`elapsed`にミリ秒単位の値が入る。このようにして作ったハイブリッド版の反応拡散方程式ソルバが`gs_hybrid.cpp`である。
+
+[https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_hybrid.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_hybrid.cpp)
+
 筆者の環境ではMPIにパスが通してあるので、以下のようなオプションでコンパイルできる。
 
 ```sh

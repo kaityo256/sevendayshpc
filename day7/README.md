@@ -55,9 +55,7 @@ void print256d(__m256d x) {
 ```
 
 `_m256d x`が、そのまま`double x[4]`として使えているのがわかると思う。この時、`x[0]`が一番下位となる。
-先程の代入と合わせるとこんな感じになる。
-
-[print.cpp](print.cpp)
+先程の代入と合わせるとこんな感じになる(`print.cpp`)。
 
 ```cpp
 #include <cstdio>
@@ -112,9 +110,7 @@ __Z3addDv4_dS_:
 
 `vaddpd`はSIMDの足し算を行う命令であり、ちゃんとYMMレジスタの足し算が呼ばれていることがわかる。
 
-実際に4要素同時に足し算できることを確認しよう。
-
-[add.cpp](add.cpp)
+実際に4要素同時に足し算できることを確認しよう(`add.cpp`)。
 
 ```cpp
 #include <cstdio>
@@ -140,9 +136,7 @@ $ ./a.out
 
 `(0,1,2,3)`というベクトルと、`(4,5,6,7)`というベクトルの和をとり、`(4,6,8,10)`というベクトルが得られた。
 このように、ベクトル同士の演算に見えるので、SIMD化のことをベクトル化と呼んだりする。ただし、線形代数で出てくる
-ベクトルの積とは違い、SIMDの積は単に要素ごとの積になることに注意。実際、さっきの和を積にするとこうなる。
-
-[mul.cpp](mul.cpp)
+ベクトルの積とは違い、SIMDの積は単に要素ごとの積になることに注意。実際、さっきの和を積にするとこうなる(`mul.cpp`)。
 
 ```cpp
 #include <cstdio>
@@ -168,10 +162,7 @@ $ ./a.out
 
 それぞれ、`0*0`、`1*5`、`2*6`、`3*7`が計算されていることがわかる。
 
-あとSIMD化で大事なのは、SIMDレジスタへのデータの読み書きである。先程はデバッグのために`_mm256_set_pd`を使ったが、これは極めて遅い。
-どんな動作をするか見てみよう。
-
-[setpd.cpp](setpd.cpp)
+あとSIMD化で大事なのは、SIMDレジスタへのデータの読み書きである。先程はデバッグのために`_mm256_set_pd`を使ったが、これは極めて遅い。どんな動作をするか見てみよう(`setpd.cpp`)。
 
 ```cpp
 #include <x86intrin.h>
@@ -211,9 +202,7 @@ __Z5setpddddd:
 例えば、`_mm256_load_pd`は、指定されたポインタから連続する4つの倍精度実数をとってきて
 YMMレジスタに入れてくれる。ただし、そのポインタの指すアドレスは32バイトアラインされていなければならない。
 
-利用例はこんな感じになる。
-
-[load.cpp](load.cpp)
+利用例はこんな感じになる(`load.cpp`)。
 
 ```cpp
 #include <cstdio>
@@ -245,9 +234,7 @@ $ ./a.out
 10.000000 8.000000 6.000000 4.000000
 ```
 
-`_mm256_load_pd`が何をやっているか(どんなアセンブリに対応するか)も見てみよう。こんなコードのアセンブリを見てみる。
-
-[loadasm.cpp](loadasm.cpp)
+`_mm256_load_pd`が何をやっているか(どんなアセンブリに対応するか)も見てみよう。こんなコードのアセンブリを見てみる(`loadasm.cpp`)。
 
 ```cpp
 #include <x86intrin.h>  
@@ -302,9 +289,7 @@ IBM以外でも、ARMが規定したアセンブリ言語であるUALは「[Unif
 ## 簡単なSIMD化の例
 
 では、実際にSIMD化をやってみよう。こんなコードを考える。
-一次元の配列の単純な和のループである。
-
-[func.cpp](func.cpp)
+一次元の配列の単純な和のループである(`func.cpp`)。
 
 ```cpp
 const int N = 10000;
@@ -351,9 +336,7 @@ x86は歴史的経緯からスカラーコードでも浮動小数点演算にSI
 * 二つのレジスタを足す
 * 結果のレジスタを配列cのしかるべき場所に保存する
 
-ということをすればSIMD化完了である。コードを見たほうが早いと思う。
-
-[func_simd.cpp](func_simd.cpp)
+ということをすればSIMD化完了である。コードを見たほうが早いと思う(`func_simd.cpp`)。
 
 ```cpp
 #include <x86intrin.h>
@@ -437,9 +420,64 @@ void check(void(*pfunc)(), const char *type) {
 }
 ```
 
-全部まとめたコードはこちら。
+全部まとめたコードを`simdcheck.cpp`として保存、実行してみよう。
 
-[simdcheck.cpp](simdcheck.cpp)
+```cpp
+#include <cstdio>
+#include <random>
+#include <algorithm>
+#include <x86intrin.h>
+
+const int N = 10000;
+
+double a[N], b[N], c[N];
+double ans[N];
+
+void check(void(*pfunc)(), const char *type) {
+  pfunc();
+  unsigned char *x = (unsigned char *)c;
+  unsigned char *y = (unsigned char *)ans;
+  bool valid = true;
+  for (int i = 0; i < 8 * N; i++) {
+    if (x[i] != y[i]) {
+      valid = false;
+      break;
+    }
+  }
+  if (valid) {
+    printf("%s is OK\n", type);
+  } else {
+    printf("%s is NG\n", type);
+  }
+}
+
+void func() {
+  for (int i = 0; i < N; i++) {
+    c[i] = a[i] + b[i];
+  }
+}
+
+void func_simd() {
+  for (int i = 0; i < N; i += 4) {
+    __m256d va = _mm256_load_pd(&(a[i]));
+    __m256d vb = _mm256_load_pd(&(b[i]));
+    __m256d vc = va + vb;
+    _mm256_store_pd(&(c[i]), vc);
+  }
+}
+
+int main() {
+  std::mt19937 mt;
+  std::uniform_real_distribution<double> ud(0.0, 1.0);
+  for (int i = 0; i < N; i++) {
+    a[i] = ud(mt);
+    b[i] = ud(mt);
+    ans[i] = a[i] + b[i];
+  }
+  check(func, "scalar");
+  check(func_simd, "vector");
+}
+```
 
 実際に実行してテストしてみよう。
 
@@ -814,7 +852,7 @@ void dump() {
 }
 ```
 
-時間発展後に座標をダンプして、その結果を比較しよう。シリアル版を[mag.cpp](magnetic/mag.cpp)、SIMD版を[mag_simd.cpp](magnetic/mag_simd.cpp)としておき、以下のようにコンパイル、実行、結果の比較をする。
+時間発展後に座標をダンプして、その結果を比較しよう。シリアル版を[mag.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day7/magnetic/mag.cpp)、SIMD版を[mag_simd.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day7/magnetic/mag_simd.cpp)としておき、以下のようにコンパイル、実行、結果の比較をする。
 
 ```sh
 $ g++ -std=c++11 -O3 -mavx2 -mfma mag.cpp -o a.out
@@ -948,6 +986,6 @@ L13:
 
 `vpermpd`がシャッフル命令である。ループボディがかなり小さいが、このループは100000回まわるため、25000回しかまわらないコンパイラによる自動SIMD化ルーチンには勝てない。大雑把な話、ループボディの計算コストが半分だが、回転数が4倍なので2倍負けた、という感じである。
 
-上記の例のように、「いま手元にあるコード」をがんばって「そのままSIMD化」して高速化しても、データ構造を変えるとコンパイラがあっさり自動SIMD化できて負けることがある。多くの場合「SIMD化」はデータ構造のグローバルな変更を伴う。先のコードのAoS版である[md.cpp](md.cpp)と、SoA版である[md_soa.cpp](md_soa.cpp)は、全く同じことをしているが **全書き換え** になっている。今回はコードが短いから良いが、10万行とかあるコードだと「やっぱりSoAの方が早いから全書き換えで！」と気軽には言えないだろう。また、デバイスによってデータ構造の向き不向きもある。例えば「CPUではAoSの方が早いが、GPGPUではSoAの方が早い」なんてこともざらにある。こういう場合には、ホットスポットルーチンに入る前にAoS←→SoAの相互変換をしたりすることも検討するが、もちろんその分オーバーヘッドもあるので面倒くさいところである。
+上記の例のように、「いま手元にあるコード」をがんばって「そのままSIMD化」して高速化しても、データ構造を変えるとコンパイラがあっさり自動SIMD化できて負けることがある。多くの場合「SIMD化」はデータ構造のグローバルな変更を伴う。先のコードのAoS版である[mag.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day7/magnetic/mag.cpp)と、SoA版である[mag_soa.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day7/magnetic/mag_soa.cpp)は、全く同じことをしているが **全書き換え** になっている。今回はコードが短いから良いが、10万行とかあるコードだと「やっぱりSoAの方が早いから全書き換えで！」と気軽には言えないだろう。また、デバイスによってデータ構造の向き不向きもある。例えば「CPUではAoSの方が早いが、GPGPUではSoAの方が早い」なんてこともざらにある。こういう場合には、ホットスポットルーチンに入る前にAoS←→SoAの相互変換をしたりすることも検討するが、もちろんその分オーバーヘッドもあるので面倒くさいところである。
 
 まぁ、以上のようにいろいろ面倒なことを書いたが、ちゃんと手を動かして上記を試してみた方には「SIMD化は(原理的には)簡単だ」ということには同意してもらえると思う。MPIもSIMD化も同じである。いろいろ考えることがあって面倒だが、やること自体は単純なので難しくはない。今回はシャッフル命令を取り上げたが、他にもマスク処理やgather/scatter、pack/unpackなど、SIMDには実に様々な命令がある。しかし、「そういう命令欲しいな」と思って調べたらたいがいある。あとは対応する組み込み関数を呼べばよい。要するに「やるだけ」である。ただし、MPI化は「やれば並列計算ができ、かつプロセスあたりの計算量を増やせばいくらでも並列化効率を上げられる」ことが期待されるのに対して、SIMD化は「やっても性能が向上するかはわからず、下手に手を出すよりコンパイラに任せた方が早い」なんてこともある。全くSIMD化されていないコードに対してSIMD化で得られるゲインは、256bitなら4倍、512ビットでも8倍程度しかなく、現実にはその半分も出れば御の字であろう。SIMD化はやってて楽しい作業であるが、手間とコストが釣り合うかどうかは微妙だな、というのが筆者の実感である。

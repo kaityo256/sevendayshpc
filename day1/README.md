@@ -123,7 +123,7 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 ## はじめてのMPI
 
-環境構築ができたら、こんなコードを書いて、[hello.cpp](hello.cpp)という名前で保存してみよう。
+環境構築ができたら、こんなコードを書いて、`hello.cpp`という名前で保存してみよう。
 
 ```cpp
 #include <cstdio>
@@ -196,9 +196,7 @@ MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 ```
 
 これを実行すると変数`rank`にランク番号が入る。N並列している場合、ランクは0からN-1までである。
-試してみよう。
-
-[rank.cpp](rank.cpp)
+試してみよう。以下を`rank.cpp`として保存し、コンパイル、実行してみよう。
 
 ```cpp
 #include <cstdio>
@@ -301,7 +299,7 @@ mpirun -np 4 ./a.out
 競合が起きないようにする。
 「ひとかたまりの処理」とは、例えば「`printf`で出力を始めてから終わるまで」である。
 
-例えば先程の[rank.cpp](rank.cpp)の例では、
+例えば先程の`rank.cpp`の例では、
 
 ```cpp
 printf("Hello! My rank is %d\n", rank);
@@ -330,11 +328,7 @@ puts("Hello! My rank is 3");
 
 とかになるだけで、さほど表示は乱れない。
 
-さて、同様なプログラムを`std::cout`で書いてみよう。
-
-こんな感じになると思う。
-
-[rank_stream.cpp](rank_stream.cpp)
+さて、同様なプログラムを`std::cout`で書いてみよう。以下を`rank_stream.cpp`という名前で保存、コンパイル、実行してみよう。
 
 ```cpp
 #include <iostream>
@@ -468,11 +462,7 @@ gdbで特定のプロセスにアタッチする。しかし、gdbでアタッ�
 * gdbで変数をいじって無限ループを脱出させる
 * あとは好きなようにデバッグする
 
-という方針でいく。なお、なぜかMac OSではMPIプロセスへのgdbのアタッチがうまくいかなかったので、以下はCentOSで実行している。
-
-こんなコードを書く。
-
-[gdb_mpi.cpp](gdb_mpi.cpp)
+という方針でいく。なお、なぜかMac OSではMPIプロセスへのgdbのアタッチがうまくいかなかったので、以下はCentOSで実行している。以下を`gdb_mpi.cpp`という名前で保存しよう。
 
 ```cpp
 #include <cstdio>
