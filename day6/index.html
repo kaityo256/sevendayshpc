@@ -193,8 +193,8 @@ $ <span class="ex">perf</span> record ./gs.out
 <div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">perf</span> report</code></pre></div>
 <p>環境によるが、こんな画面が出てくる。</p>
 <div class="figure">
-<img src="perf.png" alt="perf.png" />
-<p class="caption">perf.png</p>
+<img src="fig/perf_sample.png" alt="fig/perf_sample.png" />
+<p class="caption">fig/perf_sample.png</p>
 </div>
 <p>いろいろ出てきているが、とりあえずメインの計算ルーチン<code>calc</code>が計算時間の99.36%を占めるのを確認すれば良い。 このように一番「重い」関数のことを <strong>ホットスポット(hotspot)</strong> と呼ぶ。ホットスポットが90%以上を占めるような計算コードはチューニングがやりやすい。</p>
 <p>さて、一番重い関数はこんな感じになっている。</p>
@@ -422,14 +422,14 @@ $ <span class="va">OMP_NUM_THREADS=</span>24 <span class="ex">./gs_omp2.out</spa
 <span class="ex">2</span> 2 4635 [ms]</code></pre></div>
 <p>これを、手元のスパコンでベンチマークを取ってみよう。石はIntel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz、12コアが2ソケットで1ノードである。 まずは1ノードで、1プロセス1スレッドの計算から、スレッド数だけ2,3,4,6...と増やした場合と、プロセス数だけ2,3,4,6...と増やした場合の結果である。</p>
 <div class="figure">
-<img src="single_scaling.png" alt="single_scaling.png" />
-<p class="caption">single_scaling.png</p>
+<img src="fig/single_scaling.png" alt="fig/single_scaling.png" />
+<p class="caption">fig/single_scaling.png</p>
 </div>
 <p>左が実行時間で両対数、右が並列化効率で片対数グラフになっている。プロセス数を増やした場合、つまりflat-MPIの方が実行効率が良いことがわかる。 24プロセス計算で、シリアル計算に比べて16.6倍、つまり並列化効率にして70%程度出ている。一方、全てスレッド並列で実行した場合も、さほど悪くはないが、 24スレッド計算で、シリアル計算に比べて11.6倍、並列化効率にして48%と、50%を切ってしまう。MPIはバッファを作ったりコピーしたりという手間が発生する分、 マルチスレッドより遅くなりそうだが、今回のケースではflat-MPIの方が早かった。</p>
 <p>今度はノードをまたいでみよう。18ノードで計算してみる。各ノードには2ソケットx12コア、合計24コアあるから、全体で18x24=432個のCPUコアがある。 これを、プログラム全体を432スレッドのまま、プロセス数を変えてみよう。例えば、flat-MPIなら1プロセスに1スレッドなので、432プロセスが最大プロセス数、 1ノードにフルにスレッドを立てると24スレッドなので、18プロセス24スレッドの計算が最小プロセス数である。 横軸にプロセス数、縦軸に実行時間をとった結果が以下の通り。</p>
 <div class="figure">
-<img src="multi.png" alt="multi.png" />
-<p class="caption">multi.png</p>
+<img src="fig/multi.png" alt="fig/multi.png" />
+<p class="caption">fig/multi.png</p>
 </div>
 <p>横軸は対数スケールになっている。全て432スレッドの計算で、違いは「1プロセスが何スレッドを束ねているか」だけなのだが、ここでは432プロセス計算、 すなわち1プロセスが1スレッドだけを持っているflat-MPI計算が最も早かった。</p>
 <p>一般論として、プロセスとスレッドには最適な割合が存在し、どれが一番早いかはやってみないとわからない。 しかし、筆者の経験としては、非常に単純な計算で、かつそこそこ計算量がある場合はflat-MPIが一番早いことが多い。 ただし、筆者はスレッド並列化にあまり慣れていないため、上記のコードもOpenMPに慣れた人がチューニングしたら、もっとハイブリッド版が早くなるのかもしれない。そのあたりはいろいろ試して見てほしい。「こうすればもっと早くなった」「ここが問題だった」といったプルリクを歓迎する。</p>
