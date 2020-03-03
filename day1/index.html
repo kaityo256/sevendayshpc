@@ -72,7 +72,8 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <body>
 <article class="markdown-body">
 <h1 id="day-1-環境構築">Day 1: 環境構築</h1>
-<p>スパコン上で実行されるプログラムは並列プログラムである。したがって「スパコンを使う」ということは、 狭義には「並列化されたプログラムを実行する」ということを意味する。したがって、誰かが作った並列プログラムをスパコン上で実行すれば、スパコンは使えることになる。 それはそれでOKなのだが、本稿のタイトルは「一週間でなれる！スパコンプログラマ」であるから、スパコン上で動くコードを開発できるようになることを目的とする。 それはすなわち、「並列プログラミングをする」ということである。「並列プログラミング」という字面を見ると「難しそう」という印象を持つかもしれない。 しかし、(世の中の多くの「一見難しそうなもの」がそうであるように)並列プログラミングはさほど難しくない。 「一週間でなれる！スパコンプログラマ」の初日は、まずローカルに並列プログラミング環境を構築し、並列プログラミングに触れてみるところからはじめてみよう。</p>
+<!--- abstract --->
+<p>スパコン上で実行されるプログラムは並列プログラムである。したがって「スパコンを使う」ということは、 狭義には「並列化されたプログラムを実行する」ということを意味する。したがって、誰かが作った並列プログラムをスパコン上で実行すれば、スパコンは使えることになる。 それはそれでOKなのだが、本稿のタイトルは「一週間でなれる！スパコンプログラマ」であるから、スパコン上で動くコードを開発できるようになることを目的とする。 それはすなわち、「並列プログラミングをする」ということである。「並列プログラミング」という字面を見ると「難しそう」という印象を持つかもしれない。 しかし、(世の中の多くの「一見難しそうなもの」がそうであるように)並列プログラミングはさほど難しくない。 「一週間でなれる！スパコンプログラマ」の初日は、まずローカルに並列プログラミング環境を構築し、並列プログラミングに触れてみるところからはじめてみよう。 <!--- end ---></p>
 <h2 id="mpiとは">MPIとは</h2>
 <p>一口に「並列化」といっても、様々な種類がありえる。一般に使われている並列プログラミングモデルは、「データ並列」「共有メモリ並列」「分散メモリ並列」の三種類であろう。 以後、プロセスやスレッドといった単語についてかなりいい加減な言葉遣いをするため、ちゃんと学びたい人はちゃんとした書籍を参考にされたい。特にWindowsとLinuxのプロセスの違いとか言い出すと話が長くなるので、ここでは説明しない。また、データ並列についてはとりあえずおいておく。</p>
 <p>「共有メモリ並列」とは、並列単位がメモリを共有する並列化方法である。 通常は並列単位としてスレッドを用いるので、ここでは「スレッド並列」と呼ぶ。 逆に「分散メモリ並列」とは、並列単位がメモリを共有しない並列化方法である。 通常は並列単位としてプロセスを用いるので、ここでは「プロセス並列」と呼ぶ。 また、「プロセス並列」と「スレッド並列」を両方行う「ハイブリッド並列」という並列化もある。</p>
@@ -134,7 +135,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <span class="ex">warranty</span><span class="kw">;</span> <span class="ex">not</span> even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</code></pre></div>
 <p>したがって、インクルードパスやリンクの設定を明示的にするならば、<code>mpic++</code>を呼び出す必要はない。 スパコンサイトによっては、環境変数でMPIのインクルードパスが設定されている場合もあるだろう。その場合は単に<code>g++</code>でも<code>icpc</code>でも、MPIを用いたコードがそのままコンパイルできる。ただし、リンクのために<code>-lmpi</code>の指定が(場合によっては<code>-lmpi_cxx</code>も)必要なので注意。</p>
 <h2 id="はじめてのmpi">はじめてのMPI</h2>
-<p>環境構築ができたら、こんなコードを書いて、<a href="hello.cpp" class="uri">hello.cpp</a>という名前で保存してみよう。</p>
+<p>環境構築ができたら、こんなコードを書いて、<code>hello.cpp</code>という名前で保存してみよう。</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
 <span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span>
 
@@ -174,8 +175,7 @@ $ <span class="ex">./a.out</span>
 <p>MPIでは、起動したプロセスに通し番号が振られる。その通し番号のことを <strong>ランク(rank)</strong> と呼ぶ。 ランクの取得には<code>MPI_Comm_rank</code>関数を使う。</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">int</span> rank;
 MPI_Comm_rank(MPI_COMM_WORLD, &amp;rank);</code></pre></div>
-<p>これを実行すると変数<code>rank</code>にランク番号が入る。N並列している場合、ランクは0からN-1までである。 試してみよう。</p>
-<p><a href="rank.cpp" class="uri">rank.cpp</a></p>
+<p>これを実行すると変数<code>rank</code>にランク番号が入る。N並列している場合、ランクは0からN-1までである。 試してみよう。以下を<code>rank.cpp</code>として保存し、コンパイル、実行してみよう。</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
 <span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span>
 
@@ -235,7 +235,7 @@ $ <span class="ex">mpirun</span> -np 4 ./a.out
 <div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">mpirun</span> -np 4 ./a.out</code></pre></div>
 <p>などとしてMPIプログラムを実行したとする。この場合は4プロセス立ち上がり、それぞれにPIDが与えられ、固有のメモリ空間を持つ。しかし、これらのプロセスは標準出力は共有している。 したがって、「せーの」で標準出力に出力しようとしたら競合することになる。 この時、例えば他のプロセスが出力している時に他のプロセスが書き込んだり、出力が混ざったりしないように、 後ろで交通整理が行われる。そもそも画面になにかを表示する、というのはわりと奥が深いのだが、 そのあたりの話は <a href="https://github.com/tanakamura">tanakamura</a> さんの <a href="https://tanakamura.github.io/pllp/docs/">実践的低レベルプログラミング</a> とかを読んでほしい。</p>
 <p>さて、とにかく今は標準出力というリソースは一つしかないのに、4つのプロセスがそこを使う。 この時、「あるひとかたまりの処理については、一つのプロセスが独占して使う」ようにすることで 競合が起きないようにする。 「ひとかたまりの処理」とは、例えば「<code>printf</code>で出力を始めてから終わるまで」である。</p>
-<p>例えば先程の<a href="rank.cpp" class="uri">rank.cpp</a>の例では、</p>
+<p>例えば先程の<code>rank.cpp</code>の例では、</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">printf(<span class="st">&quot;Hello! My rank is </span><span class="sc">%d\n</span><span class="st">&quot;</span>, rank);</code></pre></div>
 <p>という命令があった。ここでは、まず出力すべき文字列、例えば <code>Hello! My rank is 0</code>を作る。そして、せーので書き出す。 イメージとしては</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">puts(<span class="st">&quot;Hello! My rank is 0&quot;</span>);
@@ -248,9 +248,7 @@ puts(<span class="st">&quot;Hello! My rank is 2&quot;</span>);
 puts(<span class="st">&quot;Hello! My rank is 1&quot;</span>);
 puts(<span class="st">&quot;Hello! My rank is 3&quot;</span>);</code></pre></div>
 <p>とかになるだけで、さほど表示は乱れない。</p>
-<p>さて、同様なプログラムを<code>std::cout</code>で書いてみよう。</p>
-<p>こんな感じになると思う。</p>
-<p><a href="rank_stream.cpp" class="uri">rank_stream.cpp</a></p>
+<p>さて、同様なプログラムを<code>std::cout</code>で書いてみよう。以下を<code>rank_stream.cpp</code>という名前で保存、コンパイル、実行してみよう。</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span>
 <span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span>
 
@@ -340,9 +338,7 @@ $ <span class="ex">tree</span> hoge
 <li>gdbで変数をいじって無限ループを脱出させる</li>
 <li>あとは好きなようにデバッグする</li>
 </ul>
-<p>という方針でいく。なお、なぜかMac OSではMPIプロセスへのgdbのアタッチがうまくいかなかったので、以下はCentOSで実行している。</p>
-<p>こんなコードを書く。</p>
-<p><a href="gdb_mpi.cpp" class="uri">gdb_mpi.cpp</a></p>
+<p>という方針でいく。なお、なぜかMac OSではMPIプロセスへのgdbのアタッチがうまくいかなかったので、以下はCentOSで実行している。以下を<code>gdb_mpi.cpp</code>という名前で保存しよう。</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
 <span class="pp">#include </span><span class="im">&lt;sys/types.h&gt;</span>
 <span class="pp">#include </span><span class="im">&lt;unistd.h&gt;</span>

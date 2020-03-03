@@ -72,10 +72,10 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <body>
 <article class="markdown-body">
 <h1 id="day-6-ハイブリッド並列">Day 6 : ハイブリッド並列</h1>
-<h2 id="ハイブリッド並列とは">ハイブリッド並列とは</h2>
-<p>これまで、並列化の手段としてMPIを使った「プロセス並列」を行ってきた。 最初に述べたように、並列化には他にも「スレッド並列」という手段がある。 プロセス並列が分散メモリ型、スレッド並列が共有メモリ型であり、 スレッド並列だけではノードをまたぐことができないので、普通「スパコンを使う」 というとプロセス並列が必須になる。 さて、MPIを使ったプロセス並列「だけ」による並列化を「flat-MPI」と呼ぶ。 一方、プロセス並列とスレッド並列を併用する並列化を「ハイブリッド並列」と呼ぶ。 当然のことながら、ハイブリッド並列は、プロセス並列単体、スレッド並列単体よりも 面倒になるので、できることならやりたくない。しかし、アプリケーションや サイズによっては、ハイブリッド並列を選択せざるを得ない場合もあるだろう。 ここでは、スレッド並列を行うときの注意点や、ハイブリッド並列の実例について見てみよう。</p>
+<!--- abstract --->
+<p>これまで、並列化の手段としてMPIを使った「プロセス並列」を行ってきた。 最初に述べたように、並列化には他にも「スレッド並列」という手段がある。 プロセス並列が分散メモリ型、スレッド並列が共有メモリ型であり、 スレッド並列だけではノードをまたぐことができないので、普通「スパコンを使う」 というとプロセス並列が必須になる。 さて、MPIを使ったプロセス並列「だけ」による並列化を「flat-MPI」と呼ぶ。 一方、プロセス並列とスレッド並列を併用する並列化を「ハイブリッド並列」と呼ぶ。 当然のことながら、ハイブリッド並列は、プロセス並列単体、スレッド並列単体よりも 面倒になるので、できることならやりたくない。しかし、アプリケーションや サイズによっては、ハイブリッド並列を選択せざるを得ない場合もあるだろう。 ここでは、スレッド並列を行うときの注意点や、ハイブリッド並列の実例について見てみよう。 <!--- end ---></p>
 <h2 id="仮想メモリとtlb">仮想メモリとTLB</h2>
-<p>さて、プロセス並列ではあまり気にしなくてよかったが、スレッド並列を行う時には 気にしなければいけないものとして「NUMA」というものがある。 「NUMA」を気にするためには、仮想メモリについて知らないといけない。 というわけで、仮想メモリについて見てみよう。</p>
+<p>プロセス並列ではあまり気にしなくてよかったが、スレッド並列を行う時には 気にしなければいけないものとして「NUMA」というものがある。 「NUMA」を気にするためには、仮想メモリについて知らないといけない。 というわけで、仮想メモリについて見てみよう。</p>
 <p>OSは実に様々なことをやっているが、特に重要な仕事に「メモリ管理」がある。 物理的には「メモリ」はマザーボードに刺さったDRAMを指すが、 OSの管理下で動くプロセスから見える「メモリ」は、それを仮想化したものである。 プロセスにとっては連続に見えるメモリも、実はDRAM上にバラバラに割り付けられて いるかもしれない。OSは、「プロセスから見えるアドレス」と「物理的にDRAMに割り当てられたアドレス」を うまいこと変換して、プロセスが物理メモリを意識しないで済むようにしている。 このような仕組みを「仮想メモリ (virtual memory)」と呼ぶ。 仮想メモリを扱う利点としては、</p>
 <ul>
 <li>OSがメモリを管理してくれるので複数のプロセスがお互いのメモリを気にしなくて良くなる(セキュリティ上も好ましい)</li>
@@ -83,8 +83,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li>メモリが足りない時にハードディスクなどにスワップすることで、物理メモリより大きな論理メモリ空間がとれる</li>
 </ul>
 <p>などが挙げられる。なお、Windowsでは「ハードディスクにスワップする領域の上限」のことを「仮想メモリ」と呼んでいるようなので注意。</p>
-<p>実際に、プロセスごとに固有の仮想メモリが与えられているのを見てみよう。こんなコードを書いてみる。</p>
-<p><a href="vmem.cpp" class="uri">vmem.cpp</a></p>
+<p>実際に、プロセスごとに固有の仮想メモリが与えられているのを見てみよう。こんなコード(<code>vmem.cpp</code>)を書いてみる。</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
 <span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span>
 
@@ -182,7 +181,9 @@ This system has 2 eight-core processors with hyper-threading (2 threads per core
 <ul>
 <li>Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz 12コア x 2ソケット</li>
 </ul>
-<p>まず、シリアルコードとしてDay 4で使ったGray Scottモデルの計算を使おう。純粋に計算のみをカウントするため、途中のファイル出力を削除し、また実行時間を測定するようにしたのが<a href="gs.cpp" class="uri">gs.cpp</a>である。ただし、デバッグのために最終結果だけファイルに出力している。コンパイルして<code>perf</code>でプロファイルをとってみよう。まず、<code>perf record</code>で記録を取る。</p>
+<p>まず、シリアルコードとしてDay 4で使ったGray Scottモデルの計算を使おう。純粋に計算のみをカウントするため、途中のファイル出力を削除し、また実行時間を測定するようにしたものが<code>gs.cpp</code>である。</p>
+<p><a href="https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs.cpp" class="uri">https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs.cpp</a></p>
+<p>ただし、デバッグのために最終結果だけファイルに出力している。コンパイルして<code>perf</code>でプロファイルをとってみよう。まず、<code>perf record</code>で記録を取る。</p>
 <div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">g++</span> -O3 -mavx2 -std=c++11 -fopenmp gs.cpp -o gs.out
 $ <span class="ex">perf</span> record ./gs.out
 <span class="ex">2527</span> [ms]
@@ -217,7 +218,7 @@ $ <span class="ex">perf</span> record ./gs.out
 }</code></pre></div>
 <p>二重ループになっている。OpenMPは、並列実行したいループの直前にディレクティブを入れて、「このループを並列化してください」と指示することで並列化する。スレッド並列する時には、ループインデックス間に依存性がないか確認しなければならないのだが、今回はたまたまループインデックス間に全く依存関係がないので、好きなように並列化してよい(たまたまというか、そうなるように題材を選んだわけだが)。</p>
 <p>まずは内側のループにディレクティブを入れてみよう。<code>#pragma omp parallel for</code>というディレクティブを対象ループの直前に入れるだけでよい。</p>
-<p><a href="gs_omp1.cpp" class="uri">gs_omp1.cpp</a></p>
+<p><a href="https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp1.cpp" class="uri">https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp1.cpp</a></p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> calc(vd &amp;u, vd &amp;v, vd &amp;u2, vd &amp;v2) {
   <span class="cf">for</span> (<span class="dt">int</span> iy = <span class="dv">1</span>; iy &lt; L - <span class="dv">1</span>; iy++) {
 <span class="pp">#pragma omp parallel for</span>
@@ -243,7 +244,7 @@ $ <span class="ex">perf</span> record ./gs.out
 <div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="fu">diff</span> conf000.org conf000.dat</code></pre></div>
 <p>問題なさそうですね。</p>
 <p>次に、外側を並列化してみよう。</p>
-<p><a href="gs_omp2.cpp" class="uri">gs_omp2.cpp</a></p>
+<p><a href="https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp2.cpp" class="uri">https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp2.cpp</a></p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> calc(vd &amp;u, vd &amp;v, vd &amp;u2, vd &amp;v2) {
 <span class="pp">#pragma omp parallel for</span>
   <span class="cf">for</span> (<span class="dt">int</span> iy = <span class="dv">1</span>; iy &lt; L - <span class="dv">1</span>; iy++) {
@@ -412,7 +413,9 @@ $ <span class="va">OMP_NUM_THREADS=</span>24 <span class="ex">./gs_omp2.out</spa
 <span class="co">// なにか時間を計測したい処理</span>
 <span class="at">const</span> <span class="kw">auto</span> e = <span class="bu">std::</span>chrono<span class="bu">::</span>system_clock<span class="bu">::</span>now();
 <span class="at">const</span> <span class="kw">auto</span> elapsed = <span class="bu">std::</span>chrono<span class="bu">::</span>duration_cast&lt;<span class="bu">std::</span>chrono<span class="bu">::</span>milliseconds&gt;(e - s).count();</code></pre></div>
-<p>これで<code>elapsed</code>にミリ秒単位の値が入る。このようにして作ったハイブリッド版の反応拡散方程式ソルバが<a href="gs_hybrid.cpp" class="uri">gs_hybrid.cpp</a>である。 筆者の環境ではMPIにパスが通してあるので、以下のようなオプションでコンパイルできる。</p>
+<p>これで<code>elapsed</code>にミリ秒単位の値が入る。このようにして作ったハイブリッド版の反応拡散方程式ソルバが<code>gs_hybrid.cpp</code>である。</p>
+<p><a href="https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_hybrid.cpp" class="uri">https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_hybrid.cpp</a></p>
+<p>筆者の環境ではMPIにパスが通してあるので、以下のようなオプションでコンパイルできる。</p>
 <div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">g++</span> -fopenmp -O3 -mavx2 gs_hybrid.cpp -lmpi -lmpi_cxx</code></pre></div>
 <p>手元のMacで2プロセス x 2スレッドで実行すると以下のような結果を吐く。</p>
 <div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="va">OMP_NUM_THREADS=</span>2 <span class="ex">mpiexec</span> -np 2 ./a.out

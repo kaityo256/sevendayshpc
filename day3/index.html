@@ -73,11 +73,11 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <body>
 <article class="markdown-body">
 <h1 id="day-3-自明並列">Day 3 : 自明並列</h1>
-<h2 id="自明並列またの名を馬鹿パラとは">自明並列、またの名を馬鹿パラとは</h2>
-<p>例えば、100個の画像データがあるが、それらを全部リサイズしたい、といったタスクを考える。 それぞれのタスクには依存関係が全くないので、全部同時に実行してもなんの問題もない。 したがって、100並列で実行すれば100倍早くなる。 このように、並列タスク間で依存関係や情報のやりとりが発生しない並列化のことを自明並列と呼ぶ。 英語では、Trivial Parallelization(自明並列)とか、Embarrassingly parallel(馬鹿パラ)などと表現される。 「馬鹿パラ」とは「馬鹿でもできる並列化」の略で(諸説あり)、その名の通り簡単に並列化できるため、 文字通り馬鹿にされることも多いのだが、並列化効率が100%であり、最も効率的に計算資源を利用していることになるため、 その意義は大きい。 なにはなくとも、まず馬鹿パラができないことには非自明並列もできないわけだし、馬鹿パラができるだけでも、できない人に比べて 圧倒的な攻撃力を持つことになる。 ここでは、まず馬鹿パラのやり方を見てみよう。</p>
+<!--- abstract --->
+<p>例えば、100個の画像データがあるが、それらを全部リサイズしたい、といったタスクを考える。 それぞれのタスクには依存関係が全くないので、全部同時に実行してもなんの問題もない。 したがって、100並列で実行すれば100倍早くなる。 このように、並列タスク間で依存関係や情報のやりとりが発生しない並列化のことを自明並列と呼ぶ。 英語では、Trivial Parallelization(自明並列)とか、Embarrassingly parallel(馬鹿パラ)などと表現される。 「馬鹿パラ」とは「馬鹿でもできる並列化」の略で(諸説あり)、その名の通り簡単に並列化できるため、 文字通り馬鹿にされることも多いのだが、並列化効率が100%であり、最も効率的に計算資源を利用していることになるため、 その意義は大きい。 なにはなくとも、まず馬鹿パラができないことには非自明並列もできないわけだし、馬鹿パラができるだけでも、できない人に比べて 圧倒的な攻撃力を持つことになる。 本章では、まず馬鹿パラのやり方を見てみよう。 <!--- end ---></p>
 <h2 id="自明並列の例1-円周率">自明並列の例1: 円周率</h2>
 <p>まず、自明並列でよく出てくる例として、サンプリング数を並列化で稼ぐ方法を見てみよう。とりあえず定番の、 モンテカルロ法で円周率を計算してみる。</p>
-<p>こんなコードを書いて、<a href="calc_pi.cpp" class="uri">calc_pi.cpp</a>という名前で保存してみよう。</p>
+<p>こんなコードを書いて、<code>calc_pi.cpp</code>という名前で保存してみよう。</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
 <span class="pp">#include </span><span class="im">&lt;random&gt;</span>
 <span class="pp">#include </span><span class="im">&lt;algorithm&gt;</span>
@@ -113,7 +113,7 @@ $ <span class="ex">./a.out</span>
 <li>ランク番号を乱数の種に使う</li>
 <li>そのまま<code>calc_pi</code>を呼ぶ。</li>
 </ol>
-<p>以上の修正をしたコードを<a href="calc_pi_mpi.cpp" class="uri">calc_pi_mpi.cpp</a>という名前で作成する。</p>
+<p>以上の修正をしたコードを<code>calc_pi_mpi.cpp</code>という名前で作成する。</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
 <span class="pp">#include </span><span class="im">&lt;random&gt;</span>
 <span class="pp">#include </span><span class="im">&lt;algorithm&gt;</span>
@@ -178,7 +178,7 @@ $ <span class="bu">time</span> mpirun -np 4 --oversubscribe ./a.out
 <span class="ex">45162</span>  a.out        89.1 00:12.47 3/1   0    15    2620K  0B     0B     45162</code></pre></div>
 <p>4並列実行したので、45162から45165まで4つのプロセスが起動され、実行していることがわかる。 このように、なにか統計平均を取りたい時、並列化によってサンプル数を稼ぐ並列化を<strong>サンプル並列</strong>と呼ぶ。</p>
 <h2 id="自明並列テンプレート">自明並列テンプレート</h2>
-<p>先程の並列プログラム<a href="calc_pi_mpi.cpp" class="uri">calc_pi_mpi.cpp</a>のmain関数はこうなっていた。</p>
+<p>先程の並列プログラム<code>calc_pi_mpi.cpp</code>のmain関数はこうなっていた。</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv) {
   MPI_Init(&amp;argc, &amp;argv);
   <span class="dt">int</span> rank;
@@ -227,8 +227,7 @@ $ <span class="bu">time</span> mpirun -np 4 --oversubscribe ./a.out
 <p>さて、ファイル数はともかく、プロセス数がハードコーディングされているのが気になる。 MPIのプログラムは、実行時にプロセス数を自由に指定することができる。 実行するプロセス数を変えるたびにコンパイルし直すのは面倒だ。 というわけで、実行時に総プロセス数を取得する関数<code>MPI_Comm_size</code>が用意されている。 使い方は<code>MPI_Comm_rank</code>と同じで、</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">int</span> procs;
 MPI_Comm_size(MPI_COMM_WORLD, &amp;procs)</code></pre></div>
-<p>とすれば、<code>procs</code>にプロセス数が入る。これを使うと、先程のコードは こんな感じにかける。</p>
-<p><a href="processfiles.cpp" class="uri">processfiles.cpp</a></p>
+<p>とすれば、<code>procs</code>にプロセス数が入る。これを使うと、先程のコードは こんな感じにかける(<code>processfiles.cpp</code>)。</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
 <span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span>
 
@@ -264,7 +263,7 @@ MPI_Comm_size(MPI_COMM_WORLD, &amp;procs)</code></pre></div>
 <span class="dt">double</span> pi_sum = <span class="fl">0.0</span>;
 MPI_Allreduce(&amp;pi, &amp;pi_sum, <span class="dv">1</span>, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);</code></pre></div>
 <p>第一引数から、「和を取りたい変数」「和を受け取りたい変数」「変数の数」「変数の型」「やりたい演算」「コミュニケータ」の順番で指定する。ここでは一つの変数のみ総和演算を行っているが、配列を渡して一気に複数のデータについて総和を取ることもできる。また、総和だけでなく積や論理演算も実行できる。</p>
-<p>円周率の推定値<code>pi</code>と、その自乗<code>pi2 = pi*pi</code>について総和を取り、定義通りに期待値と標準偏差を求めるコードが<a href="calc_pi_reduce.cpp" class="uri">calc_pi_reduce.cpp</a>である。</p>
+<p>円周率の推定値<code>pi</code>と、その自乗<code>pi2 = pi*pi</code>について総和を取り、定義通りに期待値と標準偏差を求めるコードが以下の<code>calc_pi_reduce.cpp</code>である。</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
 <span class="pp">#include </span><span class="im">&lt;random&gt;</span>
 <span class="pp">#include </span><span class="im">&lt;algorithm&gt;</span>

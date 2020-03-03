@@ -73,13 +73,15 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <body>
 <article class="markdown-body">
 <h1 id="day-4-領域分割による非自明並列">Day 4 : 領域分割による非自明並列</h1>
+<!--- abstract --->
+<p>これまでは並列化として、自明並列を扱ってきた。自明並列はほとんど通信を必要とせず、並列化効率が高いため計算資源を最も有効に使える計算方法である。しかし、せっかくスパコンを使うのであるから、本格的に通信を伴う非自明並列に挑戦してみよう。 <!--- end ---></p>
 <h2 id="非自明並列">非自明並列</h2>
-<p>Day 3では自明並列を扱ってきた。自明並列は別名「馬鹿パラ」と呼ばれ、馬鹿にされる傾向にあるのだが、並列化効率が高いため、「計算資源は」最も有効に使える計算方法である。さて、「スパコンはノードを束ねたもの」であり、「ノードとは本質的にはPCと同じもの」であることは既に述べた。しかし「普通のPCを多数束ねたらスパコンになるか」というとそうではなく、スパコンとして動作をするためには「ネットワーク」と「信頼性」が重要なのであった。実は、馬鹿パラは「ネットワーク」と「信頼性」のどちらも必要としない。</p>
+<p>「スパコンはノードを束ねたもの」であり、「ノードとは本質的にはPCと同じもの」であることは既に述べた。しかし「普通のPCを多数束ねたらスパコンになるか」というとそうではなく、スパコンとして動作をするためには「ネットワーク」と「信頼性」が重要である。これまで扱ってきた自明並列(通称「馬鹿パラ」)は、「ネットワーク」と「信頼性」のどちらも必要としない。</p>
 <div class="figure">
 <img src="fig/bakapara.png" alt="fig/bakapara.png" />
 <p class="caption">fig/bakapara.png</p>
 </div>
-<p>パラメタ並列の場合、一番最初に「どのパラメタをどのプロセスが担当すべきか」をばらまくのに通信したあとは通信不要である(計算が終わったら結果をファイルに吐いてしまえばよい)。したがって、各ノードが高速なネットワークで接続されている必要はなく、たとえばイーサネットなどでつないでしまって全く問題ない。 また、大規模な非自明並列計算を実行するには高い信頼性が求められるが、馬鹿パラは信頼性も要求しない。計算途中でノードが壊れてしまっても、そのノードでしていた計算だけやり直せばよいだけのことである。 つまり馬鹿パラとは最も計算資源は有効に使えるものの、「ネットワーク」と「信頼性」という、スパコンの重要な特性を全く使わない計算方法なのであった。なので、主に馬鹿パラで計算する場合には、「普通のPCを多数束ねたPCクラスタ」で全く構わない。</p>
+<p>パラメタ並列の場合、一番最初に「どのパラメタをどのプロセスが担当すべきか」をばらまくのに通信したあとは通信不要である(計算が終わったら結果をファイルに吐いてしまえばよい)。したがって、各ノードが高速なネットワークで接続されている必要はなく、たとえばイーサネットなどでつないでしまって全く問題ない。また、大規模な非自明並列計算を実行するには高い信頼性が求められるが、馬鹿パラは信頼性も要求しない。計算途中でノードが壊れてしまっても、そのノードでしていた計算だけやり直せばよいだけのことである。 つまり馬鹿パラとは最も計算資源は有効に使えるものの、「ネットワーク」と「信頼性」という、スパコンの重要な二大特性を全く使わない計算方法なのであった。なので、主に馬鹿パラで計算する場合には「普通のPCを多数束ねたPCクラスタ」で全く構わない。</p>
 <p>さて、馬鹿パラであろうとなんであろうと、スパコンを活用していることにはかわりないし、それで良い科学的成果が出るのならそれで良いのだが、せっかくスパコンを使うのなら、もう少し「スパコンらしさ」を活用してみたい。というわけで、「ネットワーク」と「信頼性」をどちらも要求する <strong>非自明並列 (non-trivial parallel)</strong> に挑戦してみよう。</p>
 <p>馬鹿パラではほとんど通信が発生しなかったのに対して、非自明並列は頻繁に通信が必要とする。 科学計算はなんらかの繰り返し計算(例えば時間発展)をすることが多いが、意味のある並列計算を行う場合、毎ステップ通信が必要となる。この時、「計算に関わる全ノードと毎回通信が発生する」タイプと、「論理的に距離が近いノードのみと通信が必要となる」タイプにわかれる。</p>
 <div class="figure">
@@ -132,8 +134,70 @@ T_i^{n+1} = T_i^{n} + h(T_{i+1}^n - 2 T_{i}^n + T_{i-1}^n)
   }
   index++;
 }</code></pre></div>
-<p>あとは適当な条件を与えれば時間発展させることができる。ここでは、「一様加熱」と「温度固定」の二通りを試してみよう。コードはこちら。</p>
-<p><a href="thermal.cpp" class="uri">thermal.cpp</a></p>
+<p>あとは適当な条件を与えれば時間発展させることができる。ここでは、「一様加熱」と「温度固定」の二通りを試してみよう。以下のコードを<code>thermal.cpp</code>という名前で保存、実行してみよう。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;fstream&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;iostream&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;vector&gt;</span>
+
+<span class="at">const</span> <span class="dt">int</span> L = <span class="dv">128</span>;
+<span class="at">const</span> <span class="dt">int</span> STEP = <span class="dv">100000</span>;
+<span class="at">const</span> <span class="dt">int</span> DUMP = <span class="dv">1000</span>;
+
+<span class="dt">void</span> onestep(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;lattice, <span class="at">const</span> <span class="dt">double</span> h) {
+  <span class="at">static</span> <span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; orig(L);
+  <span class="bu">std::</span>copy(lattice.begin(), lattice.end(), orig.begin());
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">1</span>; i &lt; L - <span class="dv">1</span>; i++) {
+    lattice[i] += h * (orig[i - <span class="dv">1</span>] - <span class="fl">2.0</span> * orig[i] + orig[i + <span class="dv">1</span>]);
+  }
+  <span class="co">// For Periodic Boundary</span>
+  lattice[<span class="dv">0</span>] += h * (orig[L - <span class="dv">1</span>] - <span class="fl">2.0</span> * lattice[<span class="dv">0</span>] + orig[<span class="dv">1</span>]);
+  lattice[L - <span class="dv">1</span>] += h * (orig[L - <span class="dv">2</span>] - <span class="fl">2.0</span> * lattice[L - <span class="dv">1</span>] + orig[<span class="dv">0</span>]);
+}
+
+<span class="dt">void</span> dump(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;data) {
+  <span class="at">static</span> <span class="dt">int</span> index = <span class="dv">0</span>;
+  <span class="dt">char</span> filename[<span class="dv">256</span>];
+  sprintf(filename, <span class="st">&quot;data</span><span class="sc">%03d</span><span class="st">.dat&quot;</span>, index);
+  <span class="bu">std::</span>cout &lt;&lt; filename &lt;&lt; <span class="bu">std::</span>endl;
+  <span class="bu">std::</span>ofstream ofs(filename);
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; data.size(); i++) {
+    ofs &lt;&lt; i &lt;&lt; <span class="st">&quot; &quot;</span> &lt;&lt; data[i] &lt;&lt; <span class="bu">std::</span>endl;
+  }
+  index++;
+}
+
+<span class="dt">void</span> fixed_temperature(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;lattice) {
+  <span class="at">const</span> <span class="dt">double</span> h = <span class="fl">0.01</span>;
+  <span class="at">const</span> <span class="dt">double</span> Q = <span class="fl">1.0</span>;
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; STEP; i++) {
+    onestep(lattice, h);
+    lattice[L / <span class="dv">4</span>] = Q;
+    lattice[<span class="dv">3</span> * L / <span class="dv">4</span>] = -Q;
+    <span class="cf">if</span> ((i % DUMP) == <span class="dv">0</span>) dump(lattice);
+  }
+}
+
+<span class="dt">void</span> uniform_heating(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;lattice) {
+  <span class="at">const</span> <span class="dt">double</span> h = <span class="fl">0.2</span>;
+  <span class="at">const</span> <span class="dt">double</span> Q = <span class="fl">1.0</span>;
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; STEP; i++) {
+    onestep(lattice, h);
+    <span class="cf">for</span> (<span class="kw">auto</span> &amp;s : lattice) {
+      s += Q * h;
+    }
+    lattice[<span class="dv">0</span>] = <span class="fl">0.0</span>;
+    lattice[L - <span class="dv">1</span>] = <span class="fl">0.0</span>;
+    <span class="cf">if</span> ((i % DUMP) == <span class="dv">0</span>) dump(lattice);
+  }
+}
+
+<span class="dt">int</span> main() {
+  <span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; lattice(L, <span class="fl">0.0</span>);
+  <span class="co">//uniform_heating(lattice);</span>
+  fixed_temperature(lattice);
+}</code></pre></div>
+<p>実行結果は以下のようになる。</p>
 <div class="figure">
 <img src="fig/thermal.png" alt="fig/thermal.png" />
 <p class="caption">fig/thermal.png</p>
@@ -201,8 +265,7 @@ T(x) = -x (x-L)
 <li>「一度まとめてから吐く」いちど、ルートプロセス(ランク0番)に通信でデータを集めてしまってから、ルートプロセスが責任を持って一気に吐く。数千プロセスでも速度面で問題なくファイル出力できたが、全プロセスが保持する状態を一度一つのノードに集めるため、数万プロセス実行時にメモリ不足で落ちた。</li>
 </ol>
 <p>とりあえずメモリに問題なければ「3. 一度まとめてから吐く」が楽なので、今回はこれを採用しよう。メモリが厳しかったり、数万プロセスの計算とかする時にはなにか工夫してくださいまし。</p>
-<p>さて、「一度まとめてから吐く」ためには、「各プロセスにバラバラにあるデータを、どこかのプロセスに一括して持ってくる」必要があるのだが、MPIには そのものずばり<code>MPI_Gather</code>という関数がある。使い方は以下のサンプルを見たほうが早いと思う。</p>
-<p><a href="gather.cpp" class="uri">gather.cpp</a></p>
+<p>さて、「一度まとめてから吐く」ためには、「各プロセスにバラバラにあるデータを、どこかのプロセスに一括して持ってくる」必要があるのだが、MPIには そのものずばり<code>MPI_Gather</code>という関数がある。使い方はサンプルを見たほうが早い。以下を<code>gather.cpp</code>という名前で保存、実行しよう。</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
 <span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span>
 <span class="pp">#include </span><span class="im">&lt;vector&gt;</span>
@@ -314,9 +377,101 @@ $ <span class="ex">mpirun</span> -np 8 ./a.out
     <span class="cf">if</span> ((i % DUMP) == <span class="dv">0</span>) dump_mpi(lattice, rank, procs);
   }
 }</code></pre></div>
-<p>これも一様加熱と同じで、「温度を固定している場所がどのプロセスが担当するどの場所か」を調べる必要があるが、それを考えるのはさほど難しくないだろう。</p>
-<p>そんなわけで完成した並列コードがこちら。</p>
-<p><a href="thermal_mpi.cpp" class="uri">thermal_mpi.cpp</a></p>
+<p>これも一様加熱と同じで、「温度を固定している場所がどのプロセスが担当するどの場所か」を調べる必要があるが、それを考えるのはさほど難しくないだろう。そんなわけで完成した並列コードを<code>thermal_mpi.cpp</code>という名前で保存しよう。</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;fstream&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;iostream&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span>
+<span class="pp">#include </span><span class="im">&lt;vector&gt;</span>
+
+<span class="at">const</span> <span class="dt">int</span> L = <span class="dv">128</span>;
+<span class="at">const</span> <span class="dt">int</span> STEP = <span class="dv">100000</span>;
+<span class="at">const</span> <span class="dt">int</span> DUMP = <span class="dv">1000</span>;
+
+<span class="dt">void</span> dump(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;data) {
+  <span class="at">static</span> <span class="dt">int</span> index = <span class="dv">0</span>;
+  <span class="dt">char</span> filename[<span class="dv">256</span>];
+  sprintf(filename, <span class="st">&quot;data</span><span class="sc">%03d</span><span class="st">.dat&quot;</span>, index);
+  <span class="bu">std::</span>cout &lt;&lt; filename &lt;&lt; <span class="bu">std::</span>endl;
+  <span class="bu">std::</span>ofstream ofs(filename);
+  <span class="cf">for</span> (<span class="dt">unsigned</span> <span class="dt">int</span> i = <span class="dv">0</span>; i &lt; data.size(); i++) {
+    ofs &lt;&lt; i &lt;&lt; <span class="st">&quot; &quot;</span> &lt;&lt; data[i] &lt;&lt; <span class="bu">std::</span>endl;
+  }
+  index++;
+}
+
+<span class="dt">void</span> dump_mpi(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;local, <span class="dt">int</span> rank, <span class="dt">int</span> procs) {
+  <span class="at">static</span> <span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; global(L);
+  MPI_Gather(&amp;(local[<span class="dv">1</span>]), L / procs, MPI_DOUBLE, global.data(), L / procs, MPI_DOUBLE, <span class="dv">0</span>, MPI_COMM_WORLD);
+  <span class="cf">if</span> (rank == <span class="dv">0</span>) {
+    dump(global);
+  }
+}
+
+<span class="dt">void</span> onestep(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;lattice, <span class="dt">double</span> h, <span class="dt">int</span> rank, <span class="dt">int</span> procs) {
+  <span class="at">const</span> <span class="dt">int</span> size = lattice.size();
+  <span class="at">static</span> <span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; orig(size);
+  <span class="bu">std::</span>copy(lattice.begin(), lattice.end(), orig.begin());
+  <span class="co">// ここから通信のためのコード</span>
+  <span class="at">const</span> <span class="dt">int</span> left = (rank - <span class="dv">1</span> + procs) % procs; <span class="co">// 左のランク番号</span>
+  <span class="at">const</span> <span class="dt">int</span> right = (rank + <span class="dv">1</span>) % procs;        <span class="co">// 右のランク番号</span>
+  MPI_Status st;
+  <span class="co">// 右端を右に送って、左端を左から受け取る</span>
+  MPI_Sendrecv(&amp;(lattice[size - <span class="dv">2</span>]), <span class="dv">1</span>, MPI_DOUBLE, right, <span class="dv">0</span>, &amp;(orig[<span class="dv">0</span>]), <span class="dv">1</span>, MPI_DOUBLE, left, <span class="dv">0</span>, MPI_COMM_WORLD, &amp;st);
+  <span class="co">// 左端を左に送って、右端を右から受け取る</span>
+  MPI_Sendrecv(&amp;(lattice[<span class="dv">1</span>]), <span class="dv">1</span>, MPI_DOUBLE, left, <span class="dv">0</span>, &amp;(orig[size - <span class="dv">1</span>]), <span class="dv">1</span>, MPI_DOUBLE, right, <span class="dv">0</span>, MPI_COMM_WORLD, &amp;st);
+
+  <span class="co">//あとはシリアル版と同じ</span>
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">1</span>; i &lt; size - <span class="dv">1</span>; i++) {
+    lattice[i] += h * (orig[i - <span class="dv">1</span>] - <span class="fl">2.0</span> * orig[i] + orig[i + <span class="dv">1</span>]);
+  }
+}
+
+<span class="dt">void</span> uniform_heating(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;lattice, <span class="dt">int</span> rank, <span class="dt">int</span> procs) {
+  <span class="at">const</span> <span class="dt">double</span> h = <span class="fl">0.2</span>;
+  <span class="at">const</span> <span class="dt">double</span> Q = <span class="fl">1.0</span>;
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; STEP; i++) {
+    onestep(lattice, h, rank, procs);
+    <span class="cf">for</span> (<span class="kw">auto</span> &amp;s : lattice) {
+      s += Q * h;
+    }
+    <span class="cf">if</span> (rank == <span class="dv">0</span>) {
+      lattice[<span class="dv">1</span>] = <span class="fl">0.0</span>;
+    }
+    <span class="cf">if</span> (rank == procs - <span class="dv">1</span>) {
+      lattice[lattice.size() - <span class="dv">2</span>] = <span class="fl">0.0</span>;
+    }
+    <span class="cf">if</span> ((i % DUMP) == <span class="dv">0</span>) dump_mpi(lattice, rank, procs);
+  }
+}
+
+<span class="dt">void</span> fixed_temperature(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;lattice, <span class="dt">int</span> rank, <span class="dt">int</span> procs) {
+  <span class="at">const</span> <span class="dt">double</span> h = <span class="fl">0.01</span>;
+  <span class="at">const</span> <span class="dt">double</span> Q = <span class="fl">1.0</span>;
+  <span class="at">const</span> <span class="dt">int</span> s = L / procs;
+  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; STEP; i++) {
+    onestep(lattice, h, rank, procs);
+    <span class="cf">if</span> (rank == (L / <span class="dv">4</span> / s)) {
+      lattice[L / <span class="dv">4</span> - rank * s + <span class="dv">1</span>] = Q;
+    }
+    <span class="cf">if</span> (rank == (<span class="dv">3</span> * L / <span class="dv">4</span> / s)) {
+      lattice[<span class="dv">3</span> * L / <span class="dv">4</span> - rank * s + <span class="dv">1</span>] = -Q;
+    }
+    <span class="cf">if</span> ((i % DUMP) == <span class="dv">0</span>) dump_mpi(lattice, rank, procs);
+  }
+}
+
+<span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv) {
+  MPI_Init(&amp;argc, &amp;argv);
+  <span class="dt">int</span> rank, procs;
+  MPI_Comm_rank(MPI_COMM_WORLD, &amp;rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &amp;procs);
+  <span class="at">const</span> <span class="dt">int</span> mysize = L / procs + <span class="dv">2</span>;
+  <span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; local(mysize);
+  uniform_heating(local, rank, procs);
+  <span class="co">//fixed_temperature(local, rank, procs);</span>
+  MPI_Finalize();
+}</code></pre></div>
 <p>せっかく並列化したので、高速化したかどうか調べてみよう。一様加熱の計算をさせてみる。</p>
 <p>まずはシリアル版の速度。</p>
 <div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="fu">clang</span>++ -O3 -std=c++11 thermal.cpp
