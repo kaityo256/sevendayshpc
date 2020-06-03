@@ -211,7 +211,7 @@ $ <span class="ex">./a.out</span>
 __m256d load(<span class="dt">double</span> *a, <span class="dt">int</span> index) {
   <span class="cf">return</span> _mm256_load_pd(a + index);
 }</code></pre></div>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">g++</span> -O2 -mavx2 loadasm.cpp</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">g++</span> -O2 -mavx2 -S loadasm.cpp</code></pre></div>
 <p>例によって、少し最適化をかけておく。</p>
 <div class="sourceCode"><pre class="sourceCode asm"><code class="sourceCode fasm"><span class="fu">__Z4loadPdi:</span>
   movslq  %<span class="kw">esi</span>, %<span class="kw">rsi</span>

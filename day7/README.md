@@ -243,7 +243,7 @@ __m256d load(double *a, int index) {
 ```
 
 ```sh
-g++ -O2 -mavx2 loadasm.cpp
+g++ -O2 -mavx2 -S loadasm.cpp
 ```
 
 例によって、少し最適化をかけておく。
