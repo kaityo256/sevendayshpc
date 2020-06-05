@@ -80,8 +80,8 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p>計算機というのは、要するにメモリからデータと命令を取ってきて、演算器に投げ、結果をメモリに書き戻す機械である。CPUの動作単位は「サイクル」で表される。演算器に計算を投げてから、結果が返ってくるまでに数サイクルかかるが、現代のCPUではパイプライン処理という手法によって事実上1サイクルに1個演算ができる。1サイクル1演算できるので、あとは「1秒あたりのサイクル数=動作周波数」を増やせば増やすほど性能が向上することになる。</p>
 <p>というわけでCPUベンダーで動作周波数を向上させる熾烈な競争が行われたのだが、2000年代に入って動作周波数は上がらなくなった。これはリーク電流による発熱が主な原因なのだが、ここでは深く立ち入らない。1サイクルに1演算できる状態で、動作周波数をもう上げられないのだから、性能を向上させるためには「1サイクルに複数演算」をさせなければならない。この「1サイクルに複数演算」の実現にはいくつかの方法が考えられた。</p>
 <div class="figure">
-<img src="fig/simd.png" alt="fig/simd.png" />
-<p class="caption">fig/simd.png</p>
+<img src="fig/simd.png" alt="CPUにおける並列実行形式" />
+<p class="caption">CPUにおける並列実行形式</p>
 </div>
 <p>まず、単純に演算器の数を増やすという方法が考えられる。1サイクルで命令を複数取ってきて、その中に独立に実行できるものがあれば、複数の演算器に同時に投げることで1サイクルあたりの演算数を増やそう、という方法論である。これを <strong>スーパースカラ</strong> と呼ぶ。独立に実行できる命令がないと性能が上がらないため、よくアウトオブオーダー実行と組み合わされる。要するに命令をたくさん取ってきて命令キューにためておき、スケジューラがそこを見て独立に実行できる命令を選んでは演算器に投げる、ということをする。</p>
 <p>この方法には「命令セットの変更を伴わない」という大きなメリットがある。ハードウェアが勝手に並列実行できる命令を探して同時に実行してくれるので、プログラマは何もしなくて良い。そういう意味において、 <strong>スーパースカラとはハードウェアにがんばらせる方法論</strong> である。デメリット、というか問題点は、実行ユニットの数が増えると、依存関係チェックの手間が指数関数的に増えることである。一般的には整数演算が4つ程度、浮動小数点演算が2つくらいまでが限界だと思われる。</p>
@@ -266,7 +266,7 @@ __m256d load(<span class="dt">double</span> *a, <span class="dt">int</span> inde
     _mm256_store_pd(&amp;(c[i]), vc);
   }
 }</code></pre></div>
-<p>先程みたように、4つ連続したデータを持ってくる命令が<code>_mm256_load_pd</code>であり、 SIMDレジスタの内容をメモリに保存する命令が<code>_mm256_load_pd</code>である。 これをコンパイルしてアセンブリを見てみよう。</p>
+<p>先程みたように、4つ連続したデータを持ってくる命令が<code>_mm256_load_pd</code>であり、 SIMDレジスタの内容をメモリに保存する命令が<code>_mm256_store_pd</code>である。 これをコンパイルしてアセンブリを見てみよう。</p>
 <div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">g++</span> -O1 -mavx2 -S func_simd.cpp</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode asm"><code class="sourceCode fasm">  xorl  %<span class="kw">eax</span>, %<span class="kw">eax</span>
   leaq  _a(%rip), %<span class="kw">rcx</span>
@@ -463,8 +463,8 @@ $ <span class="fu">cat</span> report5.txt
 \]</span></p>
 <p>磁場中の荷電粒子の運動は、磁場と平行な向きには等速直線運動、垂直な向きには円運動をするため、結果として螺旋を描いてすすむ。こんな感じ。</p>
 <div class="figure">
-<img src="fig/one.png" alt="fig/one.png" />
-<p class="caption">fig/one.png</p>
+<img src="fig/one.png" alt="磁場中の荷電粒子の軌道" />
+<p class="caption">磁場中の荷電粒子の軌道</p>
 </div>
 <p>さて、適当な方向に向いた磁場中に、ランダムな向きに初速を持った荷電粒子たちをばらまいた系を計算してみよう。なお、粒子同士の相互作用も無視する。 三次元シミュレーションなので、三次元ベクトルを構造体で表現する。</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="kw">struct</span> vec {
@@ -509,8 +509,8 @@ vec r[N], v[N];</code></pre></div>
   }</code></pre></div>
 <p>平均エネルギーの時間発展はこうなる。</p>
 <div class="figure">
-<img src="fig/energy.png" alt="fig/energy.png" />
-<p class="caption">fig/energy.png</p>
+<img src="fig/energy.png" alt="オイラー法とルンゲクッタ法によるエネルギーの保存の様子" />
+<p class="caption">オイラー法とルンゲクッタ法によるエネルギーの保存の様子</p>
 </div>
 <p>1st-Eulerとあるのが1次のオイラー法である。保存するべきエネルギーがどんどん増えてしまっていることがわかる。</p>
 <p>さて、精度を上げる数値積分法はいくらでもあるが、ここでは簡単に二次のRunge-Kutta(RK)法を採用しよう。</p>
@@ -542,8 +542,8 @@ vec r[N], v[N];</code></pre></div>
 };</code></pre></div>
 <p>こうすると、一命令で粒子の速度がごそっとレジスタに乗る。</p>
 <div class="figure">
-<img src="fig/load_pd.png" alt="fig/load_pd.png" />
-<p class="caption">fig/load_pd.png</p>
+<img src="fig/load_pd.png" alt="SIMD命令によるデータのロード" />
+<p class="caption">SIMD命令によるデータのロード</p>
 </div>
 <p>上図の例では、ポインタ<code>&amp;v[i].x</code>が、i番目の粒子の速度ベクトルの先頭位置を示すため、</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="co">// vv &lt;- (w,z,y,x)</span>
@@ -560,8 +560,8 @@ __m256d vv = _mm256_load_pd((<span class="dt">double</span> *)(&amp;(v[i].x)));<
  __m256d vv_yzx = _mm256_permute4x64_pd(vv, im_yzx);</code></pre></div>
 <p>注：このあたり、左右どちらを下位に取るかいつも混乱する。レジスタは右に下位ビットを取るのが慣例であるため、その意味では(w,z,y,x)という順番で並んでいる。しかし、普通の数学の意味でのベクトルは最初の要素を左に書くのが慣例なので(x,y,z,w)と書きたくなる。そのあたり混乱しがちだが、適当に補って読んでほしい。</p>
 <div class="figure">
-<img src="fig/permute.png" alt="fig/permute.png" />
-<p class="caption">fig/permute.png</p>
+<img src="fig/permute.png" alt="permuteによる要素の入れ替え" />
+<p class="caption">permuteによる要素の入れ替え</p>
 </div>
 <p>これによりレジスタの中身を適宜並び替えて、足したりかけたり引いたりすればよろしい。磁場については、使うベクトルが(z,x,y,0)と(z,x,y,0)のパターンしかないので、最初に宣言しておこう。</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">  __m256d vb_zxy = _mm256_set_pd(<span class="fl">0.0</span>, BY, BX, BZ);

@@ -299,7 +299,10 @@ require <span class="st">&quot;pathname&quot;</span>
 <span class="ex">conf098.dat</span>
 <span class="ex">conf099.dat</span></code></pre></div>
 <p>するとこんな感じの画像が得られる。</p>
-<p><img src="fig/conf010.png" alt="fig/conf010.png" /> <img src="fig/conf030.png" alt="fig/conf030.png" /> <img src="fig/conf050.png" alt="fig/conf050.png" /> <img src="fig/conf090.png" alt="fig/conf090.png" /></p>
+<div class="figure">
+<img src="fig/gs.png" alt="反応拡散方程式シミュレーションの実行結果" />
+<p class="caption">反応拡散方程式シミュレーションの実行結果</p>
+</div>
 <h2 id="並列化ステップ1-通信の準備など">並列化ステップ1: 通信の準備など</h2>
 <p>さて、さっそく反応拡散方程式を二次元領域分割により並列化していくわけだが、 並列化で重要なのは、 <strong>いきなり本番コードで通信アルゴリズムを試さない</strong> ということである。 まずは、今やろうとしている通信と同じアルゴリズムだけを抜き出したコードを書き、ちゃんと想定通りに通信できていることを確かめる。 実際のデータは倍精度実数だが、とりあえず整数データでいろいろためそう。</p>
 <p>まず、通信関連のコードを書く前に、領域分割により、全体をどうやって分割するか、 各プロセスはどこを担当するかといった基本的なセットアップを確認しよう。</p>
@@ -312,8 +315,8 @@ require <span class="st">&quot;pathname&quot;</span>
 <p>などと、分割数3を指定し、3要素の配列を食わせてやれば良い。 ただし、OpenMPIの<code>MPI_Dims_create</code>は若干動作が怪しいので注意すること。 例えば9プロセスを二次元分割したら3x3になってほしいが、9x1を返してくる。 Intel MPIやSGI MPTはちゃんと3x3を返してくるので、このあたりは実装依存のようだ。 気になる場合は自分で因数分解コードを書いて欲しい。</p>
 <p>さて、procsプロセスを、GX*GYと分割することにしよう。 すると、各プロセスは、横がL/GX、縦がL/GY個のサイトを保持すれば良い。 例えば8x8の系を4プロセスで並列化する際、一つのプロセスが担当するのは4x4となるが、 上下左右に1列余分に必要になるので、合わせて6x6のデータを保持することになる。</p>
 <div class="figure">
-<img src="fig/margin.png" alt="fig/margin.png" />
-<p class="caption">fig/margin.png</p>
+<img src="fig/margin.png" alt="通信の「のりしろ」" />
+<p class="caption">通信の「のりしろ」</p>
 </div>
 <p>また、各プロセスは自分がどの場所を担当しているかも知っておきたいし、担当する領域のサイズも保持しておきたい。 これらに加えてランクや総プロセス数といった並列化情報を、<code>MPIinfo</code>という構造体にまとめて突っ込んで置こう。 とりあえず必要な情報はこんな感じだろうか。</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="kw">struct</span> MPIinfo {
@@ -424,8 +427,8 @@ require <span class="st">&quot;pathname&quot;</span>
 </ul>
 <p>の二種類である。一次元分割の時と同様に、まずは後者、データの保存のための通信を考えよう。</p>
 <div class="figure">
-<img src="fig/gather.png" alt="fig/gather.png" />
-<p class="caption">fig/gather.png</p>
+<img src="fig/gather.png" alt="データの集約" />
+<p class="caption">データの集約</p>
 </div>
 <p>時間発展した結果を保存したいので、各プロセスが保持するデータを集約したい。 各プロセスが保持するデータをローカルデータ、系全体のデータをグローバルデータと呼ぶことにする。 「のりしろ」は計算の時には必要だが、データの保存の時には不要だ。 なので、各プロセスはまず、ローカルデータから「のりしろ」を除いたデータを用意し、 それを<code>MPI_Gather</code>を使ってルートプロセスに集める。</p>
 <p>今、各プロセスがこんな感じにデータを持っていたとする。</p>
@@ -571,13 +574,13 @@ require <span class="st">&quot;pathname&quot;</span>
 <p>どうでも良いが筆者は昔ブログを書いており(今は書いてないが)、「斜め方向の通信どうするかなぁ」と書いたら、日記の読者二人から別々にこのアルゴリズムを教えていただいた(その節はありがとうございます)。ブログも書いてみるものである。</p>
 <p>データの転送を図解するとこんな感じになる。まず、左右方向の通信。実際の例では2x2分割のため、自分から見て左にいるプロセスと右にいるプロセスが同一になってしまうが、図では別プロセスとして描いているから注意。</p>
 <div class="figure">
-<img src="fig/sendrecv_x.png" alt="fig/sendrecv_x.png" />
-<p class="caption">fig/sendrecv_x.png</p>
+<img src="fig/sendrecv_x.png" alt="x軸方向の通信" />
+<p class="caption">x軸方向の通信</p>
 </div>
 <p>左右の通信が終わったら、左右からもらったデータも込みで上下に転送する。以下は、「下から受け取り、上に送る」通信。</p>
 <div class="figure">
-<img src="fig/sendrecv_y.png" alt="fig/sendrecv_y.png" />
-<p class="caption">fig/sendrecv_y.png</p>
+<img src="fig/sendrecv_y.png" alt="y軸方向の通信" />
+<p class="caption">y軸方向の通信</p>
 </div>
 <p>最後の点線で囲ったデータが「斜め方向のプロセスが保持していたデータ」であり、間接的に受け取ったことになる。</p>
 <p>まず、上下左右にいるプロセス番号を知りたい。<code>MPIinfo</code>に<code>get_rank</code>メソッドを追加しておこう。</p>
@@ -863,11 +866,20 @@ $ <span class="bu">time</span> mpirun -np 4 --oversubscribe ./a.out
 <span class="ex">conf098.dat</span>
 <span class="ex">conf099.dat</span>
 <span class="ex">mpirun</span> -np 4 --oversubscribe ./a.out  2.39s user 0.29s system 321% cpu 0.832 total</code></pre></div>
-<p>321%とか出てるので、並列化できているようだ。実行時間も1.697s→0.832sと倍近く早くなっている。 実行結果も可視化して確認してみよう。</p>
-<p><img src="fig/conf010_mpi.png" alt="fig/conf010_mpi.png" /> <img src="fig/conf030_mpi.png" alt="fig/conf030_mpi.png" /> <img src="fig/conf050_mpi.png" alt="fig/conf050_mpi.png" /> <img src="fig/conf090_mpi.png" alt="fig/conf090_mpi.png" /></p>
+<p><code>time</code>コマンドで出てくる<code>%</code>は、どれだけCPUコアを使ったかを表している。一つのCPUコアを使い切ると100%になる。ここでは321%と表示されているため、4コアを使った並列計算ができていることがわかる。実行時間も1.697s→0.832sと倍近く早くなっている。 シリアル版を<code>serial</code>、MPI版を<code>mpi</code>というディレクトリで実行し、それぞれにデータファイルがあるとして、<code>diff</code>で確認してみよう。時間発展前する前は当然同じ結果になる。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="fu">diff</span> -s serial/conf000.dat mpi/conf000.dat
+<span class="ex">Files</span> serial/conf000.dat and mpi/conf000.dat are identical</code></pre></div>
+<p>しかし、誤差の関係で、次のステップから結果がずれていく。</p>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="fu">diff</span> -s serial/conf001.dat mpi/conf001.dat
+<span class="ex">Binary</span> files serial/conf001.dat and mpi/conf001.dat differ</code></pre></div>
+<p>これは、シリアル版とMPI版で加算の順序が変わることによる。しかし、本質的には同じ計算をしているので、可視化すると同じような図が出てくるはずである。見てみよう。</p>
+<div class="figure">
+<img src="fig/serial_and_mpi.png" alt="シリアル版とMPI版の時間発展の比較" />
+<p class="caption">シリアル版とMPI版の時間発展の比較</p>
+</div>
 <p>うん、大丈夫そうですね。</p>
-<p>さて、いまは4コアあるローカルPCで4プロセス実行したから、理想的には4倍早くなって欲しいのに、2倍近くしか早くなっていない。つまり、並列化効率は50%程度である。</p>
-<p>ん？並列化効率が物足りない？ <strong>そういう時はウィースケーリングに逃げてサイズで殴れ！</strong></p>
+<p>さて、実行時間は1.697s→0.832sと2倍近くなったが、使ったCPUコアは4コアであった。つまり、理想的には4倍早くなって欲しいのに、2倍近くしか早くなっていない。並列化効率は50%程度である。</p>
+<p>ん？並列化効率が物足りない？ <strong>そういう時はウィースケーリングに逃げてサイズで殴る</strong>。</p>
 <p>というわけでサイズをでかくする。一辺4倍にして再度実行してみよう。</p>
 <div class="sourceCode"><pre class="sourceCode diff"><code class="sourceCode diff"><span class="st">-const int L = 128;</span>
 <span class="va">+const int L = 512;</span></code></pre></div>
