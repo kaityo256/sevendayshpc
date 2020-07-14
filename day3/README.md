@@ -101,6 +101,7 @@ int main(int argc, char **argv) {
 実行結果はこの通り。
 
 ```sh
+$ mpic++ calc_pi_mpi.cpp
 $ mpirun -np 4 --oversubscribe ./a.out
 0: 3.145000
 1: 3.142160
@@ -125,7 +126,7 @@ $ mpirun -np 4 --oversubscribe ./a.out
 ちゃんと並列計算されているか、timeコマンドで調べてみよう。
 
 ```sh
-$ ./a.out
+$ time ./a.out
 0: 3.145000
 ./a.out  0.04s user 0.01s system 57% cpu 0.086 total
 
