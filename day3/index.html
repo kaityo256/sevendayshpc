@@ -142,7 +142,8 @@ $ <span class="ex">./a.out</span>
   MPI_Finalize();
 }</code></pre></div>
 <p>ついでに、円周率の推定値を表示するときに自分のランク番号も表示するようにしてみた。 実行結果はこの通り。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">mpirun</span> -np 4 --oversubscribe ./a.out
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">mpic++</span> calc_pi_mpi.cpp
+$ <span class="ex">mpirun</span> -np 4 --oversubscribe ./a.out
 <span class="ex">0</span>: 3.145000
 <span class="ex">1</span>: 3.142160
 <span class="ex">3</span>: 3.144200
@@ -160,7 +161,7 @@ $ <span class="ex">mpirun</span> -np 4 --oversubscribe ./a.out
 </ol>
 <p>ことがわかる。</p>
 <p>ちゃんと並列計算されているか、timeコマンドで調べてみよう。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">./a.out</span>
+<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="bu">time</span> ./a.out
 <span class="ex">0</span>: 3.145000
 <span class="ex">./a.out</span>  0.04s user 0.01s system 57% cpu 0.086 total
 
