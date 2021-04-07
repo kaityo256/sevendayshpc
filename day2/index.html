@@ -127,7 +127,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p>まず、ジョブスクリプトの冒頭に、特殊なコメントを使ってジョブの要求資源を書く。 ジョブスクリプトの書き方は、どんなジョブスケジューラを使っているか、そのスパコンサイトがどういう運用をしているかによって 異なるので、もしスパコンを使う場合は、スパコンサイトが用意しているであろうマニュアルを適宜参照されたい。 しかし、基本的には、ジョブの要求ノード数や、実行時間を書けば良い。</p>
 <p>例えば、ジョブスケジューラの一つ、PBSならば、<code>#PBS</code>の後に指示文を書く。 2ノード、12時間の実行を要求するなら</p>
 <div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="co">#PBS -l nodes=2</span>
-<span class="co">#PBS -l walltime=24:00:00</span></code></pre></div>
+<span class="co">#PBS -l walltime=12:00:00</span></code></pre></div>
 <p>といった具合である。その次に、ジョブの実行方法を書く。ここで注意して欲しいのは、このプログラムはコンパイル、ジョブ投入をした計算機とは 異なる場所で実行されるということだ。したがって、カレントディレクトリや環境変数などは引き継がれない。 特に、カレントディレクトリが変わるということには注意したい。なので、</p>
 <div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="bu">cd</span> /home/path/to/dir
 <span class="ex">./a.out</span></code></pre></div>

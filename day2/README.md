@@ -113,7 +113,7 @@ BlueGeneは、第一世代のBlueGene/L、第二世代のBlueGene/P、第三世�
 
 ```sh
 #PBS -l nodes=2
-#PBS -l walltime=24:00:00
+#PBS -l walltime=12:00:00
 ```
 
 といった具合である。その次に、ジョブの実行方法を書く。ここで注意して欲しいのは、このプログラムはコンパイル、ジョブ投入をした計算機とは
