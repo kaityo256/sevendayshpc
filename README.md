@@ -100,7 +100,7 @@ SIMD化について。
 
 ## ライセンス
 
-Copyright (C) 2018-2020 Hiroshi Watanabe
+Copyright (C) 2018-present Hiroshi Watanabe
 
 この文章と絵(pptxファイルを含む)はクリエイティブ・コモンズ 4.0 表示 (CC-BY 4.0)で提供する。
 
