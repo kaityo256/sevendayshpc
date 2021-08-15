@@ -87,16 +87,18 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p>「プロセス並列」とは、複数のプロセスを立ち上げ、それぞれのプロセスに属すスレッドがCPUコアを使いにいくことで性能向上をはかる。プロセス並列はMPI(Message Passing Interface)というライブラリを使って行う。それぞれのプロセスは独自のメモリ空間を持っており、基本的にはお互いから見えないため、意味のある並列化を行うためには、必要に応じて通信を行わなければならない。</p>
 <p>さて、プロセス並列とスレッド並列では、一般的にはスレッド並列の方がとっつきやすいと言われている。 以下のような単純なループがあったとする。</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="at">const</span> <span class="dt">int</span> SIZE = <span class="dv">10000</span>;
-<span class="dt">void</span> func(<span class="dt">double</span> a[SIZE], <span class="dt">double</span> b[SIZE])
-<span class="cf">for</span> (<span class="dt">int</span> i=<span class="dv">0</span>; i &lt; SIZE; i++) {
-  a[i] += b[i];
+<span class="dt">void</span> func(<span class="dt">double</span> a[SIZE], <span class="dt">double</span> b[SIZE]) {
+  <span class="cf">for</span> (<span class="dt">int</span> i=<span class="dv">0</span>; i &lt; SIZE; i++) {
+    a[i] += b[i];
+  }
 }</code></pre></div>
 <p>これをOpenMPでスレッド並列化したければ、以下のようなディレクティブを入れるだけで良い。</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="at">const</span> <span class="dt">int</span> SIZE = <span class="dv">10000</span>;
+<span class="dt">void</span> func(<span class="dt">double</span> a[SIZE], <span class="dt">double</span> b[SIZE]) {
 <span class="pp">#pragma omp parallel for  </span><span class="co">// ← OpenMPによる並列化の指示</span>
-<span class="dt">void</span> func(<span class="dt">double</span> a[SIZE], <span class="dt">double</span> b[SIZE])
-<span class="cf">for</span> (<span class="dt">int</span> i=<span class="dv">0</span>; i &lt; SIZE; i++) {
-  a[i] += b[i];
+  <span class="cf">for</span> (<span class="dt">int</span> i=<span class="dv">0</span>; i &lt; SIZE; i++) {
+    a[i] += b[i];
+  }
 }</code></pre></div>
 <p>同じようなことをMPIでやろうとするとわりとごちゃごちゃ書かなければいけない上に、下手な書き方をするとオーバーヘッドが大きくなって効率が悪くなるかもしれない。しかし、スレッド並列はプロセスの中の並列化であり、一つのプロセスは複数のOSにまたがって存在できないため、複数のノード(ノードの説明については後述)を同時に使うことができない。</p>
 <p>逆にプロセス並列の場合は、各プロセスが独立したメモリを保持しているため、他のプロセスの保持するデータがほしければ通信を行う必要がある。この通信はユーザが関数呼び出しを使って明示的に行わなければならない。ただし、通信は別のハードにある別のOS上で実行中の別のプロセスとも行うことができるため、複数のノードを同時に使うことができる。</p>
