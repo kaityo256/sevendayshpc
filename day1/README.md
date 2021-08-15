@@ -36,9 +36,10 @@
 
 ```cpp
 const int SIZE = 10000;
-void func(double a[SIZE], double b[SIZE])
-for (int i=0; i < SIZE; i++) {
-  a[i] += b[i];
+void func(double a[SIZE], double b[SIZE]) {
+  for (int i=0; i < SIZE; i++) {
+    a[i] += b[i];
+  }
 }
 ```
 
@@ -46,10 +47,11 @@ for (int i=0; i < SIZE; i++) {
 
 ```cpp
 const int SIZE = 10000;
+void func(double a[SIZE], double b[SIZE]) {
 #pragma omp parallel for  // ← OpenMPによる並列化の指示
-void func(double a[SIZE], double b[SIZE])
-for (int i=0; i < SIZE; i++) {
-  a[i] += b[i];
+  for (int i=0; i < SIZE; i++) {
+    a[i] += b[i];
+  }
 }
 ```
 
