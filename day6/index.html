@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="generator" content="pandoc">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title></title>
+  <title>README</title>
   <style type="text/css">code{white-space: pre;}</style>
   <style type="text/css">
 div.sourceCode { overflow-x: auto; }
@@ -73,10 +73,31 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <article class="markdown-body">
 <h1 id="day-6-ハイブリッド並列">Day 6 : ハイブリッド並列</h1>
 <!--- abstract --->
-<p>これまで、並列化の手段としてMPIを使った「プロセス並列」を行ってきた。 最初に述べたように、並列化には他にも「スレッド並列」という手段がある。 プロセス並列が分散メモリ型、スレッド並列が共有メモリ型であり、 スレッド並列だけではノードをまたぐことができないので、普通「スパコンを使う」 というとプロセス並列が必須になる。 さて、MPIを使ったプロセス並列「だけ」による並列化を「flat-MPI」と呼ぶ。 一方、プロセス並列とスレッド並列を併用する並列化を「ハイブリッド並列」と呼ぶ。 当然のことながら、ハイブリッド並列は、プロセス並列単体、スレッド並列単体よりも 面倒になるので、できることならやりたくない。しかし、アプリケーションや サイズによっては、ハイブリッド並列を選択せざるを得ない場合もあるだろう。 ここでは、スレッド並列を行うときの注意点や、ハイブリッド並列の実例について見てみよう。 <!--- end ---></p>
+<p>これまで、並列化の手段としてMPIを使った「プロセス並列」を行ってきた。
+最初に述べたように、並列化には他にも「スレッド並列」という手段がある。
+プロセス並列が分散メモリ型、スレッド並列が共有メモリ型であり、
+スレッド並列だけではノードをまたぐことができないので、普通「スパコンを使う」
+というとプロセス並列が必須になる。
+さて、MPIを使ったプロセス並列「だけ」による並列化を「flat-MPI」と呼ぶ。
+一方、プロセス並列とスレッド並列を併用する並列化を「ハイブリッド並列」と呼ぶ。
+当然のことながら、ハイブリッド並列は、プロセス並列単体、スレッド並列単体よりも
+面倒になるので、できることならやりたくない。しかし、アプリケーションや
+サイズによっては、ハイブリッド並列を選択せざるを得ない場合もあるだろう。
+ここでは、スレッド並列を行うときの注意点や、ハイブリッド並列の実例について見てみよう。
+<!--- end ---></p>
 <h2 id="仮想メモリとtlb">仮想メモリとTLB</h2>
-<p>プロセス並列ではあまり気にしなくてよかったが、スレッド並列を行う時には 気にしなければいけないものとして「NUMA」というものがある。 「NUMA」を気にするためには、仮想メモリについて知らないといけない。 というわけで、仮想メモリについて見てみよう。</p>
-<p>OSは実に様々なことをやっているが、特に重要な仕事に「メモリ管理」がある。 物理的には「メモリ」はマザーボードに刺さったDRAMを指すが、 OSの管理下で動くプロセスから見える「メモリ」は、それを仮想化したものである。 プロセスにとっては連続に見えるメモリも、実はDRAM上にバラバラに割り付けられて いるかもしれない。OSは、「プロセスから見えるアドレス」と「物理的にDRAMに割り当てられたアドレス」を うまいこと変換して、プロセスが物理メモリを意識しないで済むようにしている。 このような仕組みを「仮想メモリ (virtual memory)」と呼ぶ。 仮想メモリを扱う利点としては、</p>
+<p>プロセス並列ではあまり気にしなくてよかったが、スレッド並列を行う時には
+気にしなければいけないものとして「NUMA」というものがある。
+「NUMA」を気にするためには、仮想メモリについて知らないといけない。
+というわけで、仮想メモリについて見てみよう。</p>
+<p>OSは実に様々なことをやっているが、特に重要な仕事に「メモリ管理」がある。
+物理的には「メモリ」はマザーボードに刺さったDRAMを指すが、
+OSの管理下で動くプロセスから見える「メモリ」は、それを仮想化したものである。
+プロセスにとっては連続に見えるメモリも、実はDRAM上にバラバラに割り付けられて
+いるかもしれない。OSは、「プロセスから見えるアドレス」と「物理的にDRAMに割り当てられたアドレス」を
+うまいこと変換して、プロセスが物理メモリを意識しないで済むようにしている。
+このような仕組みを「仮想メモリ (virtual memory)」と呼ぶ。
+仮想メモリを扱う利点としては、</p>
 <ul>
 <li>OSがメモリを管理してくれるので複数のプロセスがお互いのメモリを気にしなくて良くなる(セキュリティ上も好ましい)</li>
 <li>物理的には不連続であっても、プロセスから見ると連続アドレスに見えるようにできる</li>
@@ -84,358 +105,520 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </ul>
 <p>などが挙げられる。なお、Windowsでは「ハードディスクにスワップする領域の上限」のことを「仮想メモリ」と呼んでいるようなので注意。</p>
 <p>実際に、プロセスごとに固有の仮想メモリが与えられているのを見てみよう。こんなコード(<code>vmem.cpp</code>)を書いてみる。</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
-<span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span>
-
-<span class="dt">int</span> rank;
-
-<span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv) {
-  MPI_Init(&amp;argc, &amp;argv);
-  MPI_Comm_rank(MPI_COMM_WORLD, &amp;rank);
-  printf(<span class="st">&quot;rank = </span><span class="sc">%d</span><span class="st">, address = </span><span class="sc">%x\n</span><span class="st">&quot;</span>, rank, &amp;rank);
-  MPI_Finalize();
-}</code></pre></div>
-<p>これは、<code>int</code>型の変数<code>rank</code>の値とアドレスを表示するコードである。 関数の中に入れるとスタック内のアドレスになってしまうので(まぁそれでもいいんだけど)、 グローバル変数として宣言してある。これを <strong>Linux</strong> で実行するとこんな感じになる。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">mpic++</span> vmem.cpp  
-$ <span class="ex">mpirun</span> -np 4 ./a.out
-<span class="ex">rank</span> = 0, address = 611e64
-<span class="ex">rank</span> = 1, address = 611e64
-<span class="ex">rank</span> = 3, address = 611e64
-<span class="ex">rank</span> = 2, address = 611e64</code></pre></div>
-<p>すべて同じアドレスであるにもかかわらず、値が異なるのがわかるだろう。 これは、4プロセス立ち上がったそれぞれから「見える」アドレス空間が、物理的には異なる アドレスに割り当てられているからである。</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> rank<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="dt">char</span> <span class="op">**</span>argv<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  MPI_Init<span class="op">(&amp;</span>argc<span class="op">,</span> <span class="op">&amp;</span>argv<span class="op">);</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  MPI_Comm_rank<span class="op">(</span>MPI_COMM_WORLD<span class="op">,</span> <span class="op">&amp;</span>rank<span class="op">);</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  printf<span class="op">(</span><span class="st">&quot;rank = </span><span class="sc">%d</span><span class="st">, address = </span><span class="sc">%x\n</span><span class="st">&quot;</span><span class="op">,</span> rank<span class="op">,</span> <span class="op">&amp;</span>rank<span class="op">);</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  MPI_Finalize<span class="op">();</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>これは、<code>int</code>型の変数<code>rank</code>の値とアドレスを表示するコードである。
+関数の中に入れるとスタック内のアドレスになってしまうので(まぁそれでもいいんだけど)、
+グローバル変数として宣言してある。これを <strong>Linux</strong>
+で実行するとこんな感じになる。</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> mpic++ vmem.cpp  </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> mpirun <span class="at">-np</span> 4 ./a.out</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">rank</span> = 0, address = 611e64</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ex">rank</span> = 1, address = 611e64</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ex">rank</span> = 3, address = 611e64</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="ex">rank</span> = 2, address = 611e64</span></code></pre></div>
+<p>すべて同じアドレスであるにもかかわらず、値が異なるのがわかるだろう。
+これは、4プロセス立ち上がったそれぞれから「見える」アドレス空間が、物理的には異なる
+アドレスに割り当てられているからである。</p>
 <p>なお、上記のコードをMacで実行するとこうなる。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">mpirun</span> -np 4 --oversubscribe ./a.out
-<span class="ex">rank</span> = 1, address = cae26d8
-<span class="ex">rank</span> = 2, address = fe426d8
-<span class="ex">rank</span> = 3, address = ff4c6d8
-<span class="ex">rank</span> = 0, address = 40c36d8</code></pre></div>
-<p>論理的には同じ場所にあるはずの<code>rank</code>が、てんでバラバラのアドレスにあることがわかる。 これは、Mac OSXが「アドレス空間ランダム化(Address Space Layout Randomization, ASLR)」と呼ばれる セキュリティ技術を採用しているからである。ディストリビューションによってはLinuxでもこれをやっているかもしれない。 まぁそれはさておき。</p>
-<p>話の本筋からはやや外れるのだが、せっかく仮想メモリの話が出たので、合わせてTLBの話もしておこう。 OSは、プロセスから見える「論理アドレス」と、実際にDRAMに割り当てる「物理アドレス」は、「ページ」と 呼ばれる単位で管理している。メモリをある程度のまとまりごとにわけ、それを「ページ」と呼ぶ。 論理アドレスと物理アドレスの対応は「ページテーブルエントリ (PTE)」と呼ばれ、それをまとめたデータを「ページテーブル」と呼ぶ。 プロセスからメモリのアクセス要求があったら、ページテーブルを見てプロセスの論理アドレスから物理アドレスに変換してやる必要がある。 ページサイズを調べるには<code>getconf</code>を使う。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">getconf</span> PAGESIZE
-<span class="ex">4096</span></code></pre></div>
-<p>一般に、ページサイズは4096 Byteに取ることが多い。すると、<a href="http://ascii.jp/elem/000/000/567/567889/">1GBのメモリは26万2144個のPTEで管理される</a>ことになる。これだけの数をキャッシュに乗せるのは不可能であるため、基本的にはページテーブルはメモリ上に置かれる。すると、メモリにアクセスする際にキャッシュミスをすると、まず論理アドレスを物理アドレスに変換するためにメモリにアクセスし、物理アドレスがわかったらそのアドレスにアクセス、とメモリアクセスが二回発生してしまう。これを防ぐために、一度アクセスしたPTEを記憶する、特別なキャッシュが用意されている。これがTLB (Translation Lookaside Buffer)である。これもキャッシュの一種であるため、キャッシュのようにL1、L2のような階層構造を持っている。キャッシュの大きさはバイト数で指定されるが、TLBはエントリ数で指定される。TLBの情報を見るには<code>x86info</code>が便利だ。 CentOSなら、</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="fu">sudo</span> yum install x86info</code></pre></div>
-<p>で入る。他のパッケージにもだいたい入っていると思う。キャッシュの情報を見るには<code>-c</code>を指定する。 以下は Intel Xeon Gold 6130 (Skylake)上で実行した結果である。</p>
-<pre class="txt"><code>x86info v1.31pre
-Found 32 identical CPUs
-Extended Family: 0 Extended Model: 5 Family: 6 Model: 85 Stepping: 4
-Type: 0 (Original OEM)
-CPU Model (x86info&#39;s best guess): Core i7 (Skylake-X)
-Processor name string (BIOS programmed): Intel(R) Xeon(R) Gold 6130 CPU @ 2.10GHz
-
-Cache info
- L1 Data Cache: 32KB, 8-way associative, 64 byte line size
- L1 Instruction Cache: 32KB, 8-way associative, 64 byte line size
- L2 Unified Cache: 1024KB, 16-way associative, 64 byte line size
- L3 Unified Cache: 22528KB, 11-way associative, 64 byte line size
-TLB info
- Instruction TLB: 2M/4M pages, fully associative, 8 entries
- Instruction TLB: 4K pages, 8-way associative, 128 entries
- Data TLB: 1GB pages, 4-way set associative, 4 entries
- Data TLB: 4KB pages, 4-way associative, 64 entries
- Shared L2 TLB: 4KB/2MB pages, 6-way associative, 1536 entries
- 64 byte prefetching.
-Total processor threads: 32
-This system has 2 eight-core processors with hyper-threading (2 threads per core) running at an estimated 2.10GHz</code></pre>
-<p>キャッシュの構造について知っている人なら、命令用TLBとデータ用TLBが分けられていたり、L1、L2の区別があり、L2は命令用とデータ用が共通になっているなど、キャッシュと同じような構造をしていることがわかるだろう。さて、一番大きなTLBでも、エントリ数は1536しかない。デフォルトでは1ページが4KBなので、これをフルに活用しても、6MBちょっとのメモリ空間しか管理できない。したがってそれより大きなデータを扱う場合にはTLBミスが起きることになる。 しかし、先程の表示で<code>Shared L2 TLB: 4KB/2MB pages</code>と書いてあったように、このTLBは2MBのページを管理することもできる。1ページを2MBにすれば、1536エントリで3GBのメモリ空間をカバーすることができる。このように、通常より大きなサイズのページを使うことを<strong>ラージページ (Large Page)</strong>、もしくは <strong>ヒュージページ (Huge Page)</strong> と呼ぶ。ラージページのサイズは<code>meminfo</code>で確認できる。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="fu">cat</span> /proc/meminfo  <span class="kw">|</span><span class="fu">grep</span> Hugepagesize
-<span class="ex">Hugepagesize</span>:       2048 kB</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> mpirun <span class="at">-np</span> 4 <span class="at">--oversubscribe</span> ./a.out</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">rank</span> = 1, address = cae26d8</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">rank</span> = 2, address = fe426d8</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="ex">rank</span> = 3, address = ff4c6d8</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ex">rank</span> = 0, address = 40c36d8</span></code></pre></div>
+<p>論理的には同じ場所にあるはずの<code>rank</code>が、てんでバラバラのアドレスにあることがわかる。
+これは、Mac OSXが「アドレス空間ランダム化(Address Space Layout
+Randomization, ASLR)」と呼ばれる
+セキュリティ技術を採用しているからである。ディストリビューションによってはLinuxでもこれをやっているかもしれない。
+まぁそれはさておき。</p>
+<p>話の本筋からはやや外れるのだが、せっかく仮想メモリの話が出たので、合わせてTLBの話もしておこう。
+OSは、プロセスから見える「論理アドレス」と、実際にDRAMに割り当てる「物理アドレス」は、「ページ」と
+呼ばれる単位で管理している。メモリをある程度のまとまりごとにわけ、それを「ページ」と呼ぶ。
+論理アドレスと物理アドレスの対応は「ページテーブルエントリ
+(PTE)」と呼ばれ、それをまとめたデータを「ページテーブル」と呼ぶ。
+プロセスからメモリのアクセス要求があったら、ページテーブルを見てプロセスの論理アドレスから物理アドレスに変換してやる必要がある。
+ページサイズを調べるには<code>getconf</code>を使う。</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> getconf PAGESIZE</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">4096</span></span></code></pre></div>
+<p>一般に、ページサイズは4096 Byteに取ることが多い。すると、<a
+href="http://ascii.jp/elem/000/000/567/567889/">1GBのメモリは26万2144個のPTEで管理される</a>ことになる。これだけの数をキャッシュに乗せるのは不可能であるため、基本的にはページテーブルはメモリ上に置かれる。すると、メモリにアクセスする際にキャッシュミスをすると、まず論理アドレスを物理アドレスに変換するためにメモリにアクセスし、物理アドレスがわかったらそのアドレスにアクセス、とメモリアクセスが二回発生してしまう。これを防ぐために、一度アクセスしたPTEを記憶する、特別なキャッシュが用意されている。これがTLB
+(Translation Lookaside
+Buffer)である。これもキャッシュの一種であるため、キャッシュのようにL1、L2のような階層構造を持っている。キャッシュの大きさはバイト数で指定されるが、TLBはエントリ数で指定される。TLBの情報を見るには<code>x86info</code>が便利だ。
+CentOSなら、</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> yum install x86info</span></code></pre></div>
+<p>で入る。他のパッケージにもだいたい入っていると思う。キャッシュの情報を見るには<code>-c</code>を指定する。
+以下は Intel Xeon Gold 6130 (Skylake)上で実行した結果である。</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode txt"><code class="sourceCode default"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>x86info v1.31pre</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>Found 32 identical CPUs</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>Extended Family: 0 Extended Model: 5 Family: 6 Model: 85 Stepping: 4</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>Type: 0 (Original OEM)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>CPU Model (x86info&#39;s best guess): Core i7 (Skylake-X)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>Processor name string (BIOS programmed): Intel(R) Xeon(R) Gold 6130 CPU @ 2.10GHz</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>Cache info</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a> L1 Data Cache: 32KB, 8-way associative, 64 byte line size</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a> L1 Instruction Cache: 32KB, 8-way associative, 64 byte line size</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a> L2 Unified Cache: 1024KB, 16-way associative, 64 byte line size</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a> L3 Unified Cache: 22528KB, 11-way associative, 64 byte line size</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>TLB info</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a> Instruction TLB: 2M/4M pages, fully associative, 8 entries</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a> Instruction TLB: 4K pages, 8-way associative, 128 entries</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a> Data TLB: 1GB pages, 4-way set associative, 4 entries</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a> Data TLB: 4KB pages, 4-way associative, 64 entries</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a> Shared L2 TLB: 4KB/2MB pages, 6-way associative, 1536 entries</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a> 64 byte prefetching.</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>Total processor threads: 32</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>This system has 2 eight-core processors with hyper-threading (2 threads per core) running at an estimated 2.10GHz</span></code></pre></div>
+<p>キャッシュの構造について知っている人なら、命令用TLBとデータ用TLBが分けられていたり、L1、L2の区別があり、L2は命令用とデータ用が共通になっているなど、キャッシュと同じような構造をしていることがわかるだろう。さて、一番大きなTLBでも、エントリ数は1536しかない。デフォルトでは1ページが4KBなので、これをフルに活用しても、6MBちょっとのメモリ空間しか管理できない。したがってそれより大きなデータを扱う場合にはTLBミスが起きることになる。
+しかし、先程の表示で<code>Shared L2 TLB: 4KB/2MB pages</code>と書いてあったように、このTLBは2MBのページを管理することもできる。1ページを2MBにすれば、1536エントリで3GBのメモリ空間をカバーすることができる。このように、通常より大きなサイズのページを使うことを<strong>ラージページ
+(Large Page)</strong>、もしくは <strong>ヒュージページ (Huge
+Page)</strong>
+と呼ぶ。ラージページのサイズは<code>meminfo</code>で確認できる。</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> cat /proc/meminfo  <span class="kw">|</span><span class="fu">grep</span> Hugepagesize</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">Hugepagesize:</span>       2048 kB</span></code></pre></div>
 <p>確かに2MBになっていることがわかる。ラージページを使うことで、TLBミスの低減が期待できるが、メモリの最小管理サイズが大きくなるため、メモリの利用に無駄が多くなり、実質的にメモリ使用量が増える。また、<strong>ラージページはスワップアウトされない</strong>ということも覚えておくと良い。仮想メモリでは、メモリが足りなくなるとページ単位でディスクにメモリを逃がすスワッピングを行うが、ラージページはスワップされない。もしラージページをスワップアウト(ディスクへの書き出し)した場合、あとで必要になってスワップイン(メモリへの読み戻し)する時に、ラージページのサイズだけ<strong>連続した物理メモリ</strong>を用意してやる必要があるが、断片化などによりそれが保証できないためである。</p>
 <h2 id="余談tlbミスについて">余談：TLBミスについて</h2>
-<div class="figure">
+<figure>
 <img src="fig/smallpage.png" alt="スモールページのページウォーク" />
-<p class="caption">スモールページのページウォーク</p>
-</div>
-<p>TLBもキャッシュの一種であるから、通常のキャッシュと同様にキャッシュミスを起こす。最近はメモリ空間が大きくなったため、ページテーブルは多段階で管理されている。現在の一般的なマシンは64 bitなので、理論的には16 エクサバイトのメモリ空間を表現できる(正確にはEiB、つまりエクスビバイトだがそれはさておく)。しかし、現実にはそんなに大きなメモリ空間は(まだ)実現できないため、48 bitで256 テラバイトを表現する。現在のx86は、この48ビットの論理アドレスを5つの部分にわける。最下位の12ビットが、ページ内のどの場所にあるかを表すオフセットである。12ビット、すなわち4096バイトがページサイズとなる。その上位の9ビットを4セットが、ページの「住所」を表す。例えばそれぞれ「東京都」「千代田区」「一丁目」「一番地」といった具合である。イメージとしては、最初の4つで建物を指定し、最後のオフセットが部屋番号だと思えば良い。いま、「住所(論理アドレス)」が与えられた時、その住所が示す地球上での座標(物理アドレス)を探すことを考える。まず、都道府県の対応表(ページテーブル)を見て「東京」がどこにあるかを調べ、次に都内で「千代田区」がどこにあるかを調べ・・・と、4段階の検索を行って、ようやく論理アドレスと物理アドレスが対応付けられる。こうして、ページテーブルをたどっていって物理アドレスを解決することを <strong>ページウォーク</strong> と呼ぶ。また、ラージページを扱う場合には、最後の9ビットもオフセットとして用いる。するとページサイズを表すビット数が12+9=21ビットとなり、ページサイズが2**21=2097152、つまり2MiBとなることがわかる。住所の階層を一段階「粗く」して、その分最後の家を超高層ビルにしたようなイメージである。</p>
-<div class="figure">
+<figcaption
+aria-hidden="true">スモールページのページウォーク</figcaption>
+</figure>
+<p>TLBもキャッシュの一種であるから、通常のキャッシュと同様にキャッシュミスを起こす。最近はメモリ空間が大きくなったため、ページテーブルは多段階で管理されている。現在の一般的なマシンは64
+bitなので、理論的には16
+エクサバイトのメモリ空間を表現できる(正確にはEiB、つまりエクスビバイトだがそれはさておく)。しかし、現実にはそんなに大きなメモリ空間は(まだ)実現できないため、48
+bitで256
+テラバイトを表現する。現在のx86は、この48ビットの論理アドレスを5つの部分にわける。最下位の12ビットが、ページ内のどの場所にあるかを表すオフセットである。12ビット、すなわち4096バイトがページサイズとなる。その上位の9ビットを4セットが、ページの「住所」を表す。例えばそれぞれ「東京都」「千代田区」「一丁目」「一番地」といった具合である。イメージとしては、最初の4つで建物を指定し、最後のオフセットが部屋番号だと思えば良い。いま、「住所(論理アドレス)」が与えられた時、その住所が示す地球上での座標(物理アドレス)を探すことを考える。まず、都道府県の対応表(ページテーブル)を見て「東京」がどこにあるかを調べ、次に都内で「千代田区」がどこにあるかを調べ・・・と、4段階の検索を行って、ようやく論理アドレスと物理アドレスが対応付けられる。こうして、ページテーブルをたどっていって物理アドレスを解決することを
+<strong>ページウォーク</strong>
+と呼ぶ。また、ラージページを扱う場合には、最後の9ビットもオフセットとして用いる。するとページサイズを表すビット数が12+9=21ビットとなり、ページサイズが2**21=2097152、つまり2MiBとなることがわかる。住所の階層を一段階「粗く」して、その分最後の家を超高層ビルにしたようなイメージである。</p>
+<figure>
 <img src="fig/largepage.png" alt="ラージページのページウォーク" />
-<p class="caption">ラージページのページウォーク</p>
-</div>
+<figcaption aria-hidden="true">ラージページのページウォーク</figcaption>
+</figure>
 <p>いずれにせよ、ページウォークは時間がかかる作業であるため、一度調べたページテーブルエントリをキャッシュしたくなる。これがTLBであった。CPUはキャッシュと同様にハードウェアとしてTLBを持っている。一般にTLBミスはページウォークを伴うためにコストが高い。しかし、TLBミスが頻繁に起きるということは、TLBエントリ数に比べてずっと多い数のページをプログラムが触っている、ということである。これは使用メモリの局所性が低いことを意味するから、一緒にキャッシュミスも起きている可能性が高い。頻繁にキャッシュミスを起こしていれば性能は全くでないため、通常はそっちの方が問題になることが多く、それを解決すればTLBミスも一緒に減ることが多い(気がする)。しかし、現実にはキャッシュはあまり問題を起こしていないのに、TLBミスが深刻な影響を与えることがたまにある。</p>
-<p>かなりアドバンストな話題となるが、キャッシュは、ハッシュのような仕組みでデータを保存している。大雑把にいえば論理アドレスからハッシュ値を作り、そのハッシュ値によってキャッシュのどこにそのメモリを置くかを決める。したがって、メモリの別々の場所にあるにもかかわらず、ハッシュ値がぶつかるためにキャッシュ上の場所が同じになってしまうことがある。そして、運悪くそのデータを交互にアクセスするようなプログラムになっていると、キャッシュのサイズには余裕があるにもかかわらず、同じデータをキャッシュインしてはキャッシュアウトすることを繰り返し、性能が極端に劣化してしまう。これを <strong>キャッシュスラッシング</strong> と呼ぶ。 多次元配列なんかを扱っていて、その次元を変えたとき、あるサイズだけ極端に性能が劣化したりした場合は、このキャッシュスラッシングが起きている可能性が高い。</p>
-<p>さて、TLBもキャッシュであるから、全く同様な原理でスラッシングが起きる。これをTLBスラッシングと呼ぶ。個人的な経験だが、とあるサイトで自分のコードがflat-MPIでは全く問題なく高並列で性能がでるのに、ハイブリッドにすると全く等価な計算をしているにもかかわらず高並列実行時に性能ブレが発生し、結果としてかなり性能が劣化してしまう、ということが起きた。その原因究明のために不要なルーチンを削って「犯人探し」をしていると、最終的に<strong>全く呼ばれていない関数を含むオブジェクトファイルをリンクすると性能が劣化、リンクしないと劣化しない</strong>という状況になった。繰り返すが、「使っていない関数を含むオブジェクトファイルをリンクするかどうか」で、性能が20%近くもぶれてしまうのである。flat-MPIの場合にはこれは起きず、ハイブリッド並列の時だけ起きた。 結局、これはTLBスラッシングが起きていたためとわかり、ページサイズを変えることで性能劣化が抑えられたのだが、今でも「なぜハイブリッドだとTLBスラッシングが起きたのか」はよくわかってない。あのGotoBLASで有名な後藤さんも、いくつかの論文で行列積におけるTLBの影響が大きいことを指摘している。</p>
+<p>かなりアドバンストな話題となるが、キャッシュは、ハッシュのような仕組みでデータを保存している。大雑把にいえば論理アドレスからハッシュ値を作り、そのハッシュ値によってキャッシュのどこにそのメモリを置くかを決める。したがって、メモリの別々の場所にあるにもかかわらず、ハッシュ値がぶつかるためにキャッシュ上の場所が同じになってしまうことがある。そして、運悪くそのデータを交互にアクセスするようなプログラムになっていると、キャッシュのサイズには余裕があるにもかかわらず、同じデータをキャッシュインしてはキャッシュアウトすることを繰り返し、性能が極端に劣化してしまう。これを
+<strong>キャッシュスラッシング</strong> と呼ぶ。
+多次元配列なんかを扱っていて、その次元を変えたとき、あるサイズだけ極端に性能が劣化したりした場合は、このキャッシュスラッシングが起きている可能性が高い。</p>
+<p>さて、TLBもキャッシュであるから、全く同様な原理でスラッシングが起きる。これをTLBスラッシングと呼ぶ。個人的な経験だが、とあるサイトで自分のコードがflat-MPIでは全く問題なく高並列で性能がでるのに、ハイブリッドにすると全く等価な計算をしているにもかかわらず高並列実行時に性能ブレが発生し、結果としてかなり性能が劣化してしまう、ということが起きた。その原因究明のために不要なルーチンを削って「犯人探し」をしていると、最終的に<strong>全く呼ばれていない関数を含むオブジェクトファイルをリンクすると性能が劣化、リンクしないと劣化しない</strong>という状況になった。繰り返すが、「使っていない関数を含むオブジェクトファイルをリンクするかどうか」で、性能が20%近くもぶれてしまうのである。flat-MPIの場合にはこれは起きず、ハイブリッド並列の時だけ起きた。
+結局、これはTLBスラッシングが起きていたためとわかり、ページサイズを変えることで性能劣化が抑えられたのだが、今でも「なぜハイブリッドだとTLBスラッシングが起きたのか」はよくわかってない。あのGotoBLASで有名な後藤さんも、いくつかの論文で行列積におけるTLBの影響が大きいことを指摘している。</p>
 <ul>
-<li><a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.12.4905">On Reducing TLB Misses in Matrix Multiplication (2002) by Kazushige Goto and Robert van de Geijn</a></li>
-<li><a href="https://dl.acm.org/citation.cfm?doid=1356052.1356053">Anatomy of high-performance matrix multiplication</a></li>
+<li><a
+href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.12.4905">On
+Reducing TLB Misses in Matrix Multiplication (2002) by Kazushige Goto
+and Robert van de Geijn</a></li>
+<li><a
+href="https://dl.acm.org/citation.cfm?doid=1356052.1356053">Anatomy of
+high-performance matrix multiplication</a></li>
 </ul>
 <p>他にもハイブリッド実行時に性能ブレが発生し、結果として並列性能が劣化するのだが、その原因としてTLBミスが疑わしい場合が結構あるらしい。そのあたり、TLBの扱いをハードウェアでどう扱っているか、またマルチスレッドのとき、マルチプロセスのときにどうしてるかなど、実装に強く依存しているっぽいので、「どうなってるかよくわからない」というのが筆者の正直な気持ちである。</p>
-<p>なお、余談の余談となるが、論理アドレスは8バイトアラインされているため、アドレスを2進数表記すると下位3ビットは必ず0となる。glibcのmallocは、これを利用してメモリ(チャンク)の状態を記録する。詳細はkosakiさんによる<a href="https://www.youtube.com/watch?v=0-vWT-t0UHg">malloc動画</a>、もしくは<a href="https://www.slideshare.net/kosaki55tea/glibc-malloc">mallocの旅(glibc)編</a>を参照してほしい。</p>
+<p>なお、余談の余談となるが、論理アドレスは8バイトアラインされているため、アドレスを2進数表記すると下位3ビットは必ず0となる。glibcのmallocは、これを利用してメモリ(チャンク)の状態を記録する。詳細はkosakiさんによる<a
+href="https://www.youtube.com/watch?v=0-vWT-t0UHg">malloc動画</a>、もしくは<a
+href="https://www.slideshare.net/kosaki55tea/glibc-malloc">mallocの旅(glibc)編</a>を参照してほしい。</p>
 <h2 id="numa">NUMA</h2>
-<p>さて、計算ノードは「メモリ」と「CPU」でできているのだが、最近はCPUもマルチコアになったり、 マルチソケットになったりして、ノード内はかなり複雑になっている。</p>
-<div class="figure">
+<p>さて、計算ノードは「メモリ」と「CPU」でできているのだが、最近はCPUもマルチコアになったり、
+マルチソケットになったりして、ノード内はかなり複雑になっている。</p>
+<figure>
 <img src="fig/numa.png" alt="メモリとCPUの接続関係" />
-<p class="caption">メモリとCPUの接続関係</p>
-</div>
-<p>上図では、CPUが4つ搭載されており、それぞれにメモリがつながっている。CPU同士もバスで接続されており、例えば左下のCPUから 右上のメモリにアクセスすることも可能であるが、自分の近くに接続されているメモリにアクセスするよりは 時間がかかってしまう。このように、CPUから見て「近いメモリ」「遠いメモリ」が存在する構成のことを 「非対称メモリアクセス(Non-uniform Memory Access, NUMA)」と呼ぶ。 「NUMA」をなんと呼ぶのが一般的なのかよく知らないのだが、筆者は「ぬ〜ま」と呼んでいる。 他にも「ぬま」や「にゅーま」と発音している人もいる。なぜNUMAが必要となるかはここでは深入りしないので、 気になる人は各自調べて欲しい。</p>
-<p>さて、論理メモリは、宣言しただけではまだ物理メモリは割り当てられない。 例えば、以下のような配列宣言があったとする。</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">double</span> a[<span class="dv">4096</span>];</code></pre></div>
-<p>倍精度実数は一つ8バイトであるため、ページサイズが4096バイトならば、この配列全体で8枚のページを割り当てる必要がある。 しかし、宣言した瞬間には物理メモリは割り当てられない。物理メモリが割り当てられるのは、この配列に始めてアクセスした時である。 はじめて配列に触ったとき、対応するページを物理メモリに割り当てるのだが、その物理メモリは 「触ったスレッドが走っていたコアに一番近いメモリ」が選ばれる。 これを「ファーストタッチの原則」と呼ぶ。一度物理メモリが割り当てられたら、開放されるまでずっとそのままである。 したがって、そこから遠いコアで走るスレッドが触りにいったら時間がかかることになる。</p>
-<p>flat-MPIをやっている場合は、各プロセスごとに独立な論理メモリを持っているため、原則として、あるプロセス(のメインスレッド)が 触ったページを、他のスレッドが触りにくる可能性はない(ここではプロセスマイグレーションなどは考えていない)。 しかし、スレッド並列をしている場合には「最初に触ったスレッドと、計算をするスレッドが異なる可能性」がある。</p>
-<div class="figure">
+<figcaption aria-hidden="true">メモリとCPUの接続関係</figcaption>
+</figure>
+<p>上図では、CPUが4つ搭載されており、それぞれにメモリがつながっている。CPU同士もバスで接続されており、例えば左下のCPUから
+右上のメモリにアクセスすることも可能であるが、自分の近くに接続されているメモリにアクセスするよりは
+時間がかかってしまう。このように、CPUから見て「近いメモリ」「遠いメモリ」が存在する構成のことを
+「非対称メモリアクセス(Non-uniform Memory Access, NUMA)」と呼ぶ。
+「NUMA」をなんと呼ぶのが一般的なのかよく知らないのだが、筆者は「ぬ〜ま」と呼んでいる。
+他にも「ぬま」や「にゅーま」と発音している人もいる。なぜNUMAが必要となるかはここでは深入りしないので、
+気になる人は各自調べて欲しい。</p>
+<p>さて、論理メモリは、宣言しただけではまだ物理メモリは割り当てられない。
+例えば、以下のような配列宣言があったとする。</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="dt">double</span> a<span class="op">[</span><span class="dv">4096</span><span class="op">];</span></span></code></pre></div>
+<p>倍精度実数は一つ8バイトであるため、ページサイズが4096バイトならば、この配列全体で8枚のページを割り当てる必要がある。
+しかし、宣言した瞬間には物理メモリは割り当てられない。物理メモリが割り当てられるのは、この配列に始めてアクセスした時である。
+はじめて配列に触ったとき、対応するページを物理メモリに割り当てるのだが、その物理メモリは
+「触ったスレッドが走っていたコアに一番近いメモリ」が選ばれる。
+これを「ファーストタッチの原則」と呼ぶ。一度物理メモリが割り当てられたら、開放されるまでずっとそのままである。
+したがって、そこから遠いコアで走るスレッドが触りにいったら時間がかかることになる。</p>
+<p>flat-MPIをやっている場合は、各プロセスごとに独立な論理メモリを持っているため、原則として、あるプロセス(のメインスレッド)が
+触ったページを、他のスレッドが触りにくる可能性はない(ここではプロセスマイグレーションなどは考えていない)。
+しかし、スレッド並列をしている場合には「最初に触ったスレッドと、計算をするスレッドが異なる可能性」がある。</p>
+<figure>
 <img src="fig/firsttouch.png" alt="ファーストタッチの原則" />
-<p class="caption">ファーストタッチの原則</p>
-</div>
-<p>これが問題となるのは「初期化処理は軽いから」と、大きな配列の初期化をメインスレッドでやって、 全てのページがメインスレッドの近くに割り当てられてしまい、いざ重い処理をしようとしたら すべてのスレッドから「メインスレッドが走るCPU」にデータの要求が来て遅くなる、というパターンである。 これを防ぐには、予め「あとで処理をするスレッド」が「始めてそのページを触るように」してやらないといけない。</p>
+<figcaption aria-hidden="true">ファーストタッチの原則</figcaption>
+</figure>
+<p>これが問題となるのは「初期化処理は軽いから」と、大きな配列の初期化をメインスレッドでやって、
+全てのページがメインスレッドの近くに割り当てられてしまい、いざ重い処理をしようとしたら
+すべてのスレッドから「メインスレッドが走るCPU」にデータの要求が来て遅くなる、というパターンである。
+これを防ぐには、予め「あとで処理をするスレッド」が「始めてそのページを触るように」してやらないといけない。</p>
 <h2 id="openmpの例">OpenMPの例</h2>
-<p>さて、いよいよOpenMPによるスレッド並列を行うが、その前にシリアルコードのプロファイルを取ろう。 プロファイルとは、実行コードの性能分析のことで、最も簡単には関数ごとにどこがどれだけ時間を使っているか調べる。 性能分析には<code>perf</code>を使うのが良い。残念ながらMacには<code>perf</code>相当のツールがなく、同様な目的に使われる<code>gprof</code>も正常に動作しないため、 以下では<code>perf</code>が使えるLinuxを想定する。実行環境は以下の通り。</p>
+<p>さて、いよいよOpenMPによるスレッド並列を行うが、その前にシリアルコードのプロファイルを取ろう。
+プロファイルとは、実行コードの性能分析のことで、最も簡単には関数ごとにどこがどれだけ時間を使っているか調べる。
+性能分析には<code>perf</code>を使うのが良い。残念ながらMacには<code>perf</code>相当のツールがなく、同様な目的に使われる<code>gprof</code>も正常に動作しないため、
+以下では<code>perf</code>が使えるLinuxを想定する。実行環境は以下の通り。</p>
 <ul>
 <li>Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz 12コア x 2ソケット</li>
 </ul>
-<p>まず、シリアルコードとしてDay 4で使ったGray Scottモデルの計算を使おう。純粋に計算のみをカウントするため、途中のファイル出力を削除し、また実行時間を測定するようにしたものが<code>gs.cpp</code>である。</p>
-<p><a href="https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs.cpp" class="uri">https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs.cpp</a></p>
+<p>まず、シリアルコードとしてDay 4で使ったGray
+Scottモデルの計算を使おう。純粋に計算のみをカウントするため、途中のファイル出力を削除し、また実行時間を測定するようにしたものが<code>gs.cpp</code>である。</p>
+<p><a
+href="https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs.cpp">https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs.cpp</a></p>
 <p>ただし、デバッグのために最終結果だけファイルに出力している。コンパイルして<code>perf</code>でプロファイルをとってみよう。まず、<code>perf record</code>で記録を取る。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">g++</span> -O3 -mavx2 -std=c++11 -fopenmp gs.cpp -o gs.out
-$ <span class="ex">perf</span> record ./gs.out
-<span class="ex">2527</span> [ms]
-<span class="ex">conf000.dat</span>
-<span class="bu">[</span> perf record: Woken up 1 times to write data<span class="bu"> ]</span>
-<span class="bu">[</span> perf record: Captured and wrote 0.113 MB perf.data (~4953 samples)<span class="bu"> ]</span></code></pre></div>
-<p>実行時間が2527 msで、<code>conf000.dat</code>を出力したことがわかる。後のためにこれを<code>conf000.org</code>か何かにリネームしておこう。 <code>perf</code>によって記録されたプロファイルデータは、<code>perf.data</code>として保存されている。これは<code>perf report</code>で中身を見ることができる。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">perf</span> report</code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> g++ <span class="at">-O3</span> <span class="at">-mavx2</span> <span class="at">-std</span><span class="op">=</span>c++11 <span class="at">-fopenmp</span> gs.cpp <span class="at">-o</span> gs.out</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> perf record ./gs.out</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="ex">2527</span> [ms]</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="bu">[</span> perf record: Woken <span class="er">up</span> <span class="ex">1</span> times to write data ]</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="bu">[</span> perf record: Captured <span class="er">and</span> <span class="ex">wrote</span> 0.113 MB perf.data <span class="er">(</span><span class="ex">~4953</span> samples<span class="kw">)</span> <span class="ex">]</span></span></code></pre></div>
+<p>実行時間が2527
+msで、<code>conf000.dat</code>を出力したことがわかる。後のためにこれを<code>conf000.org</code>か何かにリネームしておこう。
+<code>perf</code>によって記録されたプロファイルデータは、<code>perf.data</code>として保存されている。これは<code>perf report</code>で中身を見ることができる。</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">perf</span> report</span></code></pre></div>
 <p>環境によるが、こんな画面が出てくる。</p>
-<div class="figure">
+<figure>
 <img src="fig/perf_sample.png" alt="perfの実行結果" />
-<p class="caption">perfの実行結果</p>
-</div>
-<p>いろいろ出てきているが、とりあえずメインの計算ルーチン<code>calc</code>が計算時間の99.36%を占めるのを確認すれば良い。 このように一番「重い」関数のことを <strong>ホットスポット(hotspot)</strong> と呼ぶ。ホットスポットが90%以上を占めるような計算コードはチューニングがやりやすい。</p>
+<figcaption aria-hidden="true">perfの実行結果</figcaption>
+</figure>
+<p>いろいろ出てきているが、とりあえずメインの計算ルーチン<code>calc</code>が計算時間の99.36%を占めるのを確認すれば良い。
+このように一番「重い」関数のことを
+<strong>ホットスポット(hotspot)</strong>
+と呼ぶ。ホットスポットが90%以上を占めるような計算コードはチューニングがやりやすい。</p>
 <p>さて、一番重い関数はこんな感じになっている。</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> calc(vd &amp;u, vd &amp;v, vd &amp;u2, vd &amp;v2) {
-<span class="co">// 外側ループ</span>
-  <span class="cf">for</span> (<span class="dt">int</span> iy = <span class="dv">1</span>; iy &lt; L - <span class="dv">1</span>; iy++) {
-   <span class="co">// 内側ループ</span>
-    <span class="cf">for</span> (<span class="dt">int</span> ix = <span class="dv">1</span>; ix &lt; L - <span class="dv">1</span>; ix++) {
-      <span class="dt">double</span> du = <span class="dv">0</span>;
-      <span class="dt">double</span> dv = <span class="dv">0</span>;
-      <span class="at">const</span> <span class="dt">int</span> i = ix + iy * L;
-      du = Du * laplacian(ix, iy, u);
-      dv = Dv * laplacian(ix, iy, v);
-      du += calcU(u[i], v[i]);
-      dv += calcV(u[i], v[i]);
-      u2[i] = u[i] + du * dt;
-      v2[i] = v[i] + dv * dt;
-    }
-  }
-}</code></pre></div>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> calc<span class="op">(</span>vd <span class="op">&amp;</span>u<span class="op">,</span> vd <span class="op">&amp;</span>v<span class="op">,</span> vd <span class="op">&amp;</span>u2<span class="op">,</span> vd <span class="op">&amp;</span>v2<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co">// 外側ループ</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> iy <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> iy <span class="op">&lt;</span> L <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> iy<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>   <span class="co">// 内側ループ</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> ix <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> ix <span class="op">&lt;</span> L <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> ix<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">double</span> du <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">double</span> dv <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">const</span> <span class="dt">int</span> i <span class="op">=</span> ix <span class="op">+</span> iy <span class="op">*</span> L<span class="op">;</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>      du <span class="op">=</span> Du <span class="op">*</span> laplacian<span class="op">(</span>ix<span class="op">,</span> iy<span class="op">,</span> u<span class="op">);</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>      dv <span class="op">=</span> Dv <span class="op">*</span> laplacian<span class="op">(</span>ix<span class="op">,</span> iy<span class="op">,</span> v<span class="op">);</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>      du <span class="op">+=</span> calcU<span class="op">(</span>u<span class="op">[</span>i<span class="op">],</span> v<span class="op">[</span>i<span class="op">]);</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>      dv <span class="op">+=</span> calcV<span class="op">(</span>u<span class="op">[</span>i<span class="op">],</span> v<span class="op">[</span>i<span class="op">]);</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>      u2<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> u<span class="op">[</span>i<span class="op">]</span> <span class="op">+</span> du <span class="op">*</span> dt<span class="op">;</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>      v2<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> v<span class="op">[</span>i<span class="op">]</span> <span class="op">+</span> dv <span class="op">*</span> dt<span class="op">;</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>二重ループになっている。OpenMPは、並列実行したいループの直前にディレクティブを入れて、「このループを並列化してください」と指示することで並列化する。スレッド並列する時には、ループインデックス間に依存性がないか確認しなければならないのだが、今回はたまたまループインデックス間に全く依存関係がないので、好きなように並列化してよい(たまたまというか、そうなるように題材を選んだわけだが)。</p>
 <p>まずは内側のループにディレクティブを入れてみよう。<code>#pragma omp parallel for</code>というディレクティブを対象ループの直前に入れるだけでよい。</p>
-<p><a href="https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp1.cpp" class="uri">https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp1.cpp</a></p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> calc(vd &amp;u, vd &amp;v, vd &amp;u2, vd &amp;v2) {
-  <span class="cf">for</span> (<span class="dt">int</span> iy = <span class="dv">1</span>; iy &lt; L - <span class="dv">1</span>; iy++) {
-<span class="pp">#pragma omp parallel for</span>
-    <span class="cf">for</span> (<span class="dt">int</span> ix = <span class="dv">1</span>; ix &lt; L - <span class="dv">1</span>; ix++) {
-      <span class="dt">double</span> du = <span class="dv">0</span>;
-      <span class="dt">double</span> dv = <span class="dv">0</span>;
-      <span class="at">const</span> <span class="dt">int</span> i = ix + iy * L;
-      du = Du * laplacian(ix, iy, u);
-      dv = Dv * laplacian(ix, iy, v);
-      du += calcU(u[i], v[i]);
-      dv += calcV(u[i], v[i]);
-      u2[i] = u[i] + du * dt;
-      v2[i] = v[i] + dv * dt;
-    }
-  }
-}</code></pre></div>
+<p><a
+href="https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp1.cpp">https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp1.cpp</a></p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> calc<span class="op">(</span>vd <span class="op">&amp;</span>u<span class="op">,</span> vd <span class="op">&amp;</span>v<span class="op">,</span> vd <span class="op">&amp;</span>u2<span class="op">,</span> vd <span class="op">&amp;</span>v2<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> iy <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> iy <span class="op">&lt;</span> L <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> iy<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#pragma omp parallel for</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> ix <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> ix <span class="op">&lt;</span> L <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> ix<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">double</span> du <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">double</span> dv <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">const</span> <span class="dt">int</span> i <span class="op">=</span> ix <span class="op">+</span> iy <span class="op">*</span> L<span class="op">;</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>      du <span class="op">=</span> Du <span class="op">*</span> laplacian<span class="op">(</span>ix<span class="op">,</span> iy<span class="op">,</span> u<span class="op">);</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>      dv <span class="op">=</span> Dv <span class="op">*</span> laplacian<span class="op">(</span>ix<span class="op">,</span> iy<span class="op">,</span> v<span class="op">);</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>      du <span class="op">+=</span> calcU<span class="op">(</span>u<span class="op">[</span>i<span class="op">],</span> v<span class="op">[</span>i<span class="op">]);</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>      dv <span class="op">+=</span> calcV<span class="op">(</span>u<span class="op">[</span>i<span class="op">],</span> v<span class="op">[</span>i<span class="op">]);</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>      u2<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> u<span class="op">[</span>i<span class="op">]</span> <span class="op">+</span> du <span class="op">*</span> dt<span class="op">;</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>      v2<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> v<span class="op">[</span>i<span class="op">]</span> <span class="op">+</span> dv <span class="op">*</span> dt<span class="op">;</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>実行してみよう。スレッド数は環境変数<code>OMP_NUM_THREADS</code>で指定する。12コア2ソケットマシンなので、全体で24コアあるから、24スレッドで走らせてみよう。ついでにtimeコマンドをかましてCPUがどれだけ使われているかも見てみる。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="bu">time</span> OMP_NUM_THREADS=24 ./gs_omp1.out
-<span class="ex">24</span> threads 24078 [ms]
-<span class="ex">conf000.dat</span>
-<span class="va">OMP_NUM_THREADS=</span>24 <span class="ex">./gs_omp1.out</span>  573.12s user 1.72s system 2384% cpu 24.103 total</code></pre></div>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> time OMP_NUM_THREADS=24 ./gs_omp1.out</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="ex">24</span> threads 24078 [ms]</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="va">OMP_NUM_THREADS</span><span class="op">=</span>24 <span class="ex">./gs_omp1.out</span>  573.12s user 1.72s system 2384% cpu 24.103 total</span></code></pre></div>
 <p>2384%、つまり24コア使われているのは間違いなさそうだが、シリアルコードで2527msだったのが、24078ms、つまり<strong>並列化により10倍遅くなった</strong>ことになる。ついでに結果が正しいことも確認しておこう(<strong>基本！</strong>)。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="fu">diff</span> conf000.org conf000.dat</code></pre></div>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">diff</span> conf000.org conf000.dat</span></code></pre></div>
 <p>問題なさそうですね。</p>
 <p>次に、外側を並列化してみよう。</p>
-<p><a href="https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp2.cpp" class="uri">https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp2.cpp</a></p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> calc(vd &amp;u, vd &amp;v, vd &amp;u2, vd &amp;v2) {
-<span class="pp">#pragma omp parallel for</span>
-  <span class="cf">for</span> (<span class="dt">int</span> iy = <span class="dv">1</span>; iy &lt; L - <span class="dv">1</span>; iy++) {
-    <span class="cf">for</span> (<span class="dt">int</span> ix = <span class="dv">1</span>; ix &lt; L - <span class="dv">1</span>; ix++) {
-      <span class="dt">double</span> du = <span class="dv">0</span>;
-      <span class="dt">double</span> dv = <span class="dv">0</span>;
-      <span class="at">const</span> <span class="dt">int</span> i = ix + iy * L;
-      du = Du * laplacian(ix, iy, u);
-      dv = Dv * laplacian(ix, iy, v);
-      du += calcU(u[i], v[i]);
-      dv += calcV(u[i], v[i]);
-      u2[i] = u[i] + du * dt;
-      v2[i] = v[i] + dv * dt;
-    }
-  }
-}</code></pre></div>
+<p><a
+href="https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp2.cpp">https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp2.cpp</a></p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> calc<span class="op">(</span>vd <span class="op">&amp;</span>u<span class="op">,</span> vd <span class="op">&amp;</span>v<span class="op">,</span> vd <span class="op">&amp;</span>u2<span class="op">,</span> vd <span class="op">&amp;</span>v2<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#pragma omp parallel for</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> iy <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> iy <span class="op">&lt;</span> L <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> iy<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> ix <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> ix <span class="op">&lt;</span> L <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> ix<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">double</span> du <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">double</span> dv <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">const</span> <span class="dt">int</span> i <span class="op">=</span> ix <span class="op">+</span> iy <span class="op">*</span> L<span class="op">;</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>      du <span class="op">=</span> Du <span class="op">*</span> laplacian<span class="op">(</span>ix<span class="op">,</span> iy<span class="op">,</span> u<span class="op">);</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>      dv <span class="op">=</span> Dv <span class="op">*</span> laplacian<span class="op">(</span>ix<span class="op">,</span> iy<span class="op">,</span> v<span class="op">);</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>      du <span class="op">+=</span> calcU<span class="op">(</span>u<span class="op">[</span>i<span class="op">],</span> v<span class="op">[</span>i<span class="op">]);</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>      dv <span class="op">+=</span> calcV<span class="op">(</span>u<span class="op">[</span>i<span class="op">],</span> v<span class="op">[</span>i<span class="op">]);</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>      u2<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> u<span class="op">[</span>i<span class="op">]</span> <span class="op">+</span> du <span class="op">*</span> dt<span class="op">;</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>      v2<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> v<span class="op">[</span>i<span class="op">]</span> <span class="op">+</span> dv <span class="op">*</span> dt<span class="op">;</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>同じような計算をしてみよう。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="bu">time</span> OMP_NUM_THREADS=24 ./gs_omp2.out
-<span class="ex">24</span> threads 411 [ms]
-<span class="ex">conf000.dat</span>
-<span class="va">OMP_NUM_THREADS=</span>24 <span class="ex">./gs_omp2.out</span>  9.16s user 0.02s system 2194% cpu 0.418 total
-
-$ <span class="fu">diff</span> conf000.org conf000.dat</code></pre></div>
-<p>今度は早くなった。結果も正しいようだ。しかし、24コアを使っているのに、実行速度が6.4倍にしかなっていない。並列化効率にして27%程度である。 ちなみに、12スレッド実行にしても、実行時間がたいして変わらない。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="bu">time</span> OMP_NUM_THREADS=12 ./gs_omp2.out
-<span class="ex">12</span> threads 410 [ms]
-<span class="ex">conf000.dat</span>
-<span class="va">OMP_NUM_THREADS=</span>12 <span class="ex">./gs_omp2.out</span>  4.91s user 0.01s system 1185% cpu 0.415 total</code></pre></div>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> time OMP_NUM_THREADS=24 ./gs_omp2.out</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="ex">24</span> threads 411 [ms]</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="va">OMP_NUM_THREADS</span><span class="op">=</span>24 <span class="ex">./gs_omp2.out</span>  9.16s user 0.02s system 2194% cpu 0.418 total</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> diff conf000.org conf000.dat</span></code></pre></div>
+<p>今度は早くなった。結果も正しいようだ。しかし、24コアを使っているのに、実行速度が6.4倍にしかなっていない。並列化効率にして27%程度である。
+ちなみに、12スレッド実行にしても、実行時間がたいして変わらない。</p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> time OMP_NUM_THREADS=12 ./gs_omp2.out</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="ex">12</span> threads 410 [ms]</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="va">OMP_NUM_THREADS</span><span class="op">=</span>12 <span class="ex">./gs_omp2.out</span>  4.91s user 0.01s system 1185% cpu 0.415 total</span></code></pre></div>
 <p>並列数が半分になって、実行時間がたいしてかわらないので、並列化効率も51%にまで改善した。このように、</p>
 <ul>
 <li>二重ループの内側と外側、どちらを並列化するかで性能が全く変わる。むしろ並列化により遅くなる場合もある。</li>
 <li>スレッドを増やせば増やすほど性能が良くなるわけではない。あるところからスレッドを増やすとむしろ性能が劣化する場合もある。</li>
 </ul>
 <p>ということがわかる。</p>
-<p>さて、なんで並列化して遅くなったのか見てみよう。まずは内側にディレクティブを入れた場合のコードを、1スレッド実行した場合のプロファイルである。 見やすくするために、<code>perf report</code>の結果を<code>cat</code>にパイプしよう。<code>perf report</code>はデフォルトで結果をTUIインタフェースにより表示する(<code>--tui</code>)が、 パイプをつないだ場合には標準出力に結果を流す(<code>--stdio</code>)。<code>--sort</code>は、ソートするキーを指定する。デフォルトでは関数ごとに表示されるが、<code>dso</code>を指定すると、シェアードライブラリごとにまとめてくれる。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="va">OMP_NUM_THREADS=</span>1 <span class="ex">perf</span> record ./gs_omp1.out
-<span class="ex">1</span> threads 3690 [ms]
-<span class="ex">conf000.dat</span>
-<span class="bu">[</span> perf record: Woken up 1 times to write data<span class="bu"> ]</span>
-<span class="bu">[</span> perf record: Captured and wrote 0.157 MB perf.data (~6859 samples)<span class="bu"> ]</span>
-
-$ <span class="ex">perf</span> report --sort dso <span class="kw">|</span> <span class="fu">cat</span>
-<span class="kw">(</span><span class="ex">snip</span><span class="kw">)</span>
-<span class="co"># Overhead      Shared Object</span>
-<span class="co"># ........  .................</span>
-<span class="co">#</span>
-    <span class="ex">68.91%</span>  gs_omp1.out
-    <span class="ex">22.04%</span>  [kernel.kallsyms]
-     <span class="ex">6.51%</span>  libgomp.so.1.0.0
-     <span class="ex">2.52%</span>  libc-2.11.3.so
-     <span class="ex">0.03%</span>  [obdclass]</code></pre></div>
-<p>「Overhead」が、全体の時間に占める割合だが、自分のプログラムである<code>gs_omp1.out</code>が68%しか占めていないことがわかる。 <code>libgomp.so.1.0.0</code>はOpenMPの実装である。 同じことをスレッド並列していないコード<code>gs.out</code>でやるとこうなる。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">perf</span> record ./gs.out
-<span class="ex">2422</span> [ms]
-<span class="ex">conf000.dat</span>
-<span class="bu">[</span> perf record: Woken up 1 times to write data<span class="bu"> ]</span>
-<span class="bu">[</span> perf record: Captured and wrote 0.109 MB perf.data (~4758 samples)<span class="bu"> ]</span>
-
-$ <span class="ex">perf</span> report --sort dso <span class="kw">|</span> <span class="fu">cat</span>
-<span class="co"># Overhead      Shared Object</span>
-<span class="co"># ........  .................</span>
-<span class="co">#</span>
-    <span class="ex">99.77%</span>  gs.out
-     <span class="ex">0.21%</span>  [kernel.kallsyms]
-     <span class="ex">0.02%</span>  [obdclass]</code></pre></div>
-<p>つまり、ここで増えた<code>kernel.kallsyms</code>とか<code>libgomp.so.1.0.0</code>が、スレッド並列化によるオーバーヘッドであることがわかる。 実際、3690 msの68.91%は2542msであり、シリアルコードの実行時間とほぼ同じであることがわかる。</p>
+<p>さて、なんで並列化して遅くなったのか見てみよう。まずは内側にディレクティブを入れた場合のコードを、1スレッド実行した場合のプロファイルである。
+見やすくするために、<code>perf report</code>の結果を<code>cat</code>にパイプしよう。<code>perf report</code>はデフォルトで結果をTUIインタフェースにより表示する(<code>--tui</code>)が、
+パイプをつないだ場合には標準出力に結果を流す(<code>--stdio</code>)。<code>--sort</code>は、ソートするキーを指定する。デフォルトでは関数ごとに表示されるが、<code>dso</code>を指定すると、シェアードライブラリごとにまとめてくれる。</p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> OMP_NUM_THREADS=1 perf record ./gs_omp1.out</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="ex">1</span> threads 3690 [ms]</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="bu">[</span> perf record: Woken <span class="er">up</span> <span class="ex">1</span> times to write data ]</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="bu">[</span> perf record: Captured <span class="er">and</span> <span class="ex">wrote</span> 0.157 MB perf.data <span class="er">(</span><span class="ex">~6859</span> samples<span class="kw">)</span> <span class="ex">]</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> perf report <span class="at">--sort</span> dso <span class="kw">|</span> <span class="fu">cat</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="kw">(</span><span class="ex">snip</span><span class="kw">)</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Overhead      Shared Object</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="co"># ........  .................</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>    <span class="ex">68.91%</span>  gs_omp1.out</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>    <span class="ex">22.04%</span>  [kernel.kallsyms]</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>     <span class="ex">6.51%</span>  libgomp.so.1.0.0</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>     <span class="ex">2.52%</span>  libc-2.11.3.so</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>     <span class="ex">0.03%</span>  [obdclass]</span></code></pre></div>
+<p>「Overhead」が、全体の時間に占める割合だが、自分のプログラムである<code>gs_omp1.out</code>が68%しか占めていないことがわかる。
+<code>libgomp.so.1.0.0</code>はOpenMPの実装である。
+同じことをスレッド並列していないコード<code>gs.out</code>でやるとこうなる。</p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> perf record ./gs.out</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="ex">2422</span> [ms]</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="bu">[</span> perf record: Woken <span class="er">up</span> <span class="ex">1</span> times to write data ]</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="bu">[</span> perf record: Captured <span class="er">and</span> <span class="ex">wrote</span> 0.109 MB perf.data <span class="er">(</span><span class="ex">~4758</span> samples<span class="kw">)</span> <span class="ex">]</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> perf report <span class="at">--sort</span> dso <span class="kw">|</span> <span class="fu">cat</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Overhead      Shared Object</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="co"># ........  .................</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    <span class="ex">99.77%</span>  gs.out</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>     <span class="ex">0.21%</span>  [kernel.kallsyms]</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>     <span class="ex">0.02%</span>  [obdclass]</span></code></pre></div>
+<p>つまり、ここで増えた<code>kernel.kallsyms</code>とか<code>libgomp.so.1.0.0</code>が、スレッド並列化によるオーバーヘッドであることがわかる。
+実際、3690
+msの68.91%は2542msであり、シリアルコードの実行時間とほぼ同じであることがわかる。</p>
 <p>同様なことを外側にディレクティブを入れた場合でやってみると、変なオーバーヘッドがないことがわかる。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="va">OMP_NUM_THREADS=</span>1 <span class="ex">perf</span> record ./gs_omp2.out
-<span class="ex">2342</span> [ms]
-<span class="ex">conf000.dat</span>
-<span class="bu">[</span> perf record: Woken up 1 times to write data<span class="bu"> ]</span>
-<span class="bu">[</span> perf record: Captured and wrote 0.106 MB perf.data (~4615 samples)<span class="bu"> ]</span>
-
-$ <span class="ex">perf</span> report --sort dso <span class="kw">|</span> <span class="fu">cat</span>
-<span class="kw">(</span><span class="ex">snip</span><span class="kw">)</span>
-<span class="co"># Overhead      Shared Object</span>
-<span class="co"># ........  .................</span>
-<span class="co">#</span>
-    <span class="ex">99.21%</span>  gs_omp2.out
-     <span class="ex">0.39%</span>  [kernel.kallsyms]
-     <span class="ex">0.30%</span>  libgomp.so.1.0.0
-     <span class="ex">0.13%</span>  libc-2.11.3.so</code></pre></div>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> OMP_NUM_THREADS=1 perf record ./gs_omp2.out</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="ex">2342</span> [ms]</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="bu">[</span> perf record: Woken <span class="er">up</span> <span class="ex">1</span> times to write data ]</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="bu">[</span> perf record: Captured <span class="er">and</span> <span class="ex">wrote</span> 0.106 MB perf.data <span class="er">(</span><span class="ex">~4615</span> samples<span class="kw">)</span> <span class="ex">]</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> perf report <span class="at">--sort</span> dso <span class="kw">|</span> <span class="fu">cat</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="kw">(</span><span class="ex">snip</span><span class="kw">)</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Overhead      Shared Object</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="co"># ........  .................</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>    <span class="ex">99.21%</span>  gs_omp2.out</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>     <span class="ex">0.39%</span>  [kernel.kallsyms]</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>     <span class="ex">0.30%</span>  libgomp.so.1.0.0</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>     <span class="ex">0.13%</span>  libc-2.11.3.so</span></code></pre></div>
 <p>内側と外側、それぞれにディレクティブを入れた場合について、スレッド数を増やして行った場合、計算にかかったコストと、それ以外のオーバーヘッドをグラフにした。</p>
 <p>内側に入れた場合。</p>
-<div class="figure">
+<figure>
 <img src="fig/inner.png" alt="ディレクティブを内側に入れた場合" />
-<p class="caption">ディレクティブを内側に入れた場合</p>
-</div>
+<figcaption
+aria-hidden="true">ディレクティブを内側に入れた場合</figcaption>
+</figure>
 <p>青が実際に計算しているところで、赤がオーバーヘッドである。計算時間は順調に減っているのだが、実行時間のほとんどをオーバーヘッドが占めるという、かなり悲惨なことになっている。</p>
 <p>次に、外側にディレクティブを入れた場合。</p>
-<div class="figure">
+<figure>
 <img src="fig/outer.png" alt="ディレクティブを外側に入れた場合" />
-<p class="caption">ディレクティブを外側に入れた場合</p>
-</div>
+<figcaption
+aria-hidden="true">ディレクティブを外側に入れた場合</figcaption>
+</figure>
 <p>先程と同様に青が実際に計算しているところで、赤がオーバーヘッドである。スレッド数を増やすほど計算時間は減るが、それに伴ってオーバーヘッドが増えてしまい、12スレッドのところで最も性能が良くなることがわかる。ちなみに先程は12スレッドと24スレッドはほぼ同じ時間だったが、perfをとった時には24スレッドの方が遅くなった。もともとこれだけ計算が軽い場合のスレッド並列は実行時間がかなり揺らぐので、このくらいは誤差の範囲である。</p>
 <h2 id="性能評価">性能評価</h2>
 <p>さて、外側にディレクティブを入れて並列化した場合はそこそこうまくいったが、それでも24スレッド実行時の並列化効率は27%と低い値であった。効率だけ見るとかなり改善の余地がありそうなので、いろいろチューニングをしたくなる。しかし、チューニングを検討する前に、そもそもこの数字が良いのか悪いのか、悪いのなら理想に比べてどれだけ悪いのか考えて見よう。</p>
-<p>そもそも、この計算は全部で20000ステップの計算をしているのであった。シリアルの計算が2422 msなので、1ループあたり120 nsくらいで回っていることになる。 これを24スレッドで理想的に並列化したとすると、ループあたり5 nsしかない。24スレッドが同期するのに平均5nsとしても並列化効率50%である。実際には、24スレッド実行時に計算が平均7ns、同期コストが20ns程度かかっている。12スレッド実行の時には、9.7 ns、同期コストが5.7nsである。計算したのは12コア2ソケットのマシンなので、CPU内12コアの同期に6ns弱、2CPU24コアすべてが同期するのに20nsというのは、まぁ妥当な気がする。ということは、この計算はそもそも同期コストに比べて計算が軽すぎるのが問題なのであって、今後ループ結合やループ分割といった最適化を頑張ったとしても劇的に性能が向上したりする余地はなさそうだな、ということがわかるであろう。</p>
+<p>そもそも、この計算は全部で20000ステップの計算をしているのであった。シリアルの計算が2422
+msなので、1ループあたり120 nsくらいで回っていることになる。
+これを24スレッドで理想的に並列化したとすると、ループあたり5
+nsしかない。24スレッドが同期するのに平均5nsとしても並列化効率50%である。実際には、24スレッド実行時に計算が平均7ns、同期コストが20ns程度かかっている。12スレッド実行の時には、9.7
+ns、同期コストが5.7nsである。計算したのは12コア2ソケットのマシンなので、CPU内12コアの同期に6ns弱、2CPU24コアすべてが同期するのに20nsというのは、まぁ妥当な気がする。ということは、この計算はそもそも同期コストに比べて計算が軽すぎるのが問題なのであって、今後ループ結合やループ分割といった最適化を頑張ったとしても劇的に性能が向上したりする余地はなさそうだな、ということがわかるであろう。</p>
 <p>ちなみに、内側を並列化した場合は、さらに外側のループの回転数だけ同期コストが増える。いま<code>L=128</code>で、ループの回転数が<code>L-2</code>なので、外側を並列化する場合に比べて同期回数が126倍かかる。これはかなりしんどそうだな、ということが想像できる。</p>
-<p>ん？並列化効率がものたりない？ <strong>だからそういう時はサイズを増やせ！</strong></p>
+<p>ん？並列化効率がものたりない？
+<strong>だからそういう時はサイズを増やせ！</strong></p>
 <p>というわけで、サイズを一辺二倍にしてみよう。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">./gs.out</span>
-<span class="ex">10032</span> [ms]
-<span class="ex">conf000.dat</span>
-
-$ <span class="va">OMP_NUM_THREADS=</span>12 <span class="ex">./gs_omp2.out</span>
-<span class="ex">12</span> threads 1104 [ms]
-<span class="ex">conf000.dat</span>
-
-$ <span class="va">OMP_NUM_THREADS=</span>24 <span class="ex">./gs_omp2.out</span>
-<span class="ex">24</span> threads 1023 [ms]
-<span class="ex">conf000.dat</span></code></pre></div>
-<p>二次元系なので、計算が単純に4倍重くなった。 同期コストはほぼ変わらないため、相対的に並列化効率は良くなる。この場合は、12スレッドで並列化効率76%、24スレッドで41%である。 サイズを増やせば増やすほど効率が高くなることが想像できよう。</p>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> ./gs.out</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="ex">10032</span> [ms]</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> OMP_NUM_THREADS=12 ./gs_omp2.out</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="ex">12</span> threads 1104 [ms]</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> OMP_NUM_THREADS=24 ./gs_omp2.out</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="ex">24</span> threads 1023 [ms]</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span></code></pre></div>
+<p>二次元系なので、計算が単純に4倍重くなった。
+同期コストはほぼ変わらないため、相対的に並列化効率は良くなる。この場合は、12スレッドで並列化効率76%、24スレッドで41%である。
+サイズを増やせば増やすほど効率が高くなることが想像できよう。</p>
 <p>一般論として、スレッド並列において同期コストが見えてしまった時、そのコストをなんとかしようと努力するのは、苦労のわりに実入りが少ない。なので、そういう時には計算するモデルを見直し、同期コストが見えないほど重い計算をすれば良い。繰り返しになるが<strong>並列化効率で困ったらウィースケーリングに逃げてサイズで殴れ！</strong>。せっかく「並列化」という武器を手に入れたのだから、その武器を手に入れる前の敵とばかり戦うのではなく、その武器が最大限輝く敵を探す方が有益である。</p>
-<p>本当はOpenMPについてもう少し真面目に、たとえばNUMA最適化やLoop Fusion/Fission/Collapseなども扱おうかと思ったのだが、正直面倒くさくなった。個人的な感想で申し訳ないのだが、ディレクティブベースの最適化はコンパイラが何をやっているかが分かりづらく、隔靴掻痒の感があってどうしても好きになれない。</p>
+<p>本当はOpenMPについてもう少し真面目に、たとえばNUMA最適化やLoop
+Fusion/Fission/Collapseなども扱おうかと思ったのだが、正直面倒くさくなった。個人的な感想で申し訳ないのだが、ディレクティブベースの最適化はコンパイラが何をやっているかが分かりづらく、隔靴掻痒の感があってどうしても好きになれない。</p>
 <p>OpenMPには様々な構文があり、実にいろいろなことができる。OpenMPについてはネットに良い文献が多数落ちているが、例えばIntelによる以下の文献がわかりやすかったので参照されたい。</p>
-<p><a href="http://jp.xlsoft.com/documents/intel/compiler/525J-001.pdf">インテルコンパイラーOpenMP入門</a></p>
+<p><a
+href="http://jp.xlsoft.com/documents/intel/compiler/525J-001.pdf">インテルコンパイラーOpenMP入門</a></p>
 <p>また、名大の片桐先生による講義資料も詳しいので一読されたい。</p>
-<p><a href="http://www.r-ccs.riken.jp/r-ccssite/wp-content/uploads/2017/04/tokuronA_17_3_katagiri_r1.pdf">計算科学技術特論 第三回 OpenMPの基礎</a></p>
+<p><a
+href="http://www.r-ccs.riken.jp/r-ccssite/wp-content/uploads/2017/04/tokuronA_17_3_katagiri_r1.pdf">計算科学技術特論
+第三回 OpenMPの基礎</a></p>
 <h2 id="余談ロックの話">余談：ロックの話</h2>
 <p>スレッド数が増えた時に、スレッドの同期コストが問題になると書いた。同期とは「待ち合わせ」のことである。修学旅行などで自由行動があったりするが、次の場所に移動する際には一度集合場所に集まって、全員がそろっているか確認しなければならない。この時、先に集合場所についた人は、後から来る人を待つことになる。この待ち時間が同期コストである。そう思うと、同期待ちの時にはCPUは遊んでいそうな気がするが、実際にほとんど同期待ちでCPUが「遊んでいる」はずのコードをtimeコマンドで実行してみると、</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="bu">time</span> OMP_NUM_THREADS=24 ./gs_omp1.out
-<span class="ex">24</span> threads 24078 [ms]
-<span class="ex">conf000.dat</span>
-<span class="va">OMP_NUM_THREADS=</span>24 <span class="ex">./gs_omp1.out</span>  573.12s user 1.72s system 2384% cpu 24.103 total</code></pre></div>
-<p>と、24コアのCPUを2384%使っており、「ほぼ全てのCPUコアが忙しく動いていた」ことがわかる。これが何をやっているのか見てみよう。 <code>perf report</code>コマンドは、そのまま実行するとTUIモードになる。「内側」をスレッド並列化し、非常に非効率的になったコードを<code>perf record</code>で記録してみよう。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="va">OMP_NUM_THREADS=</span>24 <span class="ex">record</span> ./gs_omp1.out</code></pre></div>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> time OMP_NUM_THREADS=24 ./gs_omp1.out</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="ex">24</span> threads 24078 [ms]</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="va">OMP_NUM_THREADS</span><span class="op">=</span>24 <span class="ex">./gs_omp1.out</span>  573.12s user 1.72s system 2384% cpu 24.103 total</span></code></pre></div>
+<p>と、24コアのCPUを2384%使っており、「ほぼ全てのCPUコアが忙しく動いていた」ことがわかる。これが何をやっているのか見てみよう。
+<code>perf report</code>コマンドは、そのまま実行するとTUIモードになる。「内側」をスレッド並列化し、非常に非効率的になったコードを<code>perf record</code>で記録してみよう。</p>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="va">OMP_NUM_THREADS</span><span class="op">=</span>24 <span class="ex">record</span> ./gs_omp1.out</span></code></pre></div>
 <p>実行が終了したら、<code>perf report</code>してみる。こんな画面になるだろう。</p>
-<div class="figure">
+<figure>
 <img src="fig/perf.png" alt="スレッド並列実行時のperfの実行結果" />
-<p class="caption">スレッド並列実行時のperfの実行結果</p>
-</div>
-<p><code>gomp_barrier_wait_end</code>とか<code>gomp_team_barrier_wait_end</code>みたいな、いかにも同期待ち向けの関数が並んでいることがわかる。 <code>perf</code>は、関数の内部を見ることができる。まずは<code>gomp_barrier_wait</code>を見てみよう。 カーソルキーの上下で目的の関数を選び、エンターを押すと「Annotate gomp_barrier_wait」という項目があるので、それを選ぶ。こんな画面になるはずだ。</p>
-<div class="figure">
+<figcaption
+aria-hidden="true">スレッド並列実行時のperfの実行結果</figcaption>
+</figure>
+<p><code>gomp_barrier_wait_end</code>とか<code>gomp_team_barrier_wait_end</code>みたいな、いかにも同期待ち向けの関数が並んでいることがわかる。
+<code>perf</code>は、関数の内部を見ることができる。まずは<code>gomp_barrier_wait</code>を見てみよう。
+カーソルキーの上下で目的の関数を選び、エンターを押すと「Annotate
+gomp_barrier_wait」という項目があるので、それを選ぶ。こんな画面になるはずだ。</p>
+<figure>
 <img src="fig/perf2.png" alt="バリア命令のアセンブリ" />
-<p class="caption">バリア命令のアセンブリ</p>
-</div>
-<p>非常に単純なコードだが、気になる命令がある。<code>lock</code>だ。実は<code>lock</code>は命令ではなく、命令のプリフィックスである。「後に続く命令をアトミックにしてください」という修飾語のようなものだ。 <code>lock</code>の後には、<code>inc</code>や<code>xchg</code>、そしてここで出てくる`subl'など、いわゆる「read-modify-write」命令が入る。 「read-modify-write」とは、「メモリから何かを読み出し、修正して、書き戻す」という一連の動作である。普通はこの動作はアトミックにならない。 アトミックとは「不可分である、分けられない」という意味である。アトミックでない場合、この一連の動作の合間に他のスレッドの動作が割り込んでくる可能性がある。 マルチスレッドでこういうことが起きるといろいろ困ることがある。よく言われるのが銀行のATMの例だ。今、100万円の貯金がある口座から、2つのATMからほぼ同時に1万円を 引き出すことを考える。ATMがするべき動作は「銀行残高を読み出し(read)、1万円を引いて(modify)、残額を書き戻す(99万円)」の三つである。 ところが、ATM1とATM2で同時に「銀行残高を読み出し(read)」たとする。ATM1もATM2も残高は100万円だと思っている。そしてそれぞれが「1万円を引いて(modify)、残額を書き戻す(99万円)」という残りの動作を行うと、 合計2万円を引き出したにもかかわらず、残高が99万円になってしまう。こういったことを防ぐために、マルチスレッドをサポートするCPUは 「read-modify-write」の一連の動作をアトミックに行う命令をハードウェアで持っている。この目的でよく使われるのが「compare-and-swap」、いわゆるCAS命令であるが、ここでは深入りしないことにしよう。 ちなみに、例えば<a href="https://ja.wikipedia.org/wiki/%E3%83%94%E3%83%BC%E3%82%BF%E3%83%BC%E3%82%BD%E3%83%B3%E3%81%AE%E3%82%A2%E3%83%AB%E3%82%B4%E3%83%AA%E3%82%BA%E3%83%A0">ピーターソンのアルゴリズム</a>など、ハードウェアサポートがなくても安全なロックを取る方法も知られているのだが、一般的に遅いので、マルチスレッドの実装にはハードウェアサポートがほぼ必須だと思われる。</p>
+<figcaption aria-hidden="true">バリア命令のアセンブリ</figcaption>
+</figure>
+<p>非常に単純なコードだが、気になる命令がある。<code>lock</code>だ。実は<code>lock</code>は命令ではなく、命令のプリフィックスである。「後に続く命令をアトミックにしてください」という修飾語のようなものだ。
+<code>lock</code>の後には、<code>inc</code>や<code>xchg</code>、そしてここで出てくる`subl’など、いわゆる「read-modify-write」命令が入る。
+「read-modify-write」とは、「メモリから何かを読み出し、修正して、書き戻す」という一連の動作である。普通はこの動作はアトミックにならない。
+アトミックとは「不可分である、分けられない」という意味である。アトミックでない場合、この一連の動作の合間に他のスレッドの動作が割り込んでくる可能性がある。
+マルチスレッドでこういうことが起きるといろいろ困ることがある。よく言われるのが銀行のATMの例だ。今、100万円の貯金がある口座から、2つのATMからほぼ同時に1万円を
+引き出すことを考える。ATMがするべき動作は「銀行残高を読み出し(read)、1万円を引いて(modify)、残額を書き戻す(99万円)」の三つである。
+ところが、ATM1とATM2で同時に「銀行残高を読み出し(read)」たとする。ATM1もATM2も残高は100万円だと思っている。そしてそれぞれが「1万円を引いて(modify)、残額を書き戻す(99万円)」という残りの動作を行うと、
+合計2万円を引き出したにもかかわらず、残高が99万円になってしまう。こういったことを防ぐために、マルチスレッドをサポートするCPUは
+「read-modify-write」の一連の動作をアトミックに行う命令をハードウェアで持っている。この目的でよく使われるのが「compare-and-swap」、いわゆるCAS命令であるが、ここでは深入りしないことにしよう。
+ちなみに、例えば<a
+href="https://ja.wikipedia.org/wiki/%E3%83%94%E3%83%BC%E3%82%BF%E3%83%BC%E3%82%BD%E3%83%B3%E3%81%AE%E3%82%A2%E3%83%AB%E3%82%B4%E3%83%AA%E3%82%BA%E3%83%A0">ピーターソンのアルゴリズム</a>など、ハードウェアサポートがなくても安全なロックを取る方法も知られているのだが、一般的に遅いので、マルチスレッドの実装にはハードウェアサポートがほぼ必須だと思われる。</p>
 <p>さて、さっきの<code>gomp_barrier_wait</code>のアセンブリを見てみよう。<code>libgomp.so</code>を<code>objdump</code>すれば良い。シェアードライブラリの場所は<code>LD_LIBRARY_PATH</code>にあるだろうから探してみよう。</p>
-<div class="sourceCode"><pre class="sourceCode asm"><code class="sourceCode fasm">000000000000a430 &lt;gomp_barrier_wait&gt;:
-<span class="fu">    a430:</span>       8b <span class="dv">47</span> <span class="dv">04</span>                <span class="bu">mov</span>    <span class="bn">0x4</span>(%<span class="kw">rdi</span>),%<span class="kw">eax</span>
-<span class="fu">    a433:</span>       <span class="dv">31</span> f6                   <span class="bu">xor</span>    %<span class="kw">esi</span>,%<span class="kw">esi</span>
-<span class="fu">    a435:</span>       <span class="dv">83</span> e0 fc                <span class="bu">and</span>    <span class="dv">$</span><span class="bn">0xfffffffc</span>,%<span class="kw">eax</span>
-<span class="fu">    a438:</span>       f0 <span class="dv">83</span> 6f <span class="dv">40</span> <span class="dv">01</span>          lock subl <span class="dv">$</span><span class="bn">0x1,0x40</span>(%<span class="kw">rdi</span>)
-<span class="fu">    a43d:</span>       <span class="dv">40</span> 0f <span class="dv">94</span> c6             <span class="bu">sete</span>   %sil
-<span class="fu">    a441:</span>       <span class="dv">01</span> c6                   <span class="bu">add</span>    %<span class="kw">eax</span>,%<span class="kw">esi</span>
-<span class="fu">    a443:</span>       e9 <span class="dv">08</span> ff ff ff          jmpq   a350 &lt;gomp_barrier_wait_end&gt;
-<span class="fu">    a448:</span>       0f 1f <span class="dv">84</span> <span class="dv">00</span> <span class="dv">00</span> <span class="dv">00</span> <span class="dv">00</span>    nopl   <span class="bn">0x0</span>(%<span class="kw">rax</span>,%<span class="kw">rax</span>,<span class="dv">1</span>)
-<span class="fu">    a44f:</span>       <span class="dv">00</span></code></pre></div>
-<p>ロックを取って、あるメモリの指す値を1減らしたら、<code>gomp_barrier_wait_end</code>に飛んでいることがわかる。そこも見てみよう。 <code>perf</code>で調べると、「重かった」のはこのループのようだ。</p>
-<div class="sourceCode"><pre class="sourceCode asm"><code class="sourceCode fasm"><span class="fu">    a390:</span>       <span class="dv">44</span> 8b <span class="dv">07</span>                <span class="bu">mov</span>    (%<span class="kw">rdi</span>),%r8d
-<span class="fu">    a393:</span>       <span class="dv">41</span> <span class="dv">39</span> d0                <span class="bu">cmp</span>    %<span class="kw">edx</span>,%r8d
-<span class="fu">    a396:</span>       <span class="dv">75</span> <span class="dv">20</span>                   <span class="bu">jne</span>    a3b8 &lt;gomp_barrier_wait_end+<span class="bn">0x68</span>&gt;
-<span class="fu">    a398:</span>       <span class="dv">48</span> <span class="dv">83</span> c1 <span class="dv">01</span>             <span class="bu">add</span>    <span class="dv">$</span><span class="bn">0x1,</span>%<span class="kw">rcx</span>
-<span class="fu">    a39c:</span>       <span class="dv">48</span> <span class="dv">39</span> f1                <span class="bu">cmp</span>    %<span class="kw">rsi</span>,%<span class="kw">rcx</span>
-<span class="fu">    a39f:</span>       f3 <span class="dv">90</span>                   <span class="bu">pause</span>  
-<span class="fu">    a3a1:</span>       <span class="dv">75</span> ed                   <span class="bu">jne</span>    a390 &lt;gomp_barrier_wait_end+<span class="bn">0x40</span>&gt;</code></pre></div>
-<p>見るとわかると思うが、あるメモリの指す場所を監視して、条件を満たしたらアドレス<code>a3b8</code>に飛べ、そうでなければアドレス<code>a390</code>(抜き出した場所の先頭)に戻れ、というループである。 つまり、スレッドは同期待ちの間遊んでいるのではなく、条件が満たされるまでひたすらこのこのループを繰り返しているのである。 例えるなら、赤信号で待っているあいだもずっとエンジンをふかしている状態である。 これが「同期待ちで暇そうなのに、なぜかCPUコアが忙しかった理由」である。ここでは「待ち合わせ」でぐるぐる回っていたが、ロックを獲得するのにぐるぐるループでまわる方式を<a href="https://ja.wikipedia.org/wiki/%E3%82%B9%E3%83%94%E3%83%B3%E3%83%AD%E3%83%83%E3%82%AF">スピンロック</a>と言う。アトミックな「read-modify-write」命令があればスピンロックの実装は簡単である。 詳細は先のWikipediaの記事を参照されたい。 ちなみに、京コンピュータで採用されているCPUはSPARC VIIIfxだが、このCPUにはハードウェアバリアが実装されている。 どんな実装になっているか詳しくは知らないのだが、スピンロックなどのソフトウェア実装に比べて<a href="http://www.fujitsu.com/downloads/JP/archive/imgjp/jmag/vol63-3/paper04.pdf">10倍以上高速</a>とのことである。 先程見たように、「計算が軽い」ループでは、同期コストが見えてきてしまう。ハードウェアバリアにより同期コストが減ると、その分だけ計算が軽くてもスケールしやすくなるため、プログラマとしてはありがたい。</p>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode asm"><code class="sourceCode fasm"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>000000000000a430 &lt;gomp_barrier_wait<span class="op">&gt;:</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">a430:</span>       8b 47 04                <span class="bu">mov</span>    <span class="bn">0x4</span><span class="op">(%</span><span class="kw">rdi</span><span class="op">),%</span><span class="kw">eax</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">a433:</span>       31 f6                   <span class="op">xor</span>    <span class="op">%</span><span class="kw">esi</span><span class="op">,%</span><span class="kw">esi</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">a435:</span>       83 e0 fc                <span class="op">and</span>    <span class="op">$</span><span class="bn">0</span>xfffffffc<span class="op">,%</span><span class="kw">eax</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">a438:</span>       f0 <span class="dv">83</span> <span class="fl">6</span><span class="bn">f</span> <span class="dv">40</span> <span class="dv">01</span>          lock subl <span class="op">$</span><span class="bn">0</span>x1<span class="op">,</span><span class="bn">0x40</span><span class="op">(%</span><span class="kw">rdi</span><span class="op">)</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">a43d:</span>       40 0f 94 c6             sete   <span class="op">%</span>sil</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">a441:</span>       01 c6                   add    <span class="op">%</span><span class="kw">eax</span><span class="op">,%</span><span class="kw">esi</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">a443:</span>       e9 <span class="dv">08</span> ff ff ff          jmpq   a350 <span class="op">&lt;</span>gomp_barrier_wait_end<span class="op">&gt;</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">a448:</span>       0f 1f 84 00 00 00 00    nopl   <span class="bn">0x0</span><span class="op">(%</span><span class="kw">rax</span><span class="op">,%</span><span class="kw">rax</span><span class="op">,</span><span class="dv">1</span><span class="op">)</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">a44f:</span>       00</span></code></pre></div>
+<p>ロックを取って、あるメモリの指す値を1減らしたら、<code>gomp_barrier_wait_end</code>に飛んでいることがわかる。そこも見てみよう。
+<code>perf</code>で調べると、「重かった」のはこのループのようだ。</p>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode asm"><code class="sourceCode fasm"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>    <span class="fu">a390:</span>       44 8b 07                <span class="bu">mov</span>    <span class="op">(%</span><span class="kw">rdi</span><span class="op">),%</span>r8d</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">a393:</span>       41 39 d0                cmp    <span class="op">%</span><span class="kw">edx</span><span class="op">,%</span>r8d</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">a396:</span>       75 20                   <span class="cf">jne</span>    a3b8 <span class="op">&lt;</span>gomp_barrier_wait_end<span class="op">+</span><span class="bn">0x68</span><span class="op">&gt;</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">a398:</span>       48 83 c1 <span class="dv">01</span>             add    <span class="op">$</span><span class="bn">0</span>x1<span class="op">,%</span><span class="kw">rcx</span></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">a39c:</span>       48 39 f1                cmp    <span class="op">%</span><span class="kw">rsi</span><span class="op">,%</span><span class="kw">rcx</span></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">a39f:</span>       f3 <span class="dv">90</span>                   pause  </span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">a3a1:</span>       75 ed                   jne    a390 <span class="op">&lt;</span>gomp_barrier_wait_end<span class="op">+</span><span class="bn">0x40</span><span class="op">&gt;</span></span></code></pre></div>
+<p>見るとわかると思うが、あるメモリの指す場所を監視して、条件を満たしたらアドレス<code>a3b8</code>に飛べ、そうでなければアドレス<code>a390</code>(抜き出した場所の先頭)に戻れ、というループである。
+つまり、スレッドは同期待ちの間遊んでいるのではなく、条件が満たされるまでひたすらこのこのループを繰り返しているのである。
+例えるなら、赤信号で待っているあいだもずっとエンジンをふかしている状態である。
+これが「同期待ちで暇そうなのに、なぜかCPUコアが忙しかった理由」である。ここでは「待ち合わせ」でぐるぐる回っていたが、ロックを獲得するのにぐるぐるループでまわる方式を<a
+href="https://ja.wikipedia.org/wiki/%E3%82%B9%E3%83%94%E3%83%B3%E3%83%AD%E3%83%83%E3%82%AF">スピンロック</a>と言う。アトミックな「read-modify-write」命令があればスピンロックの実装は簡単である。
+詳細は先のWikipediaの記事を参照されたい。
+ちなみに、京コンピュータで採用されているCPUはSPARC
+VIIIfxだが、このCPUにはハードウェアバリアが実装されている。
+どんな実装になっているか詳しくは知らないのだが、スピンロックなどのソフトウェア実装に比べて<a
+href="http://www.fujitsu.com/downloads/JP/archive/imgjp/jmag/vol63-3/paper04.pdf">10倍以上高速</a>とのことである。
+先程見たように、「計算が軽い」ループでは、同期コストが見えてきてしまう。ハードウェアバリアにより同期コストが減ると、その分だけ計算が軽くてもスケールしやすくなるため、プログラマとしてはありがたい。</p>
 <h2 id="ハイブリッド並列の実例">ハイブリッド並列の実例</h2>
-<p>というわけで、ハイブリッド並列コードを作ってみよう。といっても、既にDay 5でMPI並列版を作っているので、その計算ルーチンに<code>#pragma omp parallel for</code>を一行入れるだけである。 先程の知見から、二重ループの外側にディレクティブを入れよう。手元にある環境が、1ノードに2ソケット、1ソケットが12コアの環境で、18ノードまでの計算がすぐに走るものだったので、 系のサイズをそれにあわせて324くらいにしておく。</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="at">const</span> <span class="dt">int</span> L = <span class="dv">9</span> * <span class="dv">36</span>;</code></pre></div>
-<p>こうすると、12や18の素因数である2や3をたくさん含んでいるので都合がよろしい。 ついでに、時間を計測して、プロセス数、スレッド数、計算にかかった時間を表示するようにしておこう。 実行スレッド数は<code>omp_get_max_threads</code>で取れる。</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">int</span> num_threads = omp_get_max_threads();</code></pre></div>
+<p>というわけで、ハイブリッド並列コードを作ってみよう。といっても、既にDay
+5でMPI並列版を作っているので、その計算ルーチンに<code>#pragma omp parallel for</code>を一行入れるだけである。
+先程の知見から、二重ループの外側にディレクティブを入れよう。手元にある環境が、1ノードに2ソケット、1ソケットが12コアの環境で、18ノードまでの計算がすぐに走るものだったので、
+系のサイズをそれにあわせて324くらいにしておく。</p>
+<div class="sourceCode" id="cb26"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">int</span> L <span class="op">=</span> <span class="dv">9</span> <span class="op">*</span> <span class="dv">36</span><span class="op">;</span></span></code></pre></div>
+<p>こうすると、12や18の素因数である2や3をたくさん含んでいるので都合がよろしい。
+ついでに、時間を計測して、プロセス数、スレッド数、計算にかかった時間を表示するようにしておこう。
+実行スレッド数は<code>omp_get_max_threads</code>で取れる。</p>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> num_threads <span class="op">=</span> omp_get_max_threads<span class="op">();</span></span></code></pre></div>
 <p>時間計測はなんでも良いが、ここでは<code>std::chrono::system_clock::now</code>で計測しよう。</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="at">const</span> <span class="kw">auto</span> s = <span class="bu">std::</span>chrono<span class="bu">::</span>system_clock<span class="bu">::</span>now();
-<span class="co">// なにか時間を計測したい処理</span>
-<span class="at">const</span> <span class="kw">auto</span> e = <span class="bu">std::</span>chrono<span class="bu">::</span>system_clock<span class="bu">::</span>now();
-<span class="at">const</span> <span class="kw">auto</span> elapsed = <span class="bu">std::</span>chrono<span class="bu">::</span>duration_cast&lt;<span class="bu">std::</span>chrono<span class="bu">::</span>milliseconds&gt;(e - s).count();</code></pre></div>
+<div class="sourceCode" id="cb28"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="kw">auto</span> s <span class="op">=</span> <span class="bu">std::</span>chrono<span class="bu">::</span>system_clock<span class="bu">::</span>now<span class="op">();</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="co">// なにか時間を計測したい処理</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="kw">auto</span> e <span class="op">=</span> <span class="bu">std::</span>chrono<span class="bu">::</span>system_clock<span class="bu">::</span>now<span class="op">();</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="kw">auto</span> elapsed <span class="op">=</span> <span class="bu">std::</span>chrono<span class="bu">::</span>duration_cast<span class="op">&lt;</span><span class="bu">std::</span>chrono<span class="bu">::</span>milliseconds<span class="op">&gt;(</span>e <span class="op">-</span> s<span class="op">).</span>count<span class="op">();</span></span></code></pre></div>
 <p>これで<code>elapsed</code>にミリ秒単位の値が入る。このようにして作ったハイブリッド版の反応拡散方程式ソルバが<code>gs_hybrid.cpp</code>である。</p>
-<p><a href="https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_hybrid.cpp" class="uri">https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_hybrid.cpp</a></p>
+<p><a
+href="https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_hybrid.cpp">https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_hybrid.cpp</a></p>
 <p>筆者の環境ではMPIにパスが通してあるので、以下のようなオプションでコンパイルできる。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="ex">g++</span> -fopenmp -O3 -mavx2 gs_hybrid.cpp -lmpi -lmpi_cxx</code></pre></div>
-<p>手元のMacで2プロセス x 2スレッドで実行すると以下のような結果を吐く。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="va">OMP_NUM_THREADS=</span>2 <span class="ex">mpiexec</span> -np 2 ./a.out
-<span class="co"># Sytem Size = 324</span>
-<span class="co"># 2 Process x 2 Threads</span>
-<span class="co"># Domain = 2 x 1</span>
-<span class="ex">2</span> 2 4635 [ms]</code></pre></div>
-<p>これを、手元のスパコンでベンチマークを取ってみよう。石はIntel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz、12コアが2ソケットで1ノードである。 まずは1ノードで、1プロセス1スレッドの計算から、スレッド数だけ2,3,4,6...と増やした場合と、プロセス数だけ2,3,4,6...と増やした場合の結果である。</p>
-<div class="figure">
-<img src="fig/single_scaling.png" alt="シングルノードでのスケーリング結果" />
-<p class="caption">シングルノードでのスケーリング結果</p>
-</div>
-<p>左が実行時間で両対数、右が並列化効率で片対数グラフになっている。プロセス数を増やした場合、つまりflat-MPIの方が実行効率が良いことがわかる。 24プロセス計算で、シリアル計算に比べて16.6倍、つまり並列化効率にして70%程度出ている。一方、全てスレッド並列で実行した場合も、さほど悪くはないが、 24スレッド計算で、シリアル計算に比べて11.6倍、並列化効率にして48%と、50%を切ってしまう。MPIはバッファを作ったりコピーしたりという手間が発生する分、 マルチスレッドより遅くなりそうだが、今回のケースではflat-MPIの方が早かった。</p>
-<p>今度はノードをまたいでみよう。18ノードで計算してみる。各ノードには2ソケットx12コア、合計24コアあるから、全体で18x24=432個のCPUコアがある。 これを、プログラム全体を432スレッドのまま、プロセス数を変えてみよう。例えば、flat-MPIなら1プロセスに1スレッドなので、432プロセスが最大プロセス数、 1ノードにフルにスレッドを立てると24スレッドなので、18プロセス24スレッドの計算が最小プロセス数である。 横軸にプロセス数、縦軸に実行時間をとった結果が以下の通り。</p>
-<div class="figure">
+<div class="sourceCode" id="cb29"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="ex">g++</span> <span class="at">-fopenmp</span> <span class="at">-O3</span> <span class="at">-mavx2</span> gs_hybrid.cpp <span class="at">-lmpi</span> <span class="at">-lmpi_cxx</span></span></code></pre></div>
+<p>手元のMacで2プロセス x
+2スレッドで実行すると以下のような結果を吐く。</p>
+<div class="sourceCode" id="cb30"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> OMP_NUM_THREADS=2 mpiexec <span class="at">-np</span> 2 ./a.out</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Sytem Size = 324</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 2 Process x 2 Threads</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Domain = 2 x 1</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="ex">2</span> 2 4635 [ms]</span></code></pre></div>
+<p>これを、手元のスパコンでベンチマークを取ってみよう。石はIntel(R)
+Xeon(R) CPU E5-2680 v3 @ 2.50GHz、12コアが2ソケットで1ノードである。
+まずは1ノードで、1プロセス1スレッドの計算から、スレッド数だけ2,3,4,6…と増やした場合と、プロセス数だけ2,3,4,6…と増やした場合の結果である。</p>
+<figure>
+<img src="fig/single_scaling.png"
+alt="シングルノードでのスケーリング結果" />
+<figcaption
+aria-hidden="true">シングルノードでのスケーリング結果</figcaption>
+</figure>
+<p>左が実行時間で両対数、右が並列化効率で片対数グラフになっている。プロセス数を増やした場合、つまりflat-MPIの方が実行効率が良いことがわかる。
+24プロセス計算で、シリアル計算に比べて16.6倍、つまり並列化効率にして70%程度出ている。一方、全てスレッド並列で実行した場合も、さほど悪くはないが、
+24スレッド計算で、シリアル計算に比べて11.6倍、並列化効率にして48%と、50%を切ってしまう。MPIはバッファを作ったりコピーしたりという手間が発生する分、
+マルチスレッドより遅くなりそうだが、今回のケースではflat-MPIの方が早かった。</p>
+<p>今度はノードをまたいでみよう。18ノードで計算してみる。各ノードには2ソケットx12コア、合計24コアあるから、全体で18x24=432個のCPUコアがある。
+これを、プログラム全体を432スレッドのまま、プロセス数を変えてみよう。例えば、flat-MPIなら1プロセスに1スレッドなので、432プロセスが最大プロセス数、
+1ノードにフルにスレッドを立てると24スレッドなので、18プロセス24スレッドの計算が最小プロセス数である。
+横軸にプロセス数、縦軸に実行時間をとった結果が以下の通り。</p>
+<figure>
 <img src="fig/multi.png" alt="マルチノードでのスケーリング結果" />
-<p class="caption">マルチノードでのスケーリング結果</p>
-</div>
-<p>横軸は対数スケールになっている。全て432スレッドの計算で、違いは「1プロセスが何スレッドを束ねているか」だけなのだが、ここでは432プロセス計算、 すなわち1プロセスが1スレッドだけを持っているflat-MPI計算が最も早かった。</p>
-<p>一般論として、プロセスとスレッドには最適な割合が存在し、どれが一番早いかはやってみないとわからない。 しかし、筆者の経験としては、非常に単純な計算で、かつそこそこ計算量がある場合はflat-MPIが一番早いことが多い。 ただし、筆者はスレッド並列化にあまり慣れていないため、上記のコードもOpenMPに慣れた人がチューニングしたら、もっとハイブリッド版が早くなるのかもしれない。そのあたりはいろいろ試して見てほしい。「こうすればもっと早くなった」「ここが問題だった」といったプルリクを歓迎する。</p>
+<figcaption
+aria-hidden="true">マルチノードでのスケーリング結果</figcaption>
+</figure>
+<p>横軸は対数スケールになっている。全て432スレッドの計算で、違いは「1プロセスが何スレッドを束ねているか」だけなのだが、ここでは432プロセス計算、
+すなわち1プロセスが1スレッドだけを持っているflat-MPI計算が最も早かった。</p>
+<p>一般論として、プロセスとスレッドには最適な割合が存在し、どれが一番早いかはやってみないとわからない。
+しかし、筆者の経験としては、非常に単純な計算で、かつそこそこ計算量がある場合はflat-MPIが一番早いことが多い。
+ただし、筆者はスレッド並列化にあまり慣れていないため、上記のコードもOpenMPに慣れた人がチューニングしたら、もっとハイブリッド版が早くなるのかもしれない。そのあたりはいろいろ試して見てほしい。「こうすればもっと早くなった」「ここが問題だった」といったプルリクを歓迎する。</p>
 </article>
 </body>
 </html>

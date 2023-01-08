@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="generator" content="pandoc">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title></title>
+  <title>README</title>
   <style type="text/css">code{white-space: pre;}</style>
   <style type="text/css">
 div.sourceCode { overflow-x: auto; }
@@ -65,35 +65,49 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </style>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://kaityo256.github.io/sevendayshpc/github-markdown.css" type="text/css" />
-  <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_CHTML-full" type="text/javascript"></script>
+  <script
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"
+  type="text/javascript"></script>
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
 </head>
 <body>
 <article class="markdown-body">
-<h1 id="day-4-領域分割による非自明並列">Day 4 : 領域分割による非自明並列</h1>
+<h1 id="day-4-領域分割による非自明並列">Day 4 :
+領域分割による非自明並列</h1>
 <!--- abstract --->
-<p>これまでは並列化として、自明並列を扱ってきた。自明並列はほとんど通信を必要とせず、並列化効率が高いため計算資源を最も有効に使える計算方法である。しかし、せっかくスパコンを使うのであるから、本格的に通信を伴う非自明並列に挑戦してみよう。 <!--- end ---></p>
+<p>これまでは並列化として、自明並列を扱ってきた。自明並列はほとんど通信を必要とせず、並列化効率が高いため計算資源を最も有効に使える計算方法である。しかし、せっかくスパコンを使うのであるから、本格的に通信を伴う非自明並列に挑戦してみよう。
+<!--- end ---></p>
 <h2 id="非自明並列">非自明並列</h2>
 <p>「スパコンはノードを束ねたもの」であり、「ノードとは本質的にはPCと同じもの」であることは既に述べた。しかし「普通のPCを多数束ねたらスパコンになるか」というとそうではなく、スパコンとして動作をするためには「ネットワーク」と「信頼性」が重要である。これまで扱ってきた自明並列(通称「馬鹿パラ」)は、「ネットワーク」と「信頼性」のどちらも必要としない。</p>
-<div class="figure">
+<figure>
 <img src="fig/bakapara.png" alt="馬鹿パラの特徴" />
-<p class="caption">馬鹿パラの特徴</p>
-</div>
-<p>パラメタ並列の場合、一番最初に「どのパラメタをどのプロセスが担当すべきか」をばらまくのに通信したあとは通信不要である(計算が終わったら結果をファイルに吐いてしまえばよい)。したがって、各ノードが高速なネットワークで接続されている必要はなく、たとえばイーサネットなどでつないでしまって全く問題ない。また、大規模な非自明並列計算を実行するには高い信頼性が求められるが、馬鹿パラは信頼性も要求しない。計算途中でノードが壊れてしまっても、そのノードでしていた計算だけやり直せばよいだけのことである。 つまり馬鹿パラとは最も計算資源は有効に使えるものの、「ネットワーク」と「信頼性」という、スパコンの重要な二大特性を全く使わない計算方法なのであった。なので、主に馬鹿パラで計算する場合には「普通のPCを多数束ねたPCクラスタ」で全く構わない。</p>
-<p>さて、馬鹿パラであろうとなんであろうと、スパコンを活用していることにはかわりないし、それで良い科学的成果が出るのならそれで良いのだが、せっかくスパコンを使うのなら、もう少し「スパコンらしさ」を活用してみたい。というわけで、「ネットワーク」と「信頼性」をどちらも要求する <strong>非自明並列 (non-trivial parallel)</strong> に挑戦してみよう。</p>
-<p>馬鹿パラではほとんど通信が発生しなかったのに対して、非自明並列は頻繁に通信が必要とする。 科学計算はなんらかの繰り返し計算(例えば時間発展)をすることが多いが、意味のある並列計算を行う場合、毎ステップ通信が必要となる。この時、「計算に関わる全ノードと毎回通信が発生する」タイプと、「論理的に距離が近いノードのみと通信が必要となる」タイプにわかれる。</p>
-<div class="figure">
+<figcaption aria-hidden="true">馬鹿パラの特徴</figcaption>
+</figure>
+<p>パラメタ並列の場合、一番最初に「どのパラメタをどのプロセスが担当すべきか」をばらまくのに通信したあとは通信不要である(計算が終わったら結果をファイルに吐いてしまえばよい)。したがって、各ノードが高速なネットワークで接続されている必要はなく、たとえばイーサネットなどでつないでしまって全く問題ない。また、大規模な非自明並列計算を実行するには高い信頼性が求められるが、馬鹿パラは信頼性も要求しない。計算途中でノードが壊れてしまっても、そのノードでしていた計算だけやり直せばよいだけのことである。
+つまり馬鹿パラとは最も計算資源は有効に使えるものの、「ネットワーク」と「信頼性」という、スパコンの重要な二大特性を全く使わない計算方法なのであった。なので、主に馬鹿パラで計算する場合には「普通のPCを多数束ねたPCクラスタ」で全く構わない。</p>
+<p>さて、馬鹿パラであろうとなんであろうと、スパコンを活用していることにはかわりないし、それで良い科学的成果が出るのならそれで良いのだが、せっかくスパコンを使うのなら、もう少し「スパコンらしさ」を活用してみたい。というわけで、「ネットワーク」と「信頼性」をどちらも要求する
+<strong>非自明並列 (non-trivial parallel)</strong>
+に挑戦してみよう。</p>
+<p>馬鹿パラではほとんど通信が発生しなかったのに対して、非自明並列は頻繁に通信が必要とする。
+科学計算はなんらかの繰り返し計算(例えば時間発展)をすることが多いが、意味のある並列計算を行う場合、毎ステップ通信が必要となる。この時、「計算に関わる全ノードと毎回通信が発生する」タイプと、「論理的に距離が近いノードのみと通信が必要となる」タイプにわかれる。</p>
+<figure>
 <img src="fig/nontrivial.png" alt="非自明並列の通信パターン" />
-<p class="caption">非自明並列の通信パターン</p>
-</div>
-<p>毎回全ノードと計算が必要になるタイプは、典型的には高速フーリエ変換が必要となる場合である。 例えば、「円周率を一兆桁計算する」といった計算において、多倍長計算が必要となり、その多倍長計算の実行にフーリエ変換が使われる。乱流の計算にもフーリエ変換が使われる。以上、地球シミュレータで大規模な乱流シミュレーションが行われたが、これは地球シミュレータの強力なネットワークがなければ実現が難しかった。こういう全ノード通信は、バタフライ型のアルゴリズムで実行されることが多いが、ここでは深入りしない。興味のある人は「並列FFT」などでググってみて欲しい。</p>
+<figcaption aria-hidden="true">非自明並列の通信パターン</figcaption>
+</figure>
+<p>毎回全ノードと計算が必要になるタイプは、典型的には高速フーリエ変換が必要となる場合である。
+例えば、「円周率を一兆桁計算する」といった計算において、多倍長計算が必要となり、その多倍長計算の実行にフーリエ変換が使われる。乱流の計算にもフーリエ変換が使われる。以上、地球シミュレータで大規模な乱流シミュレーションが行われたが、これは地球シミュレータの強力なネットワークがなければ実現が難しかった。こういう全ノード通信は、バタフライ型のアルゴリズムで実行されることが多いが、ここでは深入りしない。興味のある人は「並列FFT」などでググってみて欲しい。</p>
 <p>それに対して、「近いノードのみ」と通信が必要となるタイプは、典型的には領域分割による並列化にあらわれる。領域分割とは、「計算したい領域」をプロセス数で分割して、隣接する領域で必要となる情報を通信しながら計算を実行するような並列化である。うまくプロセスを配置しないと、論理的には近い領域が、物理的には遠いノードに配置されたりして効率が悪くなるので注意したい。</p>
 <p>とりあえず図を見て、「全体通信の方が大変そうだな」と思うであろう。基本的には、計算量に対して通信量、通信頻度が低いほど並列化が楽になる(効率が出しやすい)。計算コストと通信コストの比を「粒度」と呼ぶこともある(後で説明するかもしれないし、しないかもしれない)。</p>
 <p>とりあえずここでは非自明並列の例として、領域分割をやってみる。</p>
 <h2 id="一次元拡散方程式-シリアル版">一次元拡散方程式 (シリアル版)</h2>
-<p>領域分割による並列化の題材として、一次元拡散方程式を考えよう。 これは熱を加えられたり冷やされたりした物質の温度がどう変化していくかを表す方程式である。 時刻<span class="math inline">\(t\)</span>、座標<span class="math inline">\(x\)</span>における温度を<span class="math inline">\(T(x,t)\)</span>とすると、熱伝導度を<span class="math inline">\(\kappa\)</span>として、</p>
+<p>領域分割による並列化の題材として、一次元拡散方程式を考えよう。
+これは熱を加えられたり冷やされたりした物質の温度がどう変化していくかを表す方程式である。
+時刻<span class="math inline">\(t\)</span>、座標<span
+class="math inline">\(x\)</span>における温度を<span
+class="math inline">\(T(x,t)\)</span>とすると、熱伝導度を<span
+class="math inline">\(\kappa\)</span>として、</p>
 <p><span class="math display">\[
 \frac{\partial T}{\partial t} = \kappa \frac{\partial^2 T}{\partial x^2}
 \]</span></p>
@@ -101,420 +115,498 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p><span class="math display">\[
 \kappa \frac{\partial^2 T}{\partial x^2} = 0
 \]</span></p>
-<p>ある関数の二回微分がゼロなので、解は二次関数か一次関数で与えられることがわかりますね。 ちなみに一般の時刻における解はフーリエ変換で求められる。理工系の大学生であれば二年生くらいまでで習っているはずなので 各自復習されたい。</p>
-<p>さて、この偏微分方程式を数値的に解くために空間を<span class="math inline">\(L\)</span>分割して差分化しよう。時間については一次のオイラー法、空間については中央差分を取る。時間刻みを<span class="math inline">\(h\)</span>、空間刻みを<span class="math inline">\(1\)</span>、<span class="math inline">\(n\)</span>ステップ目における<span class="math inline">\(i\)</span>番目のサイトの温度を<span class="math inline">\(T_i^{n}\)</span>とすると、同じ場所の次のステップの温度<span class="math inline">\(T_i^{n+1}\)</span>は、</p>
+<p>ある関数の二回微分がゼロなので、解は二次関数か一次関数で与えられることがわかりますね。
+ちなみに一般の時刻における解はフーリエ変換で求められる。理工系の大学生であれば二年生くらいまでで習っているはずなので
+各自復習されたい。</p>
+<p>さて、この偏微分方程式を数値的に解くために空間を<span
+class="math inline">\(L\)</span>分割して差分化しよう。時間については一次のオイラー法、空間については中央差分を取る。時間刻みを<span
+class="math inline">\(h\)</span>、空間刻みを<span
+class="math inline">\(1\)</span>、<span
+class="math inline">\(n\)</span>ステップ目における<span
+class="math inline">\(i\)</span>番目のサイトの温度を<span
+class="math inline">\(T_i^{n}\)</span>とすると、同じ場所の次のステップの温度<span
+class="math inline">\(T_i^{n+1}\)</span>は、</p>
 <p><span class="math display">\[
 T_i^{n+1} = T_i^{n} + h(T_{i+1}^n - 2 T_{i}^n + T_{i-1}^n)
 \]</span></p>
-<p>と表現される。例えば時間ステップ<span class="math inline">\(n\)</span>の温度を<code>std::vector&lt;double&gt; lattice</code>で表すと、上記の式をそのままコードに落とすと</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">  <span class="bu">std::</span>copy(lattice.begin(), lattice.end(), orig.begin());
-  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">1</span>; i &lt; L - <span class="dv">1</span>; i++) {
-    lattice[i] += h * (orig[i - <span class="dv">1</span>] - <span class="fl">2.0</span> * orig[i] + orig[i + <span class="dv">1</span>]);
-  }</code></pre></div>
+<p>と表現される。例えば時間ステップ<span
+class="math inline">\(n\)</span>の温度を<code>std::vector&lt;double&gt; lattice</code>で表すと、上記の式をそのままコードに落とすと</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>copy<span class="op">(</span>lattice<span class="op">.</span>begin<span class="op">(),</span> lattice<span class="op">.</span>end<span class="op">(),</span> orig<span class="op">.</span>begin<span class="op">());</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> i <span class="op">&lt;</span> L <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    lattice<span class="op">[</span>i<span class="op">]</span> <span class="op">+=</span> h <span class="op">*</span> <span class="op">(</span>orig<span class="op">[</span>i <span class="op">-</span> <span class="dv">1</span><span class="op">]</span> <span class="op">-</span> <span class="fl">2.0</span> <span class="op">*</span> orig<span class="op">[</span>i<span class="op">]</span> <span class="op">+</span> orig<span class="op">[</span>i <span class="op">+</span> <span class="dv">1</span><span class="op">]);</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span></code></pre></div>
 <p>と書ける。らくちんですね。これだと両端(<code>lattice[0]</code>と<code>lattice[L-1]</code>)が更新されないので、周期境界条件を課しておく。以上を、1ステップ時間を進める関数<code>onestep</code>として実装しよう。</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> onestep(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;lattice, <span class="at">const</span> <span class="dt">double</span> h) {
-  <span class="at">static</span> <span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; orig(L);
-  <span class="bu">std::</span>copy(lattice.begin(), lattice.end(), orig.begin());
-  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">1</span>; i &lt; L - <span class="dv">1</span>; i++) {
-    lattice[i] += h * (orig[i - <span class="dv">1</span>] - <span class="fl">2.0</span> * orig[i] + orig[i + <span class="dv">1</span>]);
-  }
-  <span class="co">// For Periodic Boundary</span>
-  lattice[<span class="dv">0</span>] += h * (orig[L - <span class="dv">1</span>] - <span class="fl">2.0</span> * lattice[<span class="dv">0</span>]  + orig[<span class="dv">1</span>]);
-  lattice[L - <span class="dv">1</span>] += h * (orig[L - <span class="dv">2</span>] - <span class="fl">2.0</span> * lattice[L - <span class="dv">1</span>] + orig[<span class="dv">0</span>]);
-}</code></pre></div>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> onestep<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> <span class="op">&amp;</span>lattice<span class="op">,</span> <span class="at">const</span> <span class="dt">double</span> h<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">static</span> <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> orig<span class="op">(</span>L<span class="op">);</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>copy<span class="op">(</span>lattice<span class="op">.</span>begin<span class="op">(),</span> lattice<span class="op">.</span>end<span class="op">(),</span> orig<span class="op">.</span>begin<span class="op">());</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> i <span class="op">&lt;</span> L <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    lattice<span class="op">[</span>i<span class="op">]</span> <span class="op">+=</span> h <span class="op">*</span> <span class="op">(</span>orig<span class="op">[</span>i <span class="op">-</span> <span class="dv">1</span><span class="op">]</span> <span class="op">-</span> <span class="fl">2.0</span> <span class="op">*</span> orig<span class="op">[</span>i<span class="op">]</span> <span class="op">+</span> orig<span class="op">[</span>i <span class="op">+</span> <span class="dv">1</span><span class="op">]);</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">// For Periodic Boundary</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  lattice<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">+=</span> h <span class="op">*</span> <span class="op">(</span>orig<span class="op">[</span>L <span class="op">-</span> <span class="dv">1</span><span class="op">]</span> <span class="op">-</span> <span class="fl">2.0</span> <span class="op">*</span> lattice<span class="op">[</span><span class="dv">0</span><span class="op">]</span>  <span class="op">+</span> orig<span class="op">[</span><span class="dv">1</span><span class="op">]);</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  lattice<span class="op">[</span>L <span class="op">-</span> <span class="dv">1</span><span class="op">]</span> <span class="op">+=</span> h <span class="op">*</span> <span class="op">(</span>orig<span class="op">[</span>L <span class="op">-</span> <span class="dv">2</span><span class="op">]</span> <span class="op">-</span> <span class="fl">2.0</span> <span class="op">*</span> lattice<span class="op">[</span>L <span class="op">-</span> <span class="dv">1</span><span class="op">]</span> <span class="op">+</span> orig<span class="op">[</span><span class="dv">0</span><span class="op">]);</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>これで数値計算部分はおしまい。ついでに、系の状態をファイルにダンプする関数も書いておこう。</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> dump(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;data) {
-  <span class="at">static</span> <span class="dt">int</span> index = <span class="dv">0</span>;
-  <span class="dt">char</span> filename[<span class="dv">256</span>];
-  sprintf(filename, <span class="st">&quot;data</span><span class="sc">%03d</span><span class="st">.dat&quot;</span>, index);
-  <span class="bu">std::</span>cout &lt;&lt; filename &lt;&lt; <span class="bu">std::</span>endl;
-  <span class="bu">std::</span>ofstream ofs(filename);
-  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; data.size(); i++) {
-    ofs &lt;&lt; i &lt;&lt; <span class="st">&quot; &quot;</span> &lt;&lt; data[i] &lt;&lt; <span class="bu">std::</span>endl;
-  }
-  index++;
-}</code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> dump<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> <span class="op">&amp;</span>data<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">static</span> <span class="dt">int</span> index <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">char</span> filename<span class="op">[</span><span class="dv">256</span><span class="op">];</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  sprintf<span class="op">(</span>filename<span class="op">,</span> <span class="st">&quot;data</span><span class="sc">%03d</span><span class="st">.dat&quot;</span><span class="op">,</span> index<span class="op">);</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>cout<span class="op"> &lt;&lt;</span> filename <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>ofstream<span class="op"> </span>ofs<span class="op">(</span>filename<span class="op">);</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> data<span class="op">.</span>size<span class="op">();</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    ofs <span class="op">&lt;&lt;</span> i <span class="op">&lt;&lt;</span> <span class="st">&quot; &quot;</span> <span class="op">&lt;&lt;</span> data<span class="op">[</span>i<span class="op">]</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  index<span class="op">++;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>あとは適当な条件を与えれば時間発展させることができる。ここでは、「一様加熱」と「温度固定」の二通りを試してみよう。以下のコードを<code>thermal.cpp</code>という名前で保存、実行してみよう。</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
-<span class="pp">#include </span><span class="im">&lt;fstream&gt;</span>
-<span class="pp">#include </span><span class="im">&lt;iostream&gt;</span>
-<span class="pp">#include </span><span class="im">&lt;vector&gt;</span>
-
-<span class="at">const</span> <span class="dt">int</span> L = <span class="dv">128</span>;
-<span class="at">const</span> <span class="dt">int</span> STEP = <span class="dv">100000</span>;
-<span class="at">const</span> <span class="dt">int</span> DUMP = <span class="dv">1000</span>;
-
-<span class="dt">void</span> onestep(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;lattice, <span class="at">const</span> <span class="dt">double</span> h) {
-  <span class="at">static</span> <span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; orig(L);
-  <span class="bu">std::</span>copy(lattice.begin(), lattice.end(), orig.begin());
-  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">1</span>; i &lt; L - <span class="dv">1</span>; i++) {
-    lattice[i] += h * (orig[i - <span class="dv">1</span>] - <span class="fl">2.0</span> * orig[i] + orig[i + <span class="dv">1</span>]);
-  }
-  <span class="co">// For Periodic Boundary</span>
-  lattice[<span class="dv">0</span>] += h * (orig[L - <span class="dv">1</span>] - <span class="fl">2.0</span> * lattice[<span class="dv">0</span>] + orig[<span class="dv">1</span>]);
-  lattice[L - <span class="dv">1</span>] += h * (orig[L - <span class="dv">2</span>] - <span class="fl">2.0</span> * lattice[L - <span class="dv">1</span>] + orig[<span class="dv">0</span>]);
-}
-
-<span class="dt">void</span> dump(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;data) {
-  <span class="at">static</span> <span class="dt">int</span> index = <span class="dv">0</span>;
-  <span class="dt">char</span> filename[<span class="dv">256</span>];
-  sprintf(filename, <span class="st">&quot;data</span><span class="sc">%03d</span><span class="st">.dat&quot;</span>, index);
-  <span class="bu">std::</span>cout &lt;&lt; filename &lt;&lt; <span class="bu">std::</span>endl;
-  <span class="bu">std::</span>ofstream ofs(filename);
-  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; data.size(); i++) {
-    ofs &lt;&lt; i &lt;&lt; <span class="st">&quot; &quot;</span> &lt;&lt; data[i] &lt;&lt; <span class="bu">std::</span>endl;
-  }
-  index++;
-}
-
-<span class="dt">void</span> fixed_temperature(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;lattice) {
-  <span class="at">const</span> <span class="dt">double</span> h = <span class="fl">0.01</span>;
-  <span class="at">const</span> <span class="dt">double</span> Q = <span class="fl">1.0</span>;
-  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; STEP; i++) {
-    onestep(lattice, h);
-    lattice[L / <span class="dv">4</span>] = Q;
-    lattice[<span class="dv">3</span> * L / <span class="dv">4</span>] = -Q;
-    <span class="cf">if</span> ((i % DUMP) == <span class="dv">0</span>) dump(lattice);
-  }
-}
-
-<span class="dt">void</span> uniform_heating(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;lattice) {
-  <span class="at">const</span> <span class="dt">double</span> h = <span class="fl">0.2</span>;
-  <span class="at">const</span> <span class="dt">double</span> Q = <span class="fl">1.0</span>;
-  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; STEP; i++) {
-    onestep(lattice, h);
-    <span class="cf">for</span> (<span class="kw">auto</span> &amp;s : lattice) {
-      s += Q * h;
-    }
-    lattice[<span class="dv">0</span>] = <span class="fl">0.0</span>;
-    lattice[L - <span class="dv">1</span>] = <span class="fl">0.0</span>;
-    <span class="cf">if</span> ((i % DUMP) == <span class="dv">0</span>) dump(lattice);
-  }
-}
-
-<span class="dt">int</span> main() {
-  <span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; lattice(L, <span class="fl">0.0</span>);
-  <span class="co">//uniform_heating(lattice);</span>
-  fixed_temperature(lattice);
-}</code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;fstream&gt;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;vector&gt;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">int</span> L <span class="op">=</span> <span class="dv">128</span><span class="op">;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">int</span> STEP <span class="op">=</span> <span class="dv">100000</span><span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">int</span> DUMP <span class="op">=</span> <span class="dv">1000</span><span class="op">;</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> onestep<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> <span class="op">&amp;</span>lattice<span class="op">,</span> <span class="at">const</span> <span class="dt">double</span> h<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">static</span> <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> orig<span class="op">(</span>L<span class="op">);</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>copy<span class="op">(</span>lattice<span class="op">.</span>begin<span class="op">(),</span> lattice<span class="op">.</span>end<span class="op">(),</span> orig<span class="op">.</span>begin<span class="op">());</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> i <span class="op">&lt;</span> L <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    lattice<span class="op">[</span>i<span class="op">]</span> <span class="op">+=</span> h <span class="op">*</span> <span class="op">(</span>orig<span class="op">[</span>i <span class="op">-</span> <span class="dv">1</span><span class="op">]</span> <span class="op">-</span> <span class="fl">2.0</span> <span class="op">*</span> orig<span class="op">[</span>i<span class="op">]</span> <span class="op">+</span> orig<span class="op">[</span>i <span class="op">+</span> <span class="dv">1</span><span class="op">]);</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  <span class="co">// For Periodic Boundary</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>  lattice<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">+=</span> h <span class="op">*</span> <span class="op">(</span>orig<span class="op">[</span>L <span class="op">-</span> <span class="dv">1</span><span class="op">]</span> <span class="op">-</span> <span class="fl">2.0</span> <span class="op">*</span> lattice<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> orig<span class="op">[</span><span class="dv">1</span><span class="op">]);</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  lattice<span class="op">[</span>L <span class="op">-</span> <span class="dv">1</span><span class="op">]</span> <span class="op">+=</span> h <span class="op">*</span> <span class="op">(</span>orig<span class="op">[</span>L <span class="op">-</span> <span class="dv">2</span><span class="op">]</span> <span class="op">-</span> <span class="fl">2.0</span> <span class="op">*</span> lattice<span class="op">[</span>L <span class="op">-</span> <span class="dv">1</span><span class="op">]</span> <span class="op">+</span> orig<span class="op">[</span><span class="dv">0</span><span class="op">]);</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> dump<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> <span class="op">&amp;</span>data<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">static</span> <span class="dt">int</span> index <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>  <span class="dt">char</span> filename<span class="op">[</span><span class="dv">256</span><span class="op">];</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>  sprintf<span class="op">(</span>filename<span class="op">,</span> <span class="st">&quot;data</span><span class="sc">%03d</span><span class="st">.dat&quot;</span><span class="op">,</span> index<span class="op">);</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>cout<span class="op"> &lt;&lt;</span> filename <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>ofstream<span class="op"> </span>ofs<span class="op">(</span>filename<span class="op">);</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> data<span class="op">.</span>size<span class="op">();</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>    ofs <span class="op">&lt;&lt;</span> i <span class="op">&lt;&lt;</span> <span class="st">&quot; &quot;</span> <span class="op">&lt;&lt;</span> data<span class="op">[</span>i<span class="op">]</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>  index<span class="op">++;</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fixed_temperature<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> <span class="op">&amp;</span>lattice<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">double</span> h <span class="op">=</span> <span class="fl">0.01</span><span class="op">;</span></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">double</span> Q <span class="op">=</span> <span class="fl">1.0</span><span class="op">;</span></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> STEP<span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>    onestep<span class="op">(</span>lattice<span class="op">,</span> h<span class="op">);</span></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>    lattice<span class="op">[</span>L <span class="op">/</span> <span class="dv">4</span><span class="op">]</span> <span class="op">=</span> Q<span class="op">;</span></span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>    lattice<span class="op">[</span><span class="dv">3</span> <span class="op">*</span> L <span class="op">/</span> <span class="dv">4</span><span class="op">]</span> <span class="op">=</span> <span class="op">-</span>Q<span class="op">;</span></span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">((</span>i <span class="op">%</span> DUMP<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> dump<span class="op">(</span>lattice<span class="op">);</span></span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> uniform_heating<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> <span class="op">&amp;</span>lattice<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">double</span> h <span class="op">=</span> <span class="fl">0.2</span><span class="op">;</span></span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">double</span> Q <span class="op">=</span> <span class="fl">1.0</span><span class="op">;</span></span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> STEP<span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>    onestep<span class="op">(</span>lattice<span class="op">,</span> h<span class="op">);</span></span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> <span class="op">&amp;</span>s <span class="op">:</span> lattice<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>      s <span class="op">+=</span> Q <span class="op">*</span> h<span class="op">;</span></span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a>    lattice<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">=</span> <span class="fl">0.0</span><span class="op">;</span></span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a>    lattice<span class="op">[</span>L <span class="op">-</span> <span class="dv">1</span><span class="op">]</span> <span class="op">=</span> <span class="fl">0.0</span><span class="op">;</span></span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">((</span>i <span class="op">%</span> DUMP<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> dump<span class="op">(</span>lattice<span class="op">);</span></span>
+<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> lattice<span class="op">(</span>L<span class="op">,</span> <span class="fl">0.0</span><span class="op">);</span></span>
+<span id="cb4-60"><a href="#cb4-60" aria-hidden="true" tabindex="-1"></a>  <span class="co">//uniform_heating(lattice);</span></span>
+<span id="cb4-61"><a href="#cb4-61" aria-hidden="true" tabindex="-1"></a>  fixed_temperature<span class="op">(</span>lattice<span class="op">);</span></span>
+<span id="cb4-62"><a href="#cb4-62" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>実行結果は以下のようになる。</p>
-<div class="figure">
+<figure>
 <img src="fig/thermal.png" alt="加熱シミュレーションの結果" />
-<p class="caption">加熱シミュレーションの結果</p>
-</div>
-<p>一様加熱というのは、系のすべての場所を一様に加熱することである。 単位時間あたりの加熱量を<code>Q</code>として、</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">    <span class="cf">for</span> (<span class="kw">auto</span> &amp;s : lattice) {
-      s += Q * h;
-    }</code></pre></div>
+<figcaption aria-hidden="true">加熱シミュレーションの結果</figcaption>
+</figure>
+<p>一様加熱というのは、系のすべての場所を一様に加熱することである。
+単位時間あたりの加熱量を<code>Q</code>として、</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> <span class="op">&amp;</span>s <span class="op">:</span> lattice<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>      s <span class="op">+=</span> Q <span class="op">*</span> h<span class="op">;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span></code></pre></div>
 <p>とすれば良い。ただしこのままでは全体が熱くなってしまうので、棒の両端の温度を0に固定しよう。</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">    lattice[<span class="dv">0</span>] = <span class="fl">0.0</span>;
-    lattice[L - <span class="dv">1</span>] = <span class="fl">0.0</span>;</code></pre></div>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>    lattice<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">=</span> <span class="fl">0.0</span><span class="op">;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    lattice<span class="op">[</span>L <span class="op">-</span> <span class="dv">1</span><span class="op">]</span> <span class="op">=</span> <span class="fl">0.0</span><span class="op">;</span></span></code></pre></div>
 <p>計算部分はこんな感じにかける。</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> uniform_heating(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;lattice) {
-  <span class="at">const</span> <span class="dt">double</span> h = <span class="fl">0.2</span>;
-  <span class="at">const</span> <span class="dt">double</span> Q = <span class="fl">1.0</span>;
-  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; STEP; i++) {
-    onestep(lattice, h);
-    <span class="cf">for</span> (<span class="kw">auto</span> &amp;s : lattice) {
-      s += Q * h;
-    }
-    lattice[<span class="dv">0</span>] = <span class="fl">0.0</span>;
-    lattice[L - <span class="dv">1</span>] = <span class="fl">0.0</span>;
-    <span class="cf">if</span> ((i % DUMP) == <span class="dv">0</span>) dump(lattice);
-  }
-}</code></pre></div>
-<p>何ステップかに一度、系の状態をファイルに吐いている。 定常状態は、両端がゼロとなるような二次関数、具体的には</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> uniform_heating<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> <span class="op">&amp;</span>lattice<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">double</span> h <span class="op">=</span> <span class="fl">0.2</span><span class="op">;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">double</span> Q <span class="op">=</span> <span class="fl">1.0</span><span class="op">;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> STEP<span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    onestep<span class="op">(</span>lattice<span class="op">,</span> h<span class="op">);</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> <span class="op">&amp;</span>s <span class="op">:</span> lattice<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>      s <span class="op">+=</span> Q <span class="op">*</span> h<span class="op">;</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    lattice<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">=</span> <span class="fl">0.0</span><span class="op">;</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    lattice<span class="op">[</span>L <span class="op">-</span> <span class="dv">1</span><span class="op">]</span> <span class="op">=</span> <span class="fl">0.0</span><span class="op">;</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">((</span>i <span class="op">%</span> DUMP<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> dump<span class="op">(</span>lattice<span class="op">);</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>何ステップかに一度、系の状態をファイルに吐いている。
+定常状態は、両端がゼロとなるような二次関数、具体的には</p>
 <p><span class="math display">\[
 T(x) = -x (x-L)
 \]</span></p>
 <p>となる。二次関数で、両端がゼロとなること、これが熱伝導方程式の解になっていることを確認しよう。</p>
 <p>計算結果はこんな感じになる。</p>
-<div class="figure">
+<figure>
 <img src="fig/uniform.png" alt="一様加熱シミュレーションの時間発展" />
-<p class="caption">一様加熱シミュレーションの時間発展</p>
-</div>
+<figcaption
+aria-hidden="true">一様加熱シミュレーションの時間発展</figcaption>
+</figure>
 <p>時間がたつにつれて温度が上がっていき、定常状態に近づいていくのがわかる。</p>
 <p>この例では、周期境界条件がちゃんとできているか確認できないので、温度が境界をまたぐような条件、「温度固定」を試してみよう。リング状の金属の棒の、ある点を高温に、反対側を低温に固定する。すると、定常状態は、高温と低温を結ぶ直線になる。</p>
 <p>計算部分はこんな感じに書けるだろう。</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> fixed_temperature(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;lattice) {
-  <span class="at">const</span> <span class="dt">double</span> h = <span class="fl">0.01</span>;
-  <span class="at">const</span> <span class="dt">double</span> Q = <span class="fl">1.0</span>;
-  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; STEP; i++) {
-    onestep(lattice, h);
-    lattice[L / <span class="dv">4</span>] = Q;
-    lattice[<span class="dv">3</span> * L / <span class="dv">4</span>] = -Q;
-    <span class="cf">if</span> ((i % DUMP) == <span class="dv">0</span>) dump(lattice);
-  }
-}</code></pre></div>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fixed_temperature<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> <span class="op">&amp;</span>lattice<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">double</span> h <span class="op">=</span> <span class="fl">0.01</span><span class="op">;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">double</span> Q <span class="op">=</span> <span class="fl">1.0</span><span class="op">;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> STEP<span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    onestep<span class="op">(</span>lattice<span class="op">,</span> h<span class="op">);</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    lattice<span class="op">[</span>L <span class="op">/</span> <span class="dv">4</span><span class="op">]</span> <span class="op">=</span> Q<span class="op">;</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    lattice<span class="op">[</span><span class="dv">3</span> <span class="op">*</span> L <span class="op">/</span> <span class="dv">4</span><span class="op">]</span> <span class="op">=</span> <span class="op">-</span>Q<span class="op">;</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">((</span>i <span class="op">%</span> DUMP<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> dump<span class="op">(</span>lattice<span class="op">);</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>計算結果はこんな感じ。</p>
-<div class="figure">
+<figure>
 <img src="fig/fixed.png" alt="固定境界シミュレーションの時間発展" />
-<p class="caption">固定境界シミュレーションの時間発展</p>
-</div>
-<p>時間がたつにつれて、定常状態である直線になる。ちなみに、定常状態で温度勾配が直線になる現象はフーリエの法則(Fourier's law)という名前がついている。あのフーリエ変換のフーリエさんである。もともとフーリエは熱伝導の問題を解くためにフーリエ級数を編み出したのであった。</p>
+<figcaption
+aria-hidden="true">固定境界シミュレーションの時間発展</figcaption>
+</figure>
+<p>時間がたつにつれて、定常状態である直線になる。ちなみに、定常状態で温度勾配が直線になる現象はフーリエの法則(Fourier’s
+law)という名前がついている。あのフーリエ変換のフーリエさんである。もともとフーリエは熱伝導の問題を解くためにフーリエ級数を編み出したのであった。</p>
 <h2 id="一次元拡散方程式-並列版">一次元拡散方程式 (並列版)</h2>
-<p>さて、一次元拡散方程式のシミュレーションコードがかけたところで、これを並列化しよう。 並列化の方法としては領域分割を採用する。 要するに空間をプロセスの数で分割して、各プロセスは自分の担当する領域を、必要に応じて隣のプロセスから情報をもらいながら更新すればよい。 ただし、隣の領域の情報を参照する必要があるので、その部分を「のりしろ」として保持し、そこを通信することになる。</p>
+<p>さて、一次元拡散方程式のシミュレーションコードがかけたところで、これを並列化しよう。
+並列化の方法としては領域分割を採用する。
+要するに空間をプロセスの数で分割して、各プロセスは自分の担当する領域を、必要に応じて隣のプロセスから情報をもらいながら更新すればよい。
+ただし、隣の領域の情報を参照する必要があるので、その部分を「のりしろ」として保持し、そこを通信することになる。</p>
 <p>並列化で考えなければいけないことの一つに「ファイル出力をどうするか」というものがある。これまでプロセスが一つしかなかったので、そいつがファイルを吐けばよかったのだが、プロセス並列をしていると、別々のプロセスがそれぞれ系の状態を分割して保持している。どうにかしてこれをファイルに吐かないといけない。並列計算をする前に、まずは領域分割をして、各プロセスが別々に保持している状態をどうやってファイルに吐くか考えてみよう。いろいろ方法はあるだろうが、とりあえず「全プロセス勝手に吐く」「一つのファイルに追記」「一度まとめてから吐く」の三通りの方法が考えられる。</p>
-<div class="figure">
-<img src="fig/parafile.png" alt="並列プログラムにおけるファイルの吐き方" />
-<p class="caption">並列プログラムにおけるファイルの吐き方</p>
-</div>
-<ol style="list-style-type: decimal">
+<figure>
+<img src="fig/parafile.png"
+alt="並列プログラムにおけるファイルの吐き方" />
+<figcaption
+aria-hidden="true">並列プログラムにおけるファイルの吐き方</figcaption>
+</figure>
+<ol type="1">
 <li>「全プロセス勝手に吐く」これは各プロセスが毎ステップ勝手にファイルを吐く方法。例えばtステップ目にi番目のプロセスが<code>file_t_i.dat</code>みたいな形式で吐く。コーディングは楽だが、毎ステップ、プロセスの数だけ出力されるので大量のファイルができる。また、解析のためには各プロセスが吐いたファイルをまとめないといけないのでファイル管理が面倒。</li>
 <li>「一つのファイルに追記」毎ステップ、ファイルをひとつだけ作成し、プロセスがシリアルに次々と追記していく方法。出力されるファイルはシリアル実行の時と同じなので解析は楽だが、「追記」をするためにプロセスが順番待ちをする。数千プロセスでやったら死ぬほど遅かった。</li>
 <li>「一度まとめてから吐く」いちど、ルートプロセス(ランク0番)に通信でデータを集めてしまってから、ルートプロセスが責任を持って一気に吐く。数千プロセスでも速度面で問題なくファイル出力できたが、全プロセスが保持する状態を一度一つのノードに集めるため、数万プロセス実行時にメモリ不足で落ちた。</li>
 </ol>
-<p>とりあえずメモリに問題なければ「3. 一度まとめてから吐く」が楽なので、今回はこれを採用しよう。メモリが厳しかったり、数万プロセスの計算とかする時にはなにか工夫してくださいまし。</p>
-<p>さて、「一度まとめてから吐く」ためには、「各プロセスにバラバラにあるデータを、どこかのプロセスに一括して持ってくる」必要があるのだが、MPIには そのものずばり<code>MPI_Gather</code>という関数がある。使い方はサンプルを見たほうが早い。以下を<code>gather.cpp</code>という名前で保存、実行しよう。</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
-<span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span>
-<span class="pp">#include </span><span class="im">&lt;vector&gt;</span>
-
-<span class="at">const</span> <span class="dt">int</span> L = <span class="dv">8</span>;
-
-<span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv) {
-  MPI_Init(&amp;argc, &amp;argv);
-  <span class="dt">int</span> rank, procs;
-  MPI_Comm_rank(MPI_COMM_WORLD, &amp;rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &amp;procs);
-  <span class="at">const</span> <span class="dt">int</span> mysize = L / procs;
-  <span class="co">// ローカルなデータ(自分のrank番号で初期化)</span>
-  <span class="bu">std::</span>vector&lt;<span class="dt">int</span>&gt; local(mysize, rank);
-  <span class="co">// 受け取り用のグローバルデータ</span>
-  <span class="bu">std::</span>vector&lt;<span class="dt">int</span>&gt; global(L);
-  <span class="co">// 通信(ランク0番に集める)</span>
-  MPI_Gather(local.data(), mysize, MPI_INT, global.data(), mysize, MPI_INT, <span class="dv">0</span>,  MPI_COMM_WORLD);
-
-  <span class="co">// ランク0番が代表して表示</span>
-  <span class="cf">if</span> (rank == <span class="dv">0</span>) {
-    <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; L; i++) {
-      printf(<span class="st">&quot;</span><span class="sc">%d</span><span class="st">&quot;</span>, global[i]);
-    }
-    printf(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>);
-  }
-  MPI_Finalize();
-}</code></pre></div>
-<p>これは、長さ<code>L=8</code>のデータを、それぞれのプロセスが<code>mysize = L/procs</code>個ずつ持っている、という状況を模している。 それぞれのプロセスが保持するデータは<code>local</code>に格納されている。これらはそれぞれ自分のランク番号で初期化されている。 これを全部ランク0番に集め、<code>global</code>で受け取って表示する、というコードである。</p>
+<p>とりあえずメモリに問題なければ「3.
+一度まとめてから吐く」が楽なので、今回はこれを採用しよう。メモリが厳しかったり、数万プロセスの計算とかする時にはなにか工夫してくださいまし。</p>
+<p>さて、「一度まとめてから吐く」ためには、「各プロセスにバラバラにあるデータを、どこかのプロセスに一括して持ってくる」必要があるのだが、MPIには
+そのものずばり<code>MPI_Gather</code>という関数がある。使い方はサンプルを見たほうが早い。以下を<code>gather.cpp</code>という名前で保存、実行しよう。</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;vector&gt;</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">int</span> L <span class="op">=</span> <span class="dv">8</span><span class="op">;</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="dt">char</span> <span class="op">**</span>argv<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  MPI_Init<span class="op">(&amp;</span>argc<span class="op">,</span> <span class="op">&amp;</span>argv<span class="op">);</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> rank<span class="op">,</span> procs<span class="op">;</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  MPI_Comm_rank<span class="op">(</span>MPI_COMM_WORLD<span class="op">,</span> <span class="op">&amp;</span>rank<span class="op">);</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  MPI_Comm_size<span class="op">(</span>MPI_COMM_WORLD<span class="op">,</span> <span class="op">&amp;</span>procs<span class="op">);</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">int</span> mysize <span class="op">=</span> L <span class="op">/</span> procs<span class="op">;</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>  <span class="co">// ローカルなデータ(自分のrank番号で初期化)</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> local<span class="op">(</span>mysize<span class="op">,</span> rank<span class="op">);</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  <span class="co">// 受け取り用のグローバルデータ</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> global<span class="op">(</span>L<span class="op">);</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  <span class="co">// 通信(ランク0番に集める)</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  MPI_Gather<span class="op">(</span>local<span class="op">.</span>data<span class="op">(),</span> mysize<span class="op">,</span> MPI_INT<span class="op">,</span> global<span class="op">.</span>data<span class="op">(),</span> mysize<span class="op">,</span> MPI_INT<span class="op">,</span> <span class="dv">0</span><span class="op">,</span>  MPI_COMM_WORLD<span class="op">);</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  <span class="co">// ランク0番が代表して表示</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>rank <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> L<span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>      printf<span class="op">(</span><span class="st">&quot;</span><span class="sc">%d</span><span class="st">&quot;</span><span class="op">,</span> global<span class="op">[</span>i<span class="op">]);</span></span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>    printf<span class="op">(</span><span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>  MPI_Finalize<span class="op">();</span></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>これは、長さ<code>L=8</code>のデータを、それぞれのプロセスが<code>mysize = L/procs</code>個ずつ持っている、という状況を模している。
+それぞれのプロセスが保持するデータは<code>local</code>に格納されている。これらはそれぞれ自分のランク番号で初期化されている。
+これを全部ランク0番に集め、<code>global</code>で受け取って表示する、というコードである。</p>
 <p>実行結果はこんな感じ。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="ex">mpic++</span> gather.cpp
-$ <span class="ex">mpirun</span> -np 1 ./a.out
-<span class="ex">00000000</span>
-
-$ <span class="ex">mpirun</span> -np 2 ./a.out
-<span class="ex">00001111</span>
-
-$ <span class="ex">mpirun</span> -np 4 ./a.out
-<span class="ex">00112233</span>
-
-$ <span class="ex">mpirun</span> -np 8 ./a.out
-<span class="ex">01234567</span></code></pre></div>
-<p>1分割から8分割まで試してみた。これができれば、一次元熱伝導方程式の並列化は難しくないだろう。 全データをまとめた後は、そのデータをシリアル版のファイルダンプに渡せば良いので、こんな関数を書けば良い。</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> dump_mpi(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;local, <span class="dt">int</span> rank, <span class="dt">int</span> procs) {
-  <span class="at">static</span> <span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; global(L);
-  MPI_Gather(&amp;(local[<span class="dv">1</span>]), L / procs, MPI_DOUBLE, global.data(), L / procs, MPI_DOUBLE, <span class="dv">0</span>,  MPI_COMM_WORLD);
-  <span class="cf">if</span> (rank == <span class="dv">0</span>) {
-    dump(global);
-  }
-}</code></pre></div>
-<p>各プロセスは<code>local</code>という<code>std::vector</code>にデータを保持しているが、両端に「のりしろ」があるので、そこだけ除いたデータをまとめて <code>global</code>という<code>std::vector</code>に受け取り、ランク0番が代表してシリアル番のダンプ関数<code>dump</code>を呼んでいる。</p>
-<p>ファイル出力の目処がついたところで、並列化を考えよう。差分方程式なので、両端にそれぞれ1サイト分の「のりしろ」を用意して、 そこだけ隣と通信すれば良い。</p>
-<div class="figure">
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> mpic++ gather.cpp</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> mpirun <span class="at">-np</span> 1 ./a.out</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="ex">00000000</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> mpirun <span class="at">-np</span> 2 ./a.out</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="ex">00001111</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> mpirun <span class="at">-np</span> 4 ./a.out</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="ex">00112233</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> mpirun <span class="at">-np</span> 8 ./a.out</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="ex">01234567</span></span></code></pre></div>
+<p>1分割から8分割まで試してみた。これができれば、一次元熱伝導方程式の並列化は難しくないだろう。
+全データをまとめた後は、そのデータをシリアル版のファイルダンプに渡せば良いので、こんな関数を書けば良い。</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> dump_mpi<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> <span class="op">&amp;</span>local<span class="op">,</span> <span class="dt">int</span> rank<span class="op">,</span> <span class="dt">int</span> procs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">static</span> <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> global<span class="op">(</span>L<span class="op">);</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  MPI_Gather<span class="op">(&amp;(</span>local<span class="op">[</span><span class="dv">1</span><span class="op">]),</span> L <span class="op">/</span> procs<span class="op">,</span> MPI_DOUBLE<span class="op">,</span> global<span class="op">.</span>data<span class="op">(),</span> L <span class="op">/</span> procs<span class="op">,</span> MPI_DOUBLE<span class="op">,</span> <span class="dv">0</span><span class="op">,</span>  MPI_COMM_WORLD<span class="op">);</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>rank <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    dump<span class="op">(</span>global<span class="op">);</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>各プロセスは<code>local</code>という<code>std::vector</code>にデータを保持しているが、両端に「のりしろ」があるので、そこだけ除いたデータをまとめて
+<code>global</code>という<code>std::vector</code>に受け取り、ランク0番が代表してシリアル番のダンプ関数<code>dump</code>を呼んでいる。</p>
+<p>ファイル出力の目処がついたところで、並列化を考えよう。差分方程式なので、両端にそれぞれ1サイト分の「のりしろ」を用意して、
+そこだけ隣と通信すれば良い。</p>
+<figure>
 <img src="fig/margin.png" alt="通信の「のりしろ」" />
-<p class="caption">通信の「のりしろ」</p>
-</div>
-<p>計算をする「前」に、両脇の領域を管轄するプロセスから端の情報を「のりしろ」にコピーして、その後は普通に計算すれば良い。 端の情報を「のりしろ」にコピーするのには一対一通信を用いる。 MPIの基本的な一対一通信関数として、<code>MPI_Send</code>による送信と<code>MPI_Recv</code>による受信が用意されているが、 それらをペアで使うより、送受信を一度にやる<code>MPI_Sendrecv</code>を使った方が良い。<code>MPI_Send</code>と<code>MPI_Recv</code>を使うと デッドロックの可能性がある上に、一般には<code>MPI_Sendrecv</code>の方が性能が良いためだ。 というわけで、並列化した計算コードはこんな感じになる。</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> onestep(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;lattice, <span class="dt">double</span> h, <span class="dt">int</span> rank, <span class="dt">int</span> procs) {
-  <span class="at">const</span> <span class="dt">int</span> size = lattice.size();
-  <span class="at">static</span> <span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; orig(size);
-  <span class="bu">std::</span>copy(lattice.begin(), lattice.end(), orig.begin());
-  <span class="co">// ここから通信のためのコード</span>
-  <span class="at">const</span> <span class="dt">int</span> left = (rank - <span class="dv">1</span> + procs) % procs; <span class="co">// 左のランク番号</span>
-  <span class="at">const</span> <span class="dt">int</span> right = (rank + <span class="dv">1</span>) % procs; <span class="co">// 右のランク番号</span>
-  MPI_Status st;
-  <span class="co">// 右端を右に送って、左端を左から受け取る</span>
-  MPI_Sendrecv(&amp;(lattice[size - <span class="dv">2</span>]), <span class="dv">1</span>, MPI_DOUBLE, right, <span class="dv">0</span>, &amp;(orig[<span class="dv">0</span>]), <span class="dv">1</span>, MPI_DOUBLE, left, <span class="dv">0</span>, MPI_COMM_WORLD, &amp;st);
-  <span class="co">// 左端を左に送って、右端を右から受け取る</span>
-  MPI_Sendrecv(&amp;(lattice[<span class="dv">1</span>]), <span class="dv">1</span>, MPI_DOUBLE, left, <span class="dv">0</span>, &amp;(orig[size - <span class="dv">1</span>]), <span class="dv">1</span>, MPI_DOUBLE, right, <span class="dv">0</span>, MPI_COMM_WORLD, &amp;st);
-
-  <span class="co">//あとはシリアル版と同じ</span>
-  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">1</span>; i &lt; size - <span class="dv">1</span>; i++) {
-    lattice[i] += h * (orig[i - <span class="dv">1</span>] - <span class="fl">2.0</span> * orig[i] + orig[i + <span class="dv">1</span>]);
-  }
-}</code></pre></div>
-<p>コードのコメントの通りで、難しいことはないと思う。<code>MPI_Sendrecv</code>で「データを送るプロセス」と「データを受け取るプロセス」が違うことに注意。 クリスマスパーティのプレゼント交換の時のように、みんなで輪になって、右の人にプレゼントを渡し、左の人からプレゼントを受け取る、みたいなイメージである。 もちろん「右に渡して右から受け取る」という通信方式でも良いが、「右に渡して左から受け取る」方がコードが楽だし、筆者の経験ではそっちの方が早かった。</p>
-<p>計算部分ができたので、あとは条件を追加すれば物理的なシミュレーションができる。 まずは一様加熱。</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> uniform_heating(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;lattice, <span class="dt">int</span> rank, <span class="dt">int</span> procs) {
-  <span class="at">const</span> <span class="dt">double</span> h = <span class="fl">0.2</span>;
-  <span class="at">const</span> <span class="dt">double</span> Q = <span class="fl">1.0</span>;
-  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; STEP; i++) {
-    onestep(lattice, h, rank, procs);
-    <span class="cf">for</span> (<span class="kw">auto</span> &amp;s : lattice) {
-      s += Q * h;
-    }
-    <span class="cf">if</span> (rank == <span class="dv">0</span>) {
-      lattice[<span class="dv">1</span>] = <span class="fl">0.0</span>;
-    }
-    <span class="cf">if</span> (rank == procs - <span class="dv">1</span>) {
-      lattice[lattice.size() - <span class="dv">2</span>] = <span class="fl">0.0</span>;
-    }
-    <span class="cf">if</span> ((i % DUMP) == <span class="dv">0</span>) dump_mpi(lattice, rank, procs);
-  }
-}</code></pre></div>
-<p>シリアル版とほぼ同じだが、「両端の温度を固定」する時に、左端はランク0番が、右端は<code>procs-1</code>番が担当しているので、そこだけif文が入る。 あとは<code>dump</code>を<code>dump_mpi</code>に変えるだけ。</p>
+<figcaption aria-hidden="true">通信の「のりしろ」</figcaption>
+</figure>
+<p>計算をする「前」に、両脇の領域を管轄するプロセスから端の情報を「のりしろ」にコピーして、その後は普通に計算すれば良い。
+端の情報を「のりしろ」にコピーするのには一対一通信を用いる。
+MPIの基本的な一対一通信関数として、<code>MPI_Send</code>による送信と<code>MPI_Recv</code>による受信が用意されているが、
+それらをペアで使うより、送受信を一度にやる<code>MPI_Sendrecv</code>を使った方が良い。<code>MPI_Send</code>と<code>MPI_Recv</code>を使うと
+デッドロックの可能性がある上に、一般には<code>MPI_Sendrecv</code>の方が性能が良いためだ。
+というわけで、並列化した計算コードはこんな感じになる。</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> onestep<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> <span class="op">&amp;</span>lattice<span class="op">,</span> <span class="dt">double</span> h<span class="op">,</span> <span class="dt">int</span> rank<span class="op">,</span> <span class="dt">int</span> procs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">int</span> size <span class="op">=</span> lattice<span class="op">.</span>size<span class="op">();</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">static</span> <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> orig<span class="op">(</span>size<span class="op">);</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>copy<span class="op">(</span>lattice<span class="op">.</span>begin<span class="op">(),</span> lattice<span class="op">.</span>end<span class="op">(),</span> orig<span class="op">.</span>begin<span class="op">());</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">// ここから通信のためのコード</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">int</span> left <span class="op">=</span> <span class="op">(</span>rank <span class="op">-</span> <span class="dv">1</span> <span class="op">+</span> procs<span class="op">)</span> <span class="op">%</span> procs<span class="op">;</span> <span class="co">// 左のランク番号</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">int</span> right <span class="op">=</span> <span class="op">(</span>rank <span class="op">+</span> <span class="dv">1</span><span class="op">)</span> <span class="op">%</span> procs<span class="op">;</span> <span class="co">// 右のランク番号</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  MPI_Status st<span class="op">;</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="co">// 右端を右に送って、左端を左から受け取る</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  MPI_Sendrecv<span class="op">(&amp;(</span>lattice<span class="op">[</span>size <span class="op">-</span> <span class="dv">2</span><span class="op">]),</span> <span class="dv">1</span><span class="op">,</span> MPI_DOUBLE<span class="op">,</span> right<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="op">&amp;(</span>orig<span class="op">[</span><span class="dv">0</span><span class="op">]),</span> <span class="dv">1</span><span class="op">,</span> MPI_DOUBLE<span class="op">,</span> left<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> MPI_COMM_WORLD<span class="op">,</span> <span class="op">&amp;</span>st<span class="op">);</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">// 左端を左に送って、右端を右から受け取る</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  MPI_Sendrecv<span class="op">(&amp;(</span>lattice<span class="op">[</span><span class="dv">1</span><span class="op">]),</span> <span class="dv">1</span><span class="op">,</span> MPI_DOUBLE<span class="op">,</span> left<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="op">&amp;(</span>orig<span class="op">[</span>size <span class="op">-</span> <span class="dv">1</span><span class="op">]),</span> <span class="dv">1</span><span class="op">,</span> MPI_DOUBLE<span class="op">,</span> right<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> MPI_COMM_WORLD<span class="op">,</span> <span class="op">&amp;</span>st<span class="op">);</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  <span class="co">//あとはシリアル版と同じ</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> i <span class="op">&lt;</span> size <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    lattice<span class="op">[</span>i<span class="op">]</span> <span class="op">+=</span> h <span class="op">*</span> <span class="op">(</span>orig<span class="op">[</span>i <span class="op">-</span> <span class="dv">1</span><span class="op">]</span> <span class="op">-</span> <span class="fl">2.0</span> <span class="op">*</span> orig<span class="op">[</span>i<span class="op">]</span> <span class="op">+</span> orig<span class="op">[</span>i <span class="op">+</span> <span class="dv">1</span><span class="op">]);</span></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>コードのコメントの通りで、難しいことはないと思う。<code>MPI_Sendrecv</code>で「データを送るプロセス」と「データを受け取るプロセス」が違うことに注意。
+クリスマスパーティのプレゼント交換の時のように、みんなで輪になって、右の人にプレゼントを渡し、左の人からプレゼントを受け取る、みたいなイメージである。
+もちろん「右に渡して右から受け取る」という通信方式でも良いが、「右に渡して左から受け取る」方がコードが楽だし、筆者の経験ではそっちの方が早かった。</p>
+<p>計算部分ができたので、あとは条件を追加すれば物理的なシミュレーションができる。
+まずは一様加熱。</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> uniform_heating<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> <span class="op">&amp;</span>lattice<span class="op">,</span> <span class="dt">int</span> rank<span class="op">,</span> <span class="dt">int</span> procs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">double</span> h <span class="op">=</span> <span class="fl">0.2</span><span class="op">;</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">double</span> Q <span class="op">=</span> <span class="fl">1.0</span><span class="op">;</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> STEP<span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    onestep<span class="op">(</span>lattice<span class="op">,</span> h<span class="op">,</span> rank<span class="op">,</span> procs<span class="op">);</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> <span class="op">&amp;</span>s <span class="op">:</span> lattice<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>      s <span class="op">+=</span> Q <span class="op">*</span> h<span class="op">;</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>rank <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>      lattice<span class="op">[</span><span class="dv">1</span><span class="op">]</span> <span class="op">=</span> <span class="fl">0.0</span><span class="op">;</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>rank <span class="op">==</span> procs <span class="op">-</span> <span class="dv">1</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>      lattice<span class="op">[</span>lattice<span class="op">.</span>size<span class="op">()</span> <span class="op">-</span> <span class="dv">2</span><span class="op">]</span> <span class="op">=</span> <span class="fl">0.0</span><span class="op">;</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">((</span>i <span class="op">%</span> DUMP<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> dump_mpi<span class="op">(</span>lattice<span class="op">,</span> rank<span class="op">,</span> procs<span class="op">);</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>シリアル版とほぼ同じだが、「両端の温度を固定」する時に、左端はランク0番が、右端は<code>procs-1</code>番が担当しているので、そこだけif文が入る。
+あとは<code>dump</code>を<code>dump_mpi</code>に変えるだけ。</p>
 <p>次に、温度の固定条件。</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="dt">void</span> fixed_temperature(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;lattice, <span class="dt">int</span> rank, <span class="dt">int</span> procs) {
-  <span class="at">const</span> <span class="dt">double</span> h = <span class="fl">0.01</span>;
-  <span class="at">const</span> <span class="dt">double</span> Q = <span class="fl">1.0</span>;
-  <span class="at">const</span> <span class="dt">int</span> s = L / procs;
-  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; STEP; i++) {
-    onestep(lattice, h, rank, procs);
-    <span class="cf">if</span> (rank == (L / <span class="dv">4</span> / s)) {
-      lattice[L / <span class="dv">4</span> - rank * s + <span class="dv">1</span>] = Q;
-    }
-    <span class="cf">if</span> (rank == (<span class="dv">3</span> * L / <span class="dv">4</span> / s)) {
-      lattice[<span class="dv">3</span> * L / <span class="dv">4</span> - rank * s + <span class="dv">1</span>] = -Q;
-    }
-    <span class="cf">if</span> ((i % DUMP) == <span class="dv">0</span>) dump_mpi(lattice, rank, procs);
-  }
-}</code></pre></div>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fixed_temperature<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> <span class="op">&amp;</span>lattice<span class="op">,</span> <span class="dt">int</span> rank<span class="op">,</span> <span class="dt">int</span> procs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">double</span> h <span class="op">=</span> <span class="fl">0.01</span><span class="op">;</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">double</span> Q <span class="op">=</span> <span class="fl">1.0</span><span class="op">;</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">int</span> s <span class="op">=</span> L <span class="op">/</span> procs<span class="op">;</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> STEP<span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    onestep<span class="op">(</span>lattice<span class="op">,</span> h<span class="op">,</span> rank<span class="op">,</span> procs<span class="op">);</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>rank <span class="op">==</span> <span class="op">(</span>L <span class="op">/</span> <span class="dv">4</span> <span class="op">/</span> s<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>      lattice<span class="op">[</span>L <span class="op">/</span> <span class="dv">4</span> <span class="op">-</span> rank <span class="op">*</span> s <span class="op">+</span> <span class="dv">1</span><span class="op">]</span> <span class="op">=</span> Q<span class="op">;</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>rank <span class="op">==</span> <span class="op">(</span><span class="dv">3</span> <span class="op">*</span> L <span class="op">/</span> <span class="dv">4</span> <span class="op">/</span> s<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>      lattice<span class="op">[</span><span class="dv">3</span> <span class="op">*</span> L <span class="op">/</span> <span class="dv">4</span> <span class="op">-</span> rank <span class="op">*</span> s <span class="op">+</span> <span class="dv">1</span><span class="op">]</span> <span class="op">=</span> <span class="op">-</span>Q<span class="op">;</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">((</span>i <span class="op">%</span> DUMP<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> dump_mpi<span class="op">(</span>lattice<span class="op">,</span> rank<span class="op">,</span> procs<span class="op">);</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>これも一様加熱と同じで、「温度を固定している場所がどのプロセスが担当するどの場所か」を調べる必要があるが、それを考えるのはさほど難しくないだろう。そんなわけで完成した並列コードを<code>thermal_mpi.cpp</code>という名前で保存しよう。</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span>
-<span class="pp">#include </span><span class="im">&lt;fstream&gt;</span>
-<span class="pp">#include </span><span class="im">&lt;iostream&gt;</span>
-<span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span>
-<span class="pp">#include </span><span class="im">&lt;vector&gt;</span>
-
-<span class="at">const</span> <span class="dt">int</span> L = <span class="dv">128</span>;
-<span class="at">const</span> <span class="dt">int</span> STEP = <span class="dv">100000</span>;
-<span class="at">const</span> <span class="dt">int</span> DUMP = <span class="dv">1000</span>;
-
-<span class="dt">void</span> dump(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;data) {
-  <span class="at">static</span> <span class="dt">int</span> index = <span class="dv">0</span>;
-  <span class="dt">char</span> filename[<span class="dv">256</span>];
-  sprintf(filename, <span class="st">&quot;data</span><span class="sc">%03d</span><span class="st">.dat&quot;</span>, index);
-  <span class="bu">std::</span>cout &lt;&lt; filename &lt;&lt; <span class="bu">std::</span>endl;
-  <span class="bu">std::</span>ofstream ofs(filename);
-  <span class="cf">for</span> (<span class="dt">unsigned</span> <span class="dt">int</span> i = <span class="dv">0</span>; i &lt; data.size(); i++) {
-    ofs &lt;&lt; i &lt;&lt; <span class="st">&quot; &quot;</span> &lt;&lt; data[i] &lt;&lt; <span class="bu">std::</span>endl;
-  }
-  index++;
-}
-
-<span class="dt">void</span> dump_mpi(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;local, <span class="dt">int</span> rank, <span class="dt">int</span> procs) {
-  <span class="at">static</span> <span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; global(L);
-  MPI_Gather(&amp;(local[<span class="dv">1</span>]), L / procs, MPI_DOUBLE, global.data(), L / procs, MPI_DOUBLE, <span class="dv">0</span>, MPI_COMM_WORLD);
-  <span class="cf">if</span> (rank == <span class="dv">0</span>) {
-    dump(global);
-  }
-}
-
-<span class="dt">void</span> onestep(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;lattice, <span class="dt">double</span> h, <span class="dt">int</span> rank, <span class="dt">int</span> procs) {
-  <span class="at">const</span> <span class="dt">int</span> size = lattice.size();
-  <span class="at">static</span> <span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; orig(size);
-  <span class="bu">std::</span>copy(lattice.begin(), lattice.end(), orig.begin());
-  <span class="co">// ここから通信のためのコード</span>
-  <span class="at">const</span> <span class="dt">int</span> left = (rank - <span class="dv">1</span> + procs) % procs; <span class="co">// 左のランク番号</span>
-  <span class="at">const</span> <span class="dt">int</span> right = (rank + <span class="dv">1</span>) % procs;        <span class="co">// 右のランク番号</span>
-  MPI_Status st;
-  <span class="co">// 右端を右に送って、左端を左から受け取る</span>
-  MPI_Sendrecv(&amp;(lattice[size - <span class="dv">2</span>]), <span class="dv">1</span>, MPI_DOUBLE, right, <span class="dv">0</span>, &amp;(orig[<span class="dv">0</span>]), <span class="dv">1</span>, MPI_DOUBLE, left, <span class="dv">0</span>, MPI_COMM_WORLD, &amp;st);
-  <span class="co">// 左端を左に送って、右端を右から受け取る</span>
-  MPI_Sendrecv(&amp;(lattice[<span class="dv">1</span>]), <span class="dv">1</span>, MPI_DOUBLE, left, <span class="dv">0</span>, &amp;(orig[size - <span class="dv">1</span>]), <span class="dv">1</span>, MPI_DOUBLE, right, <span class="dv">0</span>, MPI_COMM_WORLD, &amp;st);
-
-  <span class="co">//あとはシリアル版と同じ</span>
-  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">1</span>; i &lt; size - <span class="dv">1</span>; i++) {
-    lattice[i] += h * (orig[i - <span class="dv">1</span>] - <span class="fl">2.0</span> * orig[i] + orig[i + <span class="dv">1</span>]);
-  }
-}
-
-<span class="dt">void</span> uniform_heating(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;lattice, <span class="dt">int</span> rank, <span class="dt">int</span> procs) {
-  <span class="at">const</span> <span class="dt">double</span> h = <span class="fl">0.2</span>;
-  <span class="at">const</span> <span class="dt">double</span> Q = <span class="fl">1.0</span>;
-  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; STEP; i++) {
-    onestep(lattice, h, rank, procs);
-    <span class="cf">for</span> (<span class="kw">auto</span> &amp;s : lattice) {
-      s += Q * h;
-    }
-    <span class="cf">if</span> (rank == <span class="dv">0</span>) {
-      lattice[<span class="dv">1</span>] = <span class="fl">0.0</span>;
-    }
-    <span class="cf">if</span> (rank == procs - <span class="dv">1</span>) {
-      lattice[lattice.size() - <span class="dv">2</span>] = <span class="fl">0.0</span>;
-    }
-    <span class="cf">if</span> ((i % DUMP) == <span class="dv">0</span>) dump_mpi(lattice, rank, procs);
-  }
-}
-
-<span class="dt">void</span> fixed_temperature(<span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; &amp;lattice, <span class="dt">int</span> rank, <span class="dt">int</span> procs) {
-  <span class="at">const</span> <span class="dt">double</span> h = <span class="fl">0.01</span>;
-  <span class="at">const</span> <span class="dt">double</span> Q = <span class="fl">1.0</span>;
-  <span class="at">const</span> <span class="dt">int</span> s = L / procs;
-  <span class="cf">for</span> (<span class="dt">int</span> i = <span class="dv">0</span>; i &lt; STEP; i++) {
-    onestep(lattice, h, rank, procs);
-    <span class="cf">if</span> (rank == (L / <span class="dv">4</span> / s)) {
-      lattice[L / <span class="dv">4</span> - rank * s + <span class="dv">1</span>] = Q;
-    }
-    <span class="cf">if</span> (rank == (<span class="dv">3</span> * L / <span class="dv">4</span> / s)) {
-      lattice[<span class="dv">3</span> * L / <span class="dv">4</span> - rank * s + <span class="dv">1</span>] = -Q;
-    }
-    <span class="cf">if</span> ((i % DUMP) == <span class="dv">0</span>) dump_mpi(lattice, rank, procs);
-  }
-}
-
-<span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv) {
-  MPI_Init(&amp;argc, &amp;argv);
-  <span class="dt">int</span> rank, procs;
-  MPI_Comm_rank(MPI_COMM_WORLD, &amp;rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &amp;procs);
-  <span class="at">const</span> <span class="dt">int</span> mysize = L / procs + <span class="dv">2</span>;
-  <span class="bu">std::</span>vector&lt;<span class="dt">double</span>&gt; local(mysize);
-  uniform_heating(local, rank, procs);
-  <span class="co">//fixed_temperature(local, rank, procs);</span>
-  MPI_Finalize();
-}</code></pre></div>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;fstream&gt;</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;mpi.h&gt;</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;vector&gt;</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">int</span> L <span class="op">=</span> <span class="dv">128</span><span class="op">;</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">int</span> STEP <span class="op">=</span> <span class="dv">100000</span><span class="op">;</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">int</span> DUMP <span class="op">=</span> <span class="dv">1000</span><span class="op">;</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> dump<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> <span class="op">&amp;</span>data<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">static</span> <span class="dt">int</span> index <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>  <span class="dt">char</span> filename<span class="op">[</span><span class="dv">256</span><span class="op">];</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>  sprintf<span class="op">(</span>filename<span class="op">,</span> <span class="st">&quot;data</span><span class="sc">%03d</span><span class="st">.dat&quot;</span><span class="op">,</span> index<span class="op">);</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>cout<span class="op"> &lt;&lt;</span> filename <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>ofstream<span class="op"> </span>ofs<span class="op">(</span>filename<span class="op">);</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">unsigned</span> <span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> data<span class="op">.</span>size<span class="op">();</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>    ofs <span class="op">&lt;&lt;</span> i <span class="op">&lt;&lt;</span> <span class="st">&quot; &quot;</span> <span class="op">&lt;&lt;</span> data<span class="op">[</span>i<span class="op">]</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>  index<span class="op">++;</span></span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> dump_mpi<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> <span class="op">&amp;</span>local<span class="op">,</span> <span class="dt">int</span> rank<span class="op">,</span> <span class="dt">int</span> procs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>  <span class="at">static</span> <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> global<span class="op">(</span>L<span class="op">);</span></span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>  MPI_Gather<span class="op">(&amp;(</span>local<span class="op">[</span><span class="dv">1</span><span class="op">]),</span> L <span class="op">/</span> procs<span class="op">,</span> MPI_DOUBLE<span class="op">,</span> global<span class="op">.</span>data<span class="op">(),</span> L <span class="op">/</span> procs<span class="op">,</span> MPI_DOUBLE<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> MPI_COMM_WORLD<span class="op">);</span></span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>rank <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a>    dump<span class="op">(</span>global<span class="op">);</span></span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> onestep<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> <span class="op">&amp;</span>lattice<span class="op">,</span> <span class="dt">double</span> h<span class="op">,</span> <span class="dt">int</span> rank<span class="op">,</span> <span class="dt">int</span> procs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">int</span> size <span class="op">=</span> lattice<span class="op">.</span>size<span class="op">();</span></span>
+<span id="cb15-33"><a href="#cb15-33" aria-hidden="true" tabindex="-1"></a>  <span class="at">static</span> <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> orig<span class="op">(</span>size<span class="op">);</span></span>
+<span id="cb15-34"><a href="#cb15-34" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>copy<span class="op">(</span>lattice<span class="op">.</span>begin<span class="op">(),</span> lattice<span class="op">.</span>end<span class="op">(),</span> orig<span class="op">.</span>begin<span class="op">());</span></span>
+<span id="cb15-35"><a href="#cb15-35" aria-hidden="true" tabindex="-1"></a>  <span class="co">// ここから通信のためのコード</span></span>
+<span id="cb15-36"><a href="#cb15-36" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">int</span> left <span class="op">=</span> <span class="op">(</span>rank <span class="op">-</span> <span class="dv">1</span> <span class="op">+</span> procs<span class="op">)</span> <span class="op">%</span> procs<span class="op">;</span> <span class="co">// 左のランク番号</span></span>
+<span id="cb15-37"><a href="#cb15-37" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">int</span> right <span class="op">=</span> <span class="op">(</span>rank <span class="op">+</span> <span class="dv">1</span><span class="op">)</span> <span class="op">%</span> procs<span class="op">;</span>        <span class="co">// 右のランク番号</span></span>
+<span id="cb15-38"><a href="#cb15-38" aria-hidden="true" tabindex="-1"></a>  MPI_Status st<span class="op">;</span></span>
+<span id="cb15-39"><a href="#cb15-39" aria-hidden="true" tabindex="-1"></a>  <span class="co">// 右端を右に送って、左端を左から受け取る</span></span>
+<span id="cb15-40"><a href="#cb15-40" aria-hidden="true" tabindex="-1"></a>  MPI_Sendrecv<span class="op">(&amp;(</span>lattice<span class="op">[</span>size <span class="op">-</span> <span class="dv">2</span><span class="op">]),</span> <span class="dv">1</span><span class="op">,</span> MPI_DOUBLE<span class="op">,</span> right<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="op">&amp;(</span>orig<span class="op">[</span><span class="dv">0</span><span class="op">]),</span> <span class="dv">1</span><span class="op">,</span> MPI_DOUBLE<span class="op">,</span> left<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> MPI_COMM_WORLD<span class="op">,</span> <span class="op">&amp;</span>st<span class="op">);</span></span>
+<span id="cb15-41"><a href="#cb15-41" aria-hidden="true" tabindex="-1"></a>  <span class="co">// 左端を左に送って、右端を右から受け取る</span></span>
+<span id="cb15-42"><a href="#cb15-42" aria-hidden="true" tabindex="-1"></a>  MPI_Sendrecv<span class="op">(&amp;(</span>lattice<span class="op">[</span><span class="dv">1</span><span class="op">]),</span> <span class="dv">1</span><span class="op">,</span> MPI_DOUBLE<span class="op">,</span> left<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="op">&amp;(</span>orig<span class="op">[</span>size <span class="op">-</span> <span class="dv">1</span><span class="op">]),</span> <span class="dv">1</span><span class="op">,</span> MPI_DOUBLE<span class="op">,</span> right<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> MPI_COMM_WORLD<span class="op">,</span> <span class="op">&amp;</span>st<span class="op">);</span></span>
+<span id="cb15-43"><a href="#cb15-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-44"><a href="#cb15-44" aria-hidden="true" tabindex="-1"></a>  <span class="co">//あとはシリアル版と同じ</span></span>
+<span id="cb15-45"><a href="#cb15-45" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> i <span class="op">&lt;</span> size <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb15-46"><a href="#cb15-46" aria-hidden="true" tabindex="-1"></a>    lattice<span class="op">[</span>i<span class="op">]</span> <span class="op">+=</span> h <span class="op">*</span> <span class="op">(</span>orig<span class="op">[</span>i <span class="op">-</span> <span class="dv">1</span><span class="op">]</span> <span class="op">-</span> <span class="fl">2.0</span> <span class="op">*</span> orig<span class="op">[</span>i<span class="op">]</span> <span class="op">+</span> orig<span class="op">[</span>i <span class="op">+</span> <span class="dv">1</span><span class="op">]);</span></span>
+<span id="cb15-47"><a href="#cb15-47" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb15-48"><a href="#cb15-48" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb15-49"><a href="#cb15-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-50"><a href="#cb15-50" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> uniform_heating<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> <span class="op">&amp;</span>lattice<span class="op">,</span> <span class="dt">int</span> rank<span class="op">,</span> <span class="dt">int</span> procs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-51"><a href="#cb15-51" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">double</span> h <span class="op">=</span> <span class="fl">0.2</span><span class="op">;</span></span>
+<span id="cb15-52"><a href="#cb15-52" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">double</span> Q <span class="op">=</span> <span class="fl">1.0</span><span class="op">;</span></span>
+<span id="cb15-53"><a href="#cb15-53" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> STEP<span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb15-54"><a href="#cb15-54" aria-hidden="true" tabindex="-1"></a>    onestep<span class="op">(</span>lattice<span class="op">,</span> h<span class="op">,</span> rank<span class="op">,</span> procs<span class="op">);</span></span>
+<span id="cb15-55"><a href="#cb15-55" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> <span class="op">&amp;</span>s <span class="op">:</span> lattice<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-56"><a href="#cb15-56" aria-hidden="true" tabindex="-1"></a>      s <span class="op">+=</span> Q <span class="op">*</span> h<span class="op">;</span></span>
+<span id="cb15-57"><a href="#cb15-57" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-58"><a href="#cb15-58" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>rank <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-59"><a href="#cb15-59" aria-hidden="true" tabindex="-1"></a>      lattice<span class="op">[</span><span class="dv">1</span><span class="op">]</span> <span class="op">=</span> <span class="fl">0.0</span><span class="op">;</span></span>
+<span id="cb15-60"><a href="#cb15-60" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-61"><a href="#cb15-61" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>rank <span class="op">==</span> procs <span class="op">-</span> <span class="dv">1</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-62"><a href="#cb15-62" aria-hidden="true" tabindex="-1"></a>      lattice<span class="op">[</span>lattice<span class="op">.</span>size<span class="op">()</span> <span class="op">-</span> <span class="dv">2</span><span class="op">]</span> <span class="op">=</span> <span class="fl">0.0</span><span class="op">;</span></span>
+<span id="cb15-63"><a href="#cb15-63" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-64"><a href="#cb15-64" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">((</span>i <span class="op">%</span> DUMP<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> dump_mpi<span class="op">(</span>lattice<span class="op">,</span> rank<span class="op">,</span> procs<span class="op">);</span></span>
+<span id="cb15-65"><a href="#cb15-65" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb15-66"><a href="#cb15-66" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb15-67"><a href="#cb15-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-68"><a href="#cb15-68" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> fixed_temperature<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> <span class="op">&amp;</span>lattice<span class="op">,</span> <span class="dt">int</span> rank<span class="op">,</span> <span class="dt">int</span> procs<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-69"><a href="#cb15-69" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">double</span> h <span class="op">=</span> <span class="fl">0.01</span><span class="op">;</span></span>
+<span id="cb15-70"><a href="#cb15-70" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">double</span> Q <span class="op">=</span> <span class="fl">1.0</span><span class="op">;</span></span>
+<span id="cb15-71"><a href="#cb15-71" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">int</span> s <span class="op">=</span> L <span class="op">/</span> procs<span class="op">;</span></span>
+<span id="cb15-72"><a href="#cb15-72" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> STEP<span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb15-73"><a href="#cb15-73" aria-hidden="true" tabindex="-1"></a>    onestep<span class="op">(</span>lattice<span class="op">,</span> h<span class="op">,</span> rank<span class="op">,</span> procs<span class="op">);</span></span>
+<span id="cb15-74"><a href="#cb15-74" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>rank <span class="op">==</span> <span class="op">(</span>L <span class="op">/</span> <span class="dv">4</span> <span class="op">/</span> s<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb15-75"><a href="#cb15-75" aria-hidden="true" tabindex="-1"></a>      lattice<span class="op">[</span>L <span class="op">/</span> <span class="dv">4</span> <span class="op">-</span> rank <span class="op">*</span> s <span class="op">+</span> <span class="dv">1</span><span class="op">]</span> <span class="op">=</span> Q<span class="op">;</span></span>
+<span id="cb15-76"><a href="#cb15-76" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-77"><a href="#cb15-77" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>rank <span class="op">==</span> <span class="op">(</span><span class="dv">3</span> <span class="op">*</span> L <span class="op">/</span> <span class="dv">4</span> <span class="op">/</span> s<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb15-78"><a href="#cb15-78" aria-hidden="true" tabindex="-1"></a>      lattice<span class="op">[</span><span class="dv">3</span> <span class="op">*</span> L <span class="op">/</span> <span class="dv">4</span> <span class="op">-</span> rank <span class="op">*</span> s <span class="op">+</span> <span class="dv">1</span><span class="op">]</span> <span class="op">=</span> <span class="op">-</span>Q<span class="op">;</span></span>
+<span id="cb15-79"><a href="#cb15-79" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-80"><a href="#cb15-80" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">((</span>i <span class="op">%</span> DUMP<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> dump_mpi<span class="op">(</span>lattice<span class="op">,</span> rank<span class="op">,</span> procs<span class="op">);</span></span>
+<span id="cb15-81"><a href="#cb15-81" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb15-82"><a href="#cb15-82" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb15-83"><a href="#cb15-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-84"><a href="#cb15-84" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="dt">char</span> <span class="op">**</span>argv<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-85"><a href="#cb15-85" aria-hidden="true" tabindex="-1"></a>  MPI_Init<span class="op">(&amp;</span>argc<span class="op">,</span> <span class="op">&amp;</span>argv<span class="op">);</span></span>
+<span id="cb15-86"><a href="#cb15-86" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> rank<span class="op">,</span> procs<span class="op">;</span></span>
+<span id="cb15-87"><a href="#cb15-87" aria-hidden="true" tabindex="-1"></a>  MPI_Comm_rank<span class="op">(</span>MPI_COMM_WORLD<span class="op">,</span> <span class="op">&amp;</span>rank<span class="op">);</span></span>
+<span id="cb15-88"><a href="#cb15-88" aria-hidden="true" tabindex="-1"></a>  MPI_Comm_size<span class="op">(</span>MPI_COMM_WORLD<span class="op">,</span> <span class="op">&amp;</span>procs<span class="op">);</span></span>
+<span id="cb15-89"><a href="#cb15-89" aria-hidden="true" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">int</span> mysize <span class="op">=</span> L <span class="op">/</span> procs <span class="op">+</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb15-90"><a href="#cb15-90" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> local<span class="op">(</span>mysize<span class="op">);</span></span>
+<span id="cb15-91"><a href="#cb15-91" aria-hidden="true" tabindex="-1"></a>  uniform_heating<span class="op">(</span>local<span class="op">,</span> rank<span class="op">,</span> procs<span class="op">);</span></span>
+<span id="cb15-92"><a href="#cb15-92" aria-hidden="true" tabindex="-1"></a>  <span class="co">//fixed_temperature(local, rank, procs);</span></span>
+<span id="cb15-93"><a href="#cb15-93" aria-hidden="true" tabindex="-1"></a>  MPI_Finalize<span class="op">();</span></span>
+<span id="cb15-94"><a href="#cb15-94" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>せっかく並列化したので、高速化したかどうか調べてみよう。一様加熱の計算をさせてみる。</p>
 <p>まずはシリアル版の速度。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="fu">clang</span>++ -O3 -std=c++11 thermal.cpp
-$ <span class="bu">time</span> ./a.out
-<span class="ex">data000.dat</span>
-<span class="ex">data001.dat</span>
-<span class="kw">(</span><span class="ex">snip</span><span class="kw">)</span>
-<span class="ex">data099.dat</span>
-<span class="ex">./a.out</span>  0.05s user 0.12s system 94% cpu 0.187 total</code></pre></div>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> clang++ <span class="at">-O3</span> <span class="at">-std</span><span class="op">=</span>c++11 thermal.cpp</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> time ./a.out</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="ex">data000.dat</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="ex">data001.dat</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="kw">(</span><span class="ex">snip</span><span class="kw">)</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="ex">data099.dat</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="ex">./a.out</span>  0.05s user 0.12s system 94% cpu 0.187 total</span></code></pre></div>
 <p>次、並列版。</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash">$ <span class="bu">time</span> mpirun -np 2 --oversubscribe ./a.out
-<span class="ex">data000.dat</span>
-<span class="ex">data001.dat</span>
-<span class="kw">(</span><span class="ex">snip</span><span class="kw">)</span>
-<span class="ex">data099.dat</span>
-<span class="ex">mpirun</span> -np 2 --oversubscribe ./a.out  0.42s user 0.16s system 176% cpu 0.330 total
-
-$ <span class="bu">time</span> mpirun -np 4 --oversubscribe ./a.out
-<span class="ex">data000.dat</span>
-<span class="ex">data001.dat</span>
-<span class="kw">(</span><span class="ex">snip</span><span class="kw">)</span>
-<span class="ex">data099.dat</span>
-<span class="ex">mpirun</span> -np 4 --oversubscribe ./a.out  1.73s user 0.88s system 234% cpu 1.116 total
-
-$ <span class="bu">time</span> mpirun -np 8 --oversubscribe ./a.out
-<span class="ex">data000.dat</span>
-<span class="ex">data001.dat</span>
-<span class="kw">(</span><span class="ex">snip</span><span class="kw">)</span>
-<span class="ex">data099.dat</span>
-<span class="ex">mpirun</span> -np 8 --oversubscribe ./a.out  3.28s user 2.89s system 311% cpu 1.980 total</code></pre></div>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> time mpirun <span class="at">-np</span> 2 <span class="at">--oversubscribe</span> ./a.out</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="ex">data000.dat</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="ex">data001.dat</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="kw">(</span><span class="ex">snip</span><span class="kw">)</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="ex">data099.dat</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="ex">mpirun</span> <span class="at">-np</span> 2 <span class="at">--oversubscribe</span> ./a.out  0.42s user 0.16s system 176% cpu 0.330 total</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> time mpirun <span class="at">-np</span> 4 <span class="at">--oversubscribe</span> ./a.out</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="ex">data000.dat</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="ex">data001.dat</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="kw">(</span><span class="ex">snip</span><span class="kw">)</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="ex">data099.dat</span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a><span class="ex">mpirun</span> <span class="at">-np</span> 4 <span class="at">--oversubscribe</span> ./a.out  1.73s user 0.88s system 234% cpu 1.116 total</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> time mpirun <span class="at">-np</span> 8 <span class="at">--oversubscribe</span> ./a.out</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a><span class="ex">data000.dat</span></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a><span class="ex">data001.dat</span></span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a><span class="kw">(</span><span class="ex">snip</span><span class="kw">)</span></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a><span class="ex">data099.dat</span></span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a><span class="ex">mpirun</span> <span class="at">-np</span> 8 <span class="at">--oversubscribe</span> ./a.out  3.28s user 2.89s system 311% cpu 1.980 total</span></code></pre></div>
 <p>うん、無事に並列数を上げるほど遅くなった。</p>
 <p><del>YA・TTA・NE☆</del></p>
 <p>まぁ、サイズが小さいし、一次元だから計算もとても軽いので、通信のために余計なことをする分遅くなることは実は予想できていた。しかし、領域分割の基本的なテクニックはこのコードにすべて含まれているし、これができれば原理的には差分法で陽解法なコードは全部並列化できてしまうので、応用範囲は広い。</p>
-<h2 id="余談-eagerプロトコルとrendezvousプロトコル">余談： EagerプロトコルとRendezvousプロトコル</h2>
-<p>先程、<code>MPI_Send</code>と<code>MPI_Recv</code>を使うとデッドロックの可能性があると書いた。例えばプロセス0番が1番にSend要求とRecv要求をして、 やはりプロセス1番が0番にSend要求とRecv要求をしたとする。プロセス0番は、1番からまずSend要求の返答が返ってこないと次に進めない。 しかし、プロセス1番も0番からのSend要求の返答が来ないと次に進めず、RecvによってSend要求に答えられない。したがってこのままでは デッドロックしそうに思えるが、実際には小さいデータサイズの送受信ではデッドロックしない。 これは、サイズが小さいデータのやりとりには「Eager (イーガー)プロトコル」という方式が使われるからだ。 データサイズが大きい時には「Rendezvous (ランデブー)プロトコル」という方式が使われる。 まず、Rendezvousプロトコルは、送信側から「これくらいのデータを送って良いですか？」と聞く。 受信側は、そのデータを受け取るバッファが用意できることを確認してから「いいですよ」と答える。 こうして「ハンドシェイク」した後にデータの送受信が始まる。この方式だと、相手からの返事がないと次に進めないのでデッドロックの可能性がある。 また、受信側がデータを保存するバッファを用意できることがわかっているのであれば、いちいち送信側が受信側の応答を待つのは時間のロスになる。</p>
-<p>そこでEagerプロトコルでは、「あらかじめこれくらいのバッファは必ず受信側で用意している」と仮定して、送信側はそこに送りつけてしまう。 よく、荷物の受け取りなどで、小さな荷物であれば再配達にせず、ドアポストやどこか決められた場所に置いてしまったりする、アレである。 受信側は、自分のタイミングでそのバッファから必要な場所にデータをコピーする。送信側は相手の返事を待たずに<code>MPI_Send</code>を終了して 次に処理が進んでしまうため、先程の例でもデッドロックしない。</p>
-<div class="figure">
-<img src="fig/r_and_e.png" alt="RendezvouzプロトコルとEagerプロトコル" />
-<p class="caption">RendezvouzプロトコルとEagerプロトコル</p>
-</div>
-<p>EagerプロトコルとRendezvousプロトコルは、送受信のサイズによって切り替わり、その切替サイズはシステムによって異なる。 <code>MPI_Send</code>と<code>MPI_Recv</code>を使ったデッドロックの可能性のあるコードは、 <strong>あるサイトでは正常に動作するのに、別のサイトではデッドロック</strong>したり、 <strong>同じサイトでも小さな系では正しく動作するのに、大きくするとデッドロック</strong>したりと、分かりづらいバグを埋め込むことになる。 この問題は<code>MPI_Sendrecv</code>を使うことで回避できるので、なるべくそちらを使っていきたい。</p>
-<p>なお、<code>MPI_Send</code>や<code>MPI_Recv</code>は「ブロッキング通信」と呼ばれるため、「相手が答えるまでは次に進まない(処理がブロックされる)」という誤解がたまに見受けられるが、 このようにEagerプロトコルを採用することで、相手の返答の有無にかかわらず処理は次に進む。ブロッキング通信が保証するのは<code>MPI_Recv</code>の処理が終わった時には 受信バッファにデータが入っていることである。ノンブロッキング通信の場合には、通信の終了処理である<code>MPI_Wait</code>による通信の完了待ちが終了するまでは 通信の結果が保証されない。このあたりの事情については、例えば以下の講義資料を参照されたい。</p>
-<p><a href="http://www.r-ccs.riken.jp/r-ccssite/wp-content/uploads/2013/08/ss13_kogi2_0806revise.pdf">並列プログラミングの基本(堀　敦史)</a></p>
+<h2 id="余談-eagerプロトコルとrendezvousプロトコル">余談：
+EagerプロトコルとRendezvousプロトコル</h2>
+<p>先程、<code>MPI_Send</code>と<code>MPI_Recv</code>を使うとデッドロックの可能性があると書いた。例えばプロセス0番が1番にSend要求とRecv要求をして、
+やはりプロセス1番が0番にSend要求とRecv要求をしたとする。プロセス0番は、1番からまずSend要求の返答が返ってこないと次に進めない。
+しかし、プロセス1番も0番からのSend要求の返答が来ないと次に進めず、RecvによってSend要求に答えられない。したがってこのままでは
+デッドロックしそうに思えるが、実際には小さいデータサイズの送受信ではデッドロックしない。
+これは、サイズが小さいデータのやりとりには「Eager
+(イーガー)プロトコル」という方式が使われるからだ。
+データサイズが大きい時には「Rendezvous
+(ランデブー)プロトコル」という方式が使われる。
+まず、Rendezvousプロトコルは、送信側から「これくらいのデータを送って良いですか？」と聞く。
+受信側は、そのデータを受け取るバッファが用意できることを確認してから「いいですよ」と答える。
+こうして「ハンドシェイク」した後にデータの送受信が始まる。この方式だと、相手からの返事がないと次に進めないのでデッドロックの可能性がある。
+また、受信側がデータを保存するバッファを用意できることがわかっているのであれば、いちいち送信側が受信側の応答を待つのは時間のロスになる。</p>
+<p>そこでEagerプロトコルでは、「あらかじめこれくらいのバッファは必ず受信側で用意している」と仮定して、送信側はそこに送りつけてしまう。
+よく、荷物の受け取りなどで、小さな荷物であれば再配達にせず、ドアポストやどこか決められた場所に置いてしまったりする、アレである。
+受信側は、自分のタイミングでそのバッファから必要な場所にデータをコピーする。送信側は相手の返事を待たずに<code>MPI_Send</code>を終了して
+次に処理が進んでしまうため、先程の例でもデッドロックしない。</p>
+<figure>
+<img src="fig/r_and_e.png"
+alt="RendezvouzプロトコルとEagerプロトコル" />
+<figcaption
+aria-hidden="true">RendezvouzプロトコルとEagerプロトコル</figcaption>
+</figure>
+<p>EagerプロトコルとRendezvousプロトコルは、送受信のサイズによって切り替わり、その切替サイズはシステムによって異なる。
+<code>MPI_Send</code>と<code>MPI_Recv</code>を使ったデッドロックの可能性のあるコードは、
+<strong>あるサイトでは正常に動作するのに、別のサイトではデッドロック</strong>したり、
+<strong>同じサイトでも小さな系では正しく動作するのに、大きくするとデッドロック</strong>したりと、分かりづらいバグを埋め込むことになる。
+この問題は<code>MPI_Sendrecv</code>を使うことで回避できるので、なるべくそちらを使っていきたい。</p>
+<p>なお、<code>MPI_Send</code>や<code>MPI_Recv</code>は「ブロッキング通信」と呼ばれるため、「相手が答えるまでは次に進まない(処理がブロックされる)」という誤解がたまに見受けられるが、
+このようにEagerプロトコルを採用することで、相手の返答の有無にかかわらず処理は次に進む。ブロッキング通信が保証するのは<code>MPI_Recv</code>の処理が終わった時には
+受信バッファにデータが入っていることである。ノンブロッキング通信の場合には、通信の終了処理である<code>MPI_Wait</code>による通信の完了待ちが終了するまでは
+通信の結果が保証されない。このあたりの事情については、例えば以下の講義資料を参照されたい。</p>
+<p><a
+href="http://www.r-ccs.riken.jp/r-ccssite/wp-content/uploads/2013/08/ss13_kogi2_0806revise.pdf">並列プログラミングの基本(堀　敦史)</a></p>
 </article>
 </body>
 </html>

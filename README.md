@@ -96,7 +96,7 @@ SIMD化について。
 * 余談：x86における浮動小数点演算の扱い
 * もう少し実戦的なSIMD化
 
-## [おわりに](conclusion/README.md)
+## [おわりに](postface/README.md)
 
 ## ライセンス
 
