@@ -4,7 +4,7 @@
 
 [HTML版](https://kaityo256.github.io/sevendayshpc/)
 
-[一括PDF版](sevendayshpc.pdf)
+[一括PDF版](https://github.com/kaityo256/sevendayshpc/releases/latest/download/sevendayshpc.pdf)
 
 ## [はじめに](preface/README.md)
 
