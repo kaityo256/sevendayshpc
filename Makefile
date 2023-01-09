@@ -1,5 +1,5 @@
 TARGET=$(shell ls */README.md | sed 's/README.md/index.html/')
-PANDOC=pandoc -s --mathjax -t html --template=template
+PANDOC=pandoc -s --mathjax -t html --template=template --shift-heading-level-by=-1
 
 all: $(TARGET) index.html
 

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="generator" content="pandoc">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>index</title>
+  <title>一週間でなれる！スパコンプログラマ</title>
   <style type="text/css">code{white-space: pre;}</style>
   <style type="text/css">
 div.sourceCode { overflow-x: auto; }
@@ -71,19 +71,21 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </head>
 <body>
 <article class="markdown-body">
-<h1 id="一週間でなれるスパコンプログラマ"><a
+<header>
+<h1 class="title"><a
 href="https://kaityo256.github.io/sevendayshpc/">一週間でなれる！スパコンプログラマ</a></h1>
+</header>
 <p><a
 href="https://github.com/kaityo256/sevendayshpc">リポジトリ(kaityo256/sevendayshpc)</a></p>
 <p><a href="https://kaityo256.github.io/sevendayshpc/">HTML版</a></p>
 <p><a
 href="https://github.com/kaityo256/sevendayshpc/releases/latest/download/sevendayshpc.pdf">一括PDF版</a></p>
-<h2 id="はじめに"><a href="preface/index.html">はじめに</a></h2>
+<h1 id="はじめに"><a href="preface/index.html">はじめに</a></h1>
 <ul>
 <li>なぜスパコンを使うのか</li>
 </ul>
-<h2 id="day-1-環境構築">Day 1 : <a
-href="day1/index.html">環境構築</a></h2>
+<h1 id="day-1-環境構築">Day 1 : <a
+href="day1/index.html">環境構築</a></h1>
 <p>とりえあず手元のPCでMPIが使える環境を整え、簡単なMPIプログラミングを試してみる。</p>
 <ul>
 <li>MPIとは</li>
@@ -94,8 +96,8 @@ href="day1/index.html">環境構築</a></h2>
 <li>標準出力について</li>
 <li>GDBによるMPIプログラムのデバッグ</li>
 </ul>
-<h2 id="day-2-スパコンの使い方">Day 2 : <a
-href="day2/index.html">スパコンの使い方</a></h2>
+<h1 id="day-2-スパコンの使い方">Day 2 : <a
+href="day2/index.html">スパコンの使い方</a></h1>
 <p>スパコンを使うときに知っておきたいこと。ジョブの投げ方など。</p>
 <ul>
 <li>はじめに</li>
@@ -110,8 +112,8 @@ href="day2/index.html">スパコンの使い方</a></h2>
 <li>ステージング</li>
 <li>並列ファイルシステム</li>
 </ul>
-<h2 id="day-3-自明並列">Day 3 : <a
-href="day3/index.html">自明並列</a></h2>
+<h1 id="day-3-自明並列">Day 3 : <a
+href="day3/index.html">自明並列</a></h1>
 <p>自明並列、通称「馬鹿パラ」のやり方について。</p>
 <ul>
 <li>自明並列、またの名を馬鹿パラとは</li>
@@ -122,8 +124,8 @@ href="day3/index.html">自明並列</a></h2>
 <li>並列化効率</li>
 <li>サンプル並列とパラメタ並列の違い</li>
 </ul>
-<h2 id="day-4-領域分割による非自明並列">Day 4 : <a
-href="day4/index.html">領域分割による非自明並列</a></h2>
+<h1 id="day-4-領域分割による非自明並列">Day 4 : <a
+href="day4/index.html">領域分割による非自明並列</a></h1>
 <p>非自明並列の例として、一次元熱伝導方程式方程式を領域分割してみる。</p>
 <ul>
 <li>非自明並列</li>
@@ -131,8 +133,8 @@ href="day4/index.html">領域分割による非自明並列</a></h2>
 <li>一次元拡散方程式 (並列版)</li>
 <li>余談： EagerプロトコルとRendezvousプロトコル</li>
 </ul>
-<h2 id="day-5-二次元反応拡散方程式">Day 5 : <a
-href="day5/index.html">二次元反応拡散方程式</a></h2>
+<h1 id="day-5-二次元反応拡散方程式">Day 5 : <a
+href="day5/index.html">二次元反応拡散方程式</a></h1>
 <p>本格的なMPIプログラムの例として、二次元反応拡散方程式を領域分割してみる。</p>
 <ul>
 <li>シリアル版</li>
@@ -142,8 +144,8 @@ href="day5/index.html">二次元反応拡散方程式</a></h2>
 <li>並列化ステップ3: 並列コードの実装</li>
 <li>余談：MPIの面倒くささ</li>
 </ul>
-<h2 id="day-6-ハイブリッド並列">Day 6 : <a
-href="day6/index.html">ハイブリッド並列</a></h2>
+<h1 id="day-6-ハイブリッド並列">Day 6 : <a
+href="day6/index.html">ハイブリッド並列</a></h1>
 <p>プロセス並列とスレッド並列の併用によるハイブリッド並列化について。
 特にスレッド並列で気をつけたいことなど。</p>
 <ul>
@@ -156,7 +158,7 @@ href="day6/index.html">ハイブリッド並列</a></h2>
 <li>余談：ロックの話</li>
 <li>ハイブリッド並列の実例</li>
 </ul>
-<h2 id="day-7-simd化">Day 7 : <a href="day7/index.html">SIMD化</a></h2>
+<h1 id="day-7-simd化">Day 7 : <a href="day7/index.html">SIMD化</a></h1>
 <p>SIMD化について。</p>
 <ul>
 <li>はじめに</li>
@@ -167,8 +169,8 @@ href="day6/index.html">ハイブリッド並列</a></h2>
 <li>余談：x86における浮動小数点演算の扱い</li>
 <li>もう少し実戦的なSIMD化</li>
 </ul>
-<h2 id="おわりに"><a href="postface/index.html">おわりに</a></h2>
-<h2 id="ライセンス">ライセンス</h2>
+<h1 id="おわりに"><a href="postface/index.html">おわりに</a></h1>
+<h1 id="ライセンス">ライセンス</h1>
 <p>Copyright (C) 2018-present Hiroshi Watanabe</p>
 <p>この文章と絵(pptxファイルを含む)はクリエイティブ・コモンズ 4.0 表示
 (CC-BY 4.0)で提供する。</p>

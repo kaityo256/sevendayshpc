@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="generator" content="pandoc">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>README</title>
+  <title>Day 3 : 自明並列</title>
   <style type="text/css">code{white-space: pre;}</style>
   <style type="text/css">
 div.sourceCode { overflow-x: auto; }
@@ -74,7 +74,9 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </head>
 <body>
 <article class="markdown-body">
-<h1 id="day-3-自明並列">Day 3 : 自明並列</h1>
+<header>
+<h1 class="title">Day 3 : 自明並列</h1>
+</header>
 <!--- abstract --->
 <p>例えば、100個の画像データがあるが、それらを全部リサイズしたい、といったタスクを考える。
 それぞれのタスクには依存関係が全くないので、全部同時に実行してもなんの問題もない。
@@ -88,7 +90,7 @@ parallel(馬鹿パラ)などと表現される。
 なにはなくとも、まず馬鹿パラができないことには非自明並列もできないわけだし、馬鹿パラができるだけでも、できない人に比べて
 圧倒的な攻撃力を持つことになる。
 本章では、まず馬鹿パラのやり方を見てみよう。 <!--- end ---></p>
-<h2 id="自明並列の例1-円周率">自明並列の例1: 円周率</h2>
+<h1 id="自明並列の例1-円周率">自明並列の例1: 円周率</h1>
 <p>まず、自明並列でよく出てくる例として、サンプリング数を並列化で稼ぐ方法を見てみよう。とりあえず定番の、
 モンテカルロ法で円周率を計算してみる。</p>
 <p>こんなコードを書いて、<code>calc_pi.cpp</code>という名前で保存してみよう。</p>
@@ -200,7 +202,7 @@ class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#c
 <span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="ex">45162</span>  a.out        89.1 00:12.47 3/1   0    15    2620K  0B     0B     45162</span></code></pre></div>
 <p>4並列実行したので、45162から45165まで4つのプロセスが起動され、実行していることがわかる。
 このように、なにか統計平均を取りたい時、並列化によってサンプル数を稼ぐ並列化を<strong>サンプル並列</strong>と呼ぶ。</p>
-<h2 id="自明並列テンプレート">自明並列テンプレート</h2>
+<h1 id="自明並列テンプレート">自明並列テンプレート</h1>
 <p>先程の並列プログラム<code>calc_pi_mpi.cpp</code>のmain関数はこうなっていた。</p>
 <div class="sourceCode" id="cb7"><pre
 class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="dt">char</span> <span class="op">**</span>argv<span class="op">)</span> <span class="op">{</span></span>
@@ -236,8 +238,8 @@ class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#c
 先程の円周率のコードは、あなたが望むなら数万ノードで実行することだってできる。
 つまり、このコードがかけた時点で、誰がなんと言おうとあなたはスパコンプログラマだ。
 「一週間でなれる！スパコンプログラマ」と題した本稿だが、三日目にしてもうスパコンプログラマになることができた。</p>
-<h2 id="自明並列の例2-多数のファイル処理">自明並列の例2:
-多数のファイル処理</h2>
+<h1 id="自明並列の例2-多数のファイル処理">自明並列の例2:
+多数のファイル処理</h1>
 <p>自明並列の例として、大量のファイル処理を考えよう。たとえば一つあたり5分で終わるファイルが1000個あったとする。
 普通にやれば5000分かかる。手元に8コアのマシンがあり、うまく並列化できたとしても625分。10時間以上かかってしまう
 こういう時、手元にMPI並列ができるスパコンなりクラスタがあれば、あっという間に処理ができる。
@@ -301,7 +303,7 @@ class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb11-1"><a href="#
 MPIでプログラムを書かなくても例えば<a
 href="https://qiita.com/kaityo256/items/c147679157d9d3fe036e">makefileの並列処理機能</a>を使って処理することもできる。
 しつこいが、MPIを使うメリットは並列プログラムがノードをまたぐことができることにある。</p>
-<h2 id="自明並列の例3-統計処理">自明並列の例3: 統計処理</h2>
+<h1 id="自明並列の例3-統計処理">自明並列の例3: 統計処理</h1>
 <p>最初に、馬鹿パラで円周率を求めた。N並列ならN個の円周率の推定値が出てくるので、後でそれを統計処理すれば良い。しかし、せっかくなので統計処理もMPIでやってしまおう。各プロセスで円周率の推定値<span
 class="math inline">\(x_i\)</span>が求まったとする。平均値は</p>
 <p><span class="math display">\[
@@ -387,7 +389,7 @@ class="sourceCode sh"><code class="sourceCode bash"><span id="cb14-1"><a href="#
 <span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="ex">pi</span> = 3.142135 +- 0.003565</span></code></pre></div>
 <p>4並列では4つの推定値、8並列では8つの推定値が出てきて、最後に平均と標準偏差が表示されている。各自、エクセルかGoogle
 Spreadsheetに値を突っ込んでみて、平均と標準偏差が正しく計算できていることを確かめられたい。ちなみに、並列数が多いほうが標準偏差が小さくなることが期待されるが、乱数の初期値の与え方が悪かったのか、データが偏ってしまった。そのあたりが気になる方は、適当に修正してほしい。</p>
-<h2 id="並列化効率">並列化効率</h2>
+<h1 id="並列化効率">並列化効率</h1>
 <p>並列化した際、並列化しなかった場合に比べてどれくらい効果的に並列化されたかを知りたくなる。
 その効率を示すのが並列化効率である。
 いや、別にあなたが知りたくなくても、並列化していると「並列化効率は？」と聞いてくる人は絶対に出てくる。
@@ -440,8 +442,8 @@ class="math inline">\(T_N\)</span>が分母にある、とおぼえておけば�
 class="math inline">\(N\)</span>がつき、
 ウィークスケーリングにはファクターがつかないが、これも理想的な状況を考えればどっちがどっちだか
 すぐ思い出せるであろう。</p>
-<h2
-id="サンプル並列とパラメタ並列の違い">サンプル並列とパラメタ並列の違い</h2>
+<h1
+id="サンプル並列とパラメタ並列の違い">サンプル並列とパラメタ並列の違い</h1>
 <p>Day3では、馬鹿パラとして「サンプル並列」と「パラメタ並列」を紹介した。
 「サンプル並列」とは、計算資源を統計平均を稼ぐのに利用する並列化で、
 「パラメタ並列」とは、計算資源を異なるパラメータを処理するのに利用する並列化である。

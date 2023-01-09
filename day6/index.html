@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="generator" content="pandoc">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>README</title>
+  <title>Day 6 : ハイブリッド並列</title>
   <style type="text/css">code{white-space: pre;}</style>
   <style type="text/css">
 div.sourceCode { overflow-x: auto; }
@@ -71,7 +71,9 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </head>
 <body>
 <article class="markdown-body">
-<h1 id="day-6-ハイブリッド並列">Day 6 : ハイブリッド並列</h1>
+<header>
+<h1 class="title">Day 6 : ハイブリッド並列</h1>
+</header>
 <!--- abstract --->
 <p>これまで、並列化の手段としてMPIを使った「プロセス並列」を行ってきた。
 最初に述べたように、並列化には他にも「スレッド並列」という手段がある。
@@ -85,7 +87,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 サイズによっては、ハイブリッド並列を選択せざるを得ない場合もあるだろう。
 ここでは、スレッド並列を行うときの注意点や、ハイブリッド並列の実例について見てみよう。
 <!--- end ---></p>
-<h2 id="仮想メモリとtlb">仮想メモリとTLB</h2>
+<h1 id="仮想メモリとtlb">仮想メモリとTLB</h1>
 <p>プロセス並列ではあまり気にしなくてよかったが、スレッド並列を行う時には
 気にしなければいけないものとして「NUMA」というものがある。
 「NUMA」を気にするためには、仮想メモリについて知らないといけない。
@@ -188,7 +190,7 @@ Page)</strong>
 <div class="sourceCode" id="cb7"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> cat /proc/meminfo  <span class="kw">|</span><span class="fu">grep</span> Hugepagesize</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">Hugepagesize:</span>       2048 kB</span></code></pre></div>
 <p>確かに2MBになっていることがわかる。ラージページを使うことで、TLBミスの低減が期待できるが、メモリの最小管理サイズが大きくなるため、メモリの利用に無駄が多くなり、実質的にメモリ使用量が増える。また、<strong>ラージページはスワップアウトされない</strong>ということも覚えておくと良い。仮想メモリでは、メモリが足りなくなるとページ単位でディスクにメモリを逃がすスワッピングを行うが、ラージページはスワップされない。もしラージページをスワップアウト(ディスクへの書き出し)した場合、あとで必要になってスワップイン(メモリへの読み戻し)する時に、ラージページのサイズだけ<strong>連続した物理メモリ</strong>を用意してやる必要があるが、断片化などによりそれが保証できないためである。</p>
-<h2 id="余談tlbミスについて">余談：TLBミスについて</h2>
+<h1 id="余談tlbミスについて">余談：TLBミスについて</h1>
 <figure>
 <img src="fig/smallpage.png" alt="スモールページのページウォーク" />
 <figcaption
@@ -224,7 +226,7 @@ high-performance matrix multiplication</a></li>
 <p>なお、余談の余談となるが、論理アドレスは8バイトアラインされているため、アドレスを2進数表記すると下位3ビットは必ず0となる。glibcのmallocは、これを利用してメモリ(チャンク)の状態を記録する。詳細はkosakiさんによる<a
 href="https://www.youtube.com/watch?v=0-vWT-t0UHg">malloc動画</a>、もしくは<a
 href="https://www.slideshare.net/kosaki55tea/glibc-malloc">mallocの旅(glibc)編</a>を参照してほしい。</p>
-<h2 id="numa">NUMA</h2>
+<h1 id="numa">NUMA</h1>
 <p>さて、計算ノードは「メモリ」と「CPU」でできているのだが、最近はCPUもマルチコアになったり、
 マルチソケットになったりして、ノード内はかなり複雑になっている。</p>
 <figure>
@@ -259,7 +261,7 @@ class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#c
 全てのページがメインスレッドの近くに割り当てられてしまい、いざ重い処理をしようとしたら
 すべてのスレッドから「メインスレッドが走るCPU」にデータの要求が来て遅くなる、というパターンである。
 これを防ぐには、予め「あとで処理をするスレッド」が「始めてそのページを触るように」してやらないといけない。</p>
-<h2 id="openmpの例">OpenMPの例</h2>
+<h1 id="openmpの例">OpenMPの例</h1>
 <p>さて、いよいよOpenMPによるスレッド並列を行うが、その前にシリアルコードのプロファイルを取ろう。
 プロファイルとは、実行コードの性能分析のことで、最も簡単には関数ごとにどこがどれだけ時間を使っているか調べる。
 性能分析には<code>perf</code>を使うのが良い。残念ながらMacには<code>perf</code>相当のツールがなく、同様な目的に使われる<code>gprof</code>も正常に動作しないため、
@@ -455,7 +457,7 @@ aria-hidden="true">ディレクティブを内側に入れた場合</figcaption>
 aria-hidden="true">ディレクティブを外側に入れた場合</figcaption>
 </figure>
 <p>先程と同様に青が実際に計算しているところで、赤がオーバーヘッドである。スレッド数を増やすほど計算時間は減るが、それに伴ってオーバーヘッドが増えてしまい、12スレッドのところで最も性能が良くなることがわかる。ちなみに先程は12スレッドと24スレッドはほぼ同じ時間だったが、perfをとった時には24スレッドの方が遅くなった。もともとこれだけ計算が軽い場合のスレッド並列は実行時間がかなり揺らぐので、このくらいは誤差の範囲である。</p>
-<h2 id="性能評価">性能評価</h2>
+<h1 id="性能評価">性能評価</h1>
 <p>さて、外側にディレクティブを入れて並列化した場合はそこそこうまくいったが、それでも24スレッド実行時の並列化効率は27%と低い値であった。効率だけ見るとかなり改善の余地がありそうなので、いろいろチューニングをしたくなる。しかし、チューニングを検討する前に、そもそもこの数字が良いのか悪いのか、悪いのなら理想に比べてどれだけ悪いのか考えて見よう。</p>
 <p>そもそも、この計算は全部で20000ステップの計算をしているのであった。シリアルの計算が2422
 msなので、1ループあたり120 nsくらいで回っていることになる。
@@ -491,7 +493,7 @@ href="http://jp.xlsoft.com/documents/intel/compiler/525J-001.pdf">インテル�
 <p><a
 href="http://www.r-ccs.riken.jp/r-ccssite/wp-content/uploads/2017/04/tokuronA_17_3_katagiri_r1.pdf">計算科学技術特論
 第三回 OpenMPの基礎</a></p>
-<h2 id="余談ロックの話">余談：ロックの話</h2>
+<h1 id="余談ロックの話">余談：ロックの話</h1>
 <p>スレッド数が増えた時に、スレッドの同期コストが問題になると書いた。同期とは「待ち合わせ」のことである。修学旅行などで自由行動があったりするが、次の場所に移動する際には一度集合場所に集まって、全員がそろっているか確認しなければならない。この時、先に集合場所についた人は、後から来る人を待つことになる。この待ち時間が同期コストである。そう思うと、同期待ちの時にはCPUは遊んでいそうな気がするが、実際にほとんど同期待ちでCPUが「遊んでいる」はずのコードをtimeコマンドで実行してみると、</p>
 <div class="sourceCode" id="cb22"><pre
 class="sourceCode sh"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> time OMP_NUM_THREADS=24 ./gs_omp1.out</span>
@@ -560,7 +562,7 @@ VIIIfxだが、このCPUにはハードウェアバリアが実装されてい�
 どんな実装になっているか詳しくは知らないのだが、スピンロックなどのソフトウェア実装に比べて<a
 href="http://www.fujitsu.com/downloads/JP/archive/imgjp/jmag/vol63-3/paper04.pdf">10倍以上高速</a>とのことである。
 先程見たように、「計算が軽い」ループでは、同期コストが見えてきてしまう。ハードウェアバリアにより同期コストが減ると、その分だけ計算が軽くてもスケールしやすくなるため、プログラマとしてはありがたい。</p>
-<h2 id="ハイブリッド並列の実例">ハイブリッド並列の実例</h2>
+<h1 id="ハイブリッド並列の実例">ハイブリッド並列の実例</h1>
 <p>というわけで、ハイブリッド並列コードを作ってみよう。といっても、既にDay
 5でMPI並列版を作っているので、その計算ルーチンに<code>#pragma omp parallel for</code>を一行入れるだけである。
 先程の知見から、二重ループの外側にディレクティブを入れよう。手元にある環境が、1ノードに2ソケット、1ソケットが12コアの環境で、18ノードまでの計算がすぐに走るものだったので、

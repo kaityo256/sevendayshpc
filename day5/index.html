@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="generator" content="pandoc">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>README</title>
+  <title>Day 5 :二次元反応拡散方程式</title>
   <style type="text/css">code{white-space: pre;}</style>
   <style type="text/css">
 div.sourceCode { overflow-x: auto; }
@@ -74,12 +74,14 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </head>
 <body>
 <article class="markdown-body">
-<h1 id="day-5-二次元反応拡散方程式">Day 5 :二次元反応拡散方程式</h1>
+<header>
+<h1 class="title">Day 5 :二次元反応拡散方程式</h1>
+</header>
 <!--- abstract --->
 <p>Day
 4では一次元拡散方程式を領域分割により並列化した。後はこの応用で相互作用距離が短いモデルはなんでも領域分割できるのだが、二次元、三次元だと、一次元よりちょっと面倒くさい。後、熱伝導方程式は、「最終的になにかに落ち着く」方程式なので、シミュレーションしててあまりおもしろいものではない。そこで、二次元で、差分法で簡単に解けて、かつ結果がそこそこ面白い題材として反応拡散方程式を取り上げる。
 <!--- end ---></p>
-<h2 id="反応拡散方程式">反応拡散方程式</h2>
+<h1 id="反応拡散方程式">反応拡散方程式</h1>
 <p>反応拡散方程式(reaction-diffusion
 system)とは、拡散方程式に力学系がくっついたような系で、様々なパターンを作る。例えば「reaction-diffusion
 system」でイメージ検索してみて欲しい。生物の模様なんかがこの方程式系で説明されたりする。</p>
@@ -109,7 +111,7 @@ class="math inline">\(V\)</span>の方が拡散しやすい物質となる。
 <p>ちなみに、世界で広く使われている表記と<span
 class="math inline">\(U\)</span>と<span
 class="math inline">\(V\)</span>が逆のようである。プログラム全部書き終わってから気がついたので、申し訳ないがそのままにする。</p>
-<h2 id="シリアル版">シリアル版</h2>
+<h1 id="シリアル版">シリアル版</h1>
 <p>まず、ある点におけるラプラシアンを返す関数<code>laplacian</code>を用意しよう。中央差分で表現すると、上下左右の点との平均との差で表現すれば良いので、こう書ける。</p>
 <div class="sourceCode" id="cb1"><pre
 class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">double</span> laplacian<span class="op">(</span><span class="dt">int</span> ix<span class="op">,</span> <span class="dt">int</span> iy<span class="op">,</span> vd <span class="op">&amp;</span>s<span class="op">)</span> <span class="op">{</span></span>
@@ -345,8 +347,8 @@ class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#c
 <figcaption
 aria-hidden="true">反応拡散方程式シミュレーションの実行結果</figcaption>
 </figure>
-<h2 id="並列化ステップ1-通信の準備など">並列化ステップ1:
-通信の準備など</h2>
+<h1 id="並列化ステップ1-通信の準備など">並列化ステップ1:
+通信の準備など</h1>
 <p>さて、さっそく反応拡散方程式を二次元領域分割により並列化していくわけだが、
 並列化で重要なのは、
 <strong>いきなり本番コードで通信アルゴリズムを試さない</strong>
@@ -502,7 +504,7 @@ class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#
 <span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span></code></pre></div>
 <p>というイディオムは、MPIで頻出するので覚えておくと良いかもしれない。
 4プロセス実行し、<code>dump_local</code>を呼ぶと、先程の「のりしろ付きのローカルデータ」がダンプされる。</p>
-<h2 id="並列化ステップ2-データの保存">並列化ステップ2: データの保存</h2>
+<h1 id="並列化ステップ2-データの保存">並列化ステップ2: データの保存</h1>
 <p>計算を実行するにあたり、必要な通信は、</p>
 <ul>
 <li>時間発展のための「のりしろ」の通信</li>
@@ -669,8 +671,8 @@ class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#
 <span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>  MPI_Finalize<span class="op">();</span></span>
 <span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>まぁ、そのまんま手続きを書いただけですね。</p>
-<h2 id="並列化ステップ2-のりしろの通信">並列化ステップ2:
-のりしろの通信</h2>
+<h1 id="並列化ステップ2-のりしろの通信">並列化ステップ2:
+のりしろの通信</h1>
 <p>さて、計算を実行するためには、上下左右のプロセスから自分の「のりしろ」に情報を受け取らないといけない。
 問題は、二次元の場合には角の情報、つまり「斜め方向」の通信も必要なことである。
 普通に考えると、左右2回、上下2回、角4つで8回の通信が必要となるのだが、左右から受け取ったデータを、上下に転送することで、4回の通信で斜め方向の通信も完了する。</p>
@@ -851,8 +853,8 @@ class="sourceCode sh"><code class="sourceCode bash"><span id="cb29-1"><a href="#
 <li>受信バッファに来たデータを必要な場所にコピー</li>
 </ul>
 <p>通信そのものは関数呼び出し一発で難しくも面倒でもないが、送受信バッファの作業が面倒くさい。</p>
-<h2 id="並列化ステップ3-並列コードの実装">並列化ステップ3:
-並列コードの実装</h2>
+<h1 id="並列化ステップ3-並列コードの実装">並列化ステップ3:
+並列コードの実装</h1>
 <p>通信に使うアルゴリズムの確認が終わったので、いよいよ差分法コードに実装してみよう。まず、初期化の部分を考えないといけない。初期化についてはグローバル座標で考えたいが、実際に値を入れるのは各プロセスが保持するローカルデータである。そこで、「このグローバル座標が自分の領域に含まれるか？」「含まれるなら、そのインデックスはどこか？」が知りたくなる。それをMPIinfoのメソッドとして追加しておこう。</p>
 <div class="sourceCode" id="cb30"><pre
 class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> MPIinfo <span class="op">{</span></span>
@@ -1020,7 +1022,7 @@ class="sourceCode sh"><code class="sourceCode bash"><span id="cb39-1"><a href="#
 <span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a><span class="ex">mpirun</span> <span class="at">-np</span> 4 <span class="at">--oversubscribe</span> ./a.out  68.28s user 1.72s system 382% cpu 18.305 total</span></code></pre></div>
 <p>実行時間が58.248s →
 18.305となり、並列化効率も80%近くに向上した。それでもなんか文句を言ってくる人がいたら、とてもローカルPCのメモリには乗りきらないほど大きな系を計算して黙らせよう。「並列化効率で悩んだらサイズに逃げろ」と覚えておくと良い。</p>
-<h2 id="余談mpiの面倒くささ">余談：MPIの面倒くささ</h2>
+<h1 id="余談mpiの面倒くささ">余談：MPIの面倒くささ</h1>
 <p>本格的な領域分割コードの例として、二次元反応拡散方程式を並列化してみた。「並列化」によってどれくらいコードが増えたか見てみよう。</p>
 <div class="sourceCode" id="cb40"><pre
 class="sourceCode sh"><code class="sourceCode bash"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> wc gs.cpp gs_mpi.cpp</span>

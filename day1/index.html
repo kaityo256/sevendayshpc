@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="generator" content="pandoc">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>README</title>
+  <title>Day 1: 環境構築</title>
   <style type="text/css">code{white-space: pre;}</style>
   <style type="text/css">
 div.sourceCode { overflow-x: auto; }
@@ -71,7 +71,9 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </head>
 <body>
 <article class="markdown-body">
-<h1 id="day-1-環境構築">Day 1: 環境構築</h1>
+<header>
+<h1 class="title">Day 1: 環境構築</h1>
+</header>
 <!--- abstract --->
 <p>スパコン上で実行されるプログラムは並列プログラムである。したがって「スパコンを使う」ということは、
 狭義には「並列化されたプログラムを実行する」ということを意味する。したがって、誰かが作った並列プログラムをスパコン上で実行すれば、スパコンは使えることになる。
@@ -80,7 +82,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 しかし、(世の中の多くの「一見難しそうなもの」がそうであるように)並列プログラミングはさほど難しくない。
 「一週間でなれる！スパコンプログラマ」の初日は、まずローカルに並列プログラミング環境を構築し、並列プログラミングに触れてみるところからはじめてみよう。
 <!--- end ---></p>
-<h2 id="mpiとは">MPIとは</h2>
+<h1 id="mpiとは">MPIとは</h1>
 <p>一口に「並列化」といっても、様々な種類がありえる。一般に使われている並列プログラミングモデルは、「データ並列」「共有メモリ並列」「分散メモリ並列」の三種類であろう。
 以後、プロセスやスレッドといった単語についてかなりいい加減な言葉遣いをするため、ちゃんと学びたい人はちゃんとした書籍を参考にされたい。特にWindowsとLinuxのプロセスの違いとか言い出すと話が長くなるので、ここでは説明しない。また、データ並列についてはとりあえずおいておく。</p>
 <p>「共有メモリ並列」とは、並列単位がメモリを共有する並列化方法である。
@@ -124,13 +126,13 @@ class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#c
 <figcaption aria-hidden="true">プロセス並列とスレッド並列</figcaption>
 </figure>
 <p>上図に、簡単に「スレッド並列」と「プロセス並列」の違いをまとめた。本稿の目的は「スパコンプログラマ」になることであり、「スパコン」とは複数のノードを束ねたものであり、「スパコンプログラミング」とは複数のノードをまとめて使うことであるから、論理的必然としてスパコンプログラミングをするためにはプロセス並列が必要となる。というわけで、本稿では主にMPIを用いた分散メモリ並列を取り上げる。</p>
-<h2 id="余談mpiは難しいか">余談：MPIは難しいか</h2>
+<h1 id="余談mpiは難しいか">余談：MPIは難しいか</h1>
 <p>たまに「スレッド並列は簡単」「MPIは難しい」という声を聞く。しかし、それなりの期間スパコンと関わって思うのは、「どちらかといえばスレッド並列の方が難しい」「MPIは面倒くさいが難しくない」というのが実感である。</p>
 <p>確かにOpenMPなんかを使えば、一行いれるだけでスレッド並列化されて、簡単に数倍の性能が得られたりする。しかし、性能が出なかった時に「なぜ性能が出なかったのか」を調べるのはとても大変である。なぜならOpenMPを使うと「どのように並列化されたか」が隠蔽されてしまうからだ。基本的にはコンパイラが吐くレポートを見て、どのように並列化されたかを「想像」しながら調査をする必要がある。また、同じメモリを複数のスレッドが同時に触りにくるため、「タイミングによってはバグる」という問題を起こす。<strong>この手のマルチスレッドプログラミングのデバッグは一般に地獄である</strong>。少なくとも私はやりたくない。</p>
 <p>MPIはいろいろ書かなければならないことが多く、確かに面倒である。しかし、基本的には「書いた通り」に並列化される(ここ読んだプロが「そんなことない！」と怒っている顔が目に浮かぶが、まぁOpenMPと比較して、の話ですよ)。
 また、各プロセスのメモリは各プロセスだけのものである。通信するにしても、自分が用意したバッファに他のプロセスが書き込んでくるため、「いつ」「どこに」「誰が」「どのくらい」書き込んでくるかがわかる。これはデバッグするのに非常に重要な情報である。</p>
 <p>そんなわけで、「どうせ並列化するなら、最初からMPIで書いてしまえばいいんじゃない？複数ノードを使えるようにもなるし」というのが私の見解である。MPIで必要となる関数も、初期化(<code>MPI_Init</code>)と後処理(<code>MPI_Finalize</code>)を除けば、相互通信(<code>MPI_Sendrecv</code>)と集団通信(<code>MPI_Allreduce</code>)の二つだけ知っていればたいがいのことはなんとかなる。それ以上にややこしいことをやりたくなったら、その時にまた調べれば良い。</p>
-<h2 id="mpiのインストール">MPIのインストール</h2>
+<h1 id="mpiのインストール">MPIのインストール</h1>
 <p>スパコンを使う前に、まずはローカルPCでMPIによる並列プログラミングに慣れておこう。MPIの開発環境としては、Mac
 OSX、もしくはLinuxを強く推奨する(というか筆者はWindowsでの並列プログラミング環境の構築方法を知らない)。Linuxはなんでも良いが、とりあえずCentOSを想定する。本稿の読者なら、GCCくらいは既に利用可能な状況であろう。あとはMPIをインストールすれば並列プログラミング環境が整う。</p>
 <p>MacでHomebrewを使っているなら、</p>
@@ -157,7 +159,7 @@ OSX、もしくはLinuxを強く推奨する(というか筆者はWindowsでの�
 <span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="ex">warranty</span><span class="kw">;</span> <span class="ex">not</span> even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</span></code></pre></div>
 <p>したがって、インクルードパスやリンクの設定を明示的にするならば、<code>mpic++</code>を呼び出す必要はない。
 スパコンサイトによっては、環境変数でMPIのインクルードパスが設定されている場合もあるだろう。その場合は単に<code>g++</code>でも<code>icpc</code>でも、MPIを用いたコードがそのままコンパイルできる。ただし、リンクのために<code>-lmpi</code>の指定が(場合によっては<code>-lmpi_cxx</code>も)必要なので注意。</p>
-<h2 id="はじめてのmpi">はじめてのMPI</h2>
+<h1 id="はじめてのmpi">はじめてのMPI</h1>
 <p>環境構築ができたら、こんなコードを書いて、<code>hello.cpp</code>という名前で保存してみよう。</p>
 <div class="sourceCode" id="cb8"><pre
 class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span></span>
@@ -201,7 +203,7 @@ class="sourceCode sh"><code class="sourceCode bash"><span id="cb13-1"><a href="#
 <p>複数のプロセスが立ち上がり、なにか処理をしているのだから、これは立派な並列プログラムである。しかし、このままでは、全てのプロセスが同じ処理しかできない。そこで、MPIは立ち上げたプロセスに
 <strong>ランク(rank)</strong>
 という通し番号を振り、それを使って並列処理をする。</p>
-<h2 id="ランク">ランク</h2>
+<h1 id="ランク">ランク</h1>
 <p>MPIでは、起動したプロセスに通し番号が振られる。その通し番号のことを
 <strong>ランク(rank)</strong> と呼ぶ。
 ランクの取得には<code>MPI_Comm_rank</code>関数を使う。</p>
@@ -278,7 +280,7 @@ class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#
 立ち上げた場合でも、ランク番号は一意に振られる。例えば、ノードあたり4プロセス、10ノードで実行した場合、
 全体で40プロセスが起動されるが、それぞれに0から39までのランク番号が振られる。
 その番号が、各ノードにどのように割当られるかは設定に依るので注意。</p>
-<h2 id="標準出力について">標準出力について</h2>
+<h1 id="標準出力について">標準出力について</h1>
 <p>さて、端末で</p>
 <div class="sourceCode" id="cb19"><pre
 class="sourceCode sh"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="ex">mpirun</span> <span class="at">-np</span> 4 ./a.out</span></code></pre></div>
@@ -398,8 +400,8 @@ class="sourceCode sh"><code class="sourceCode bash"><span id="cb28-1"><a href="#
 <span id="cb28-20"><a href="#cb28-20" aria-hidden="true" tabindex="-1"></a>        <span class="ex">├──</span> stderr</span>
 <span id="cb28-21"><a href="#cb28-21" aria-hidden="true" tabindex="-1"></a>        <span class="ex">└──</span> stdout</span></code></pre></div>
 <p>標準出力にも出力した上で、各ディレクトリに、各プロセスの標準出力と標準エラー出力が保存される。覚えておくと便利な時があるかもしれない。</p>
-<h2
-id="gdbによるmpiプログラムのデバッグ">GDBによるMPIプログラムのデバッグ</h2>
+<h1
+id="gdbによるmpiプログラムのデバッグ">GDBによるMPIプログラムのデバッグ</h1>
 <p>本稿の読者の中には普段からgdbを使ってプログラムのデバッグを行っている人がいるだろう。
 並列プログラムのデバッグは一般に極めて面倒だが、とりあえずgdbを使ったMPIプログラムのデバッグ方法を知っていると将来何かの役に立つかもしれない。
 あと、これは筆者だけかもしれないが、ソース読んだりするより、gdb経由でプログラムの振る舞いを解析したほうがなんかいろいろ理解しやすかったりする。
