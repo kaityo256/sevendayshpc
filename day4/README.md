@@ -583,4 +583,4 @@ EagerプロトコルとRendezvousプロトコルは、送受信のサイズに�
 受信バッファにデータが入っていることである。ノンブロッキング通信の場合には、通信の終了処理である`MPI_Wait`による通信の完了待ちが終了するまでは
 通信の結果が保証されない。このあたりの事情については、例えば以下の講義資料を参照されたい。
 
-[並列プログラミングの基本(堀　敦史)](http://www.r-ccs.riken.jp/r-ccssite/wp-content/uploads/2013/08/ss13_kogi2_0806revise.pdf)
+[並列プログラミングの基本(堀　敦史)](https://aics.riken.jp/aicssite/wp-content/uploads/2013/08/ss13_kogi2_0806revise.pdf)
