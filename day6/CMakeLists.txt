@@ -1,0 +1,5 @@
+add_mpi_executable(vmem vmem.cpp)
+add_mpi_executable(gs_day6 gs.cpp)
+add_mpi_executable(gs_omp1 gs_omp1.cpp)
+add_mpi_executable(gs_omp2 gs_omp2.cpp)
+add_mpi_executable(gs_hybrid gs_hybrid.cpp)

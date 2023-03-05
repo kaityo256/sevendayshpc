@@ -1,0 +1,4 @@
+add_mpi_executable(calc_pi calc_pi.cpp)
+add_mpi_executable(calc_pi_mpi calc_pi_mpi.cpp)
+add_mpi_executable(calc_pi_reduce calc_pi_reduce.cpp)
+add_mpi_executable(processfiles processfiles.cpp)
