@@ -1,4 +1,9 @@
+#ifndef _WIN32
 #include <x86intrin.h>
+#else
+#include <intrin.h>
+#endif // _WIN32
+
 const int N = 10000;
 double a[N], b[N], c[N];
 void func_simd() {
