@@ -1,9 +1,5 @@
 #include <cstdio>
-#ifndef _WIN32
-#include <x86intrin.h>
-#else
-#include <intrin.h>
-#endif // _WIN32
+#include <immintrin.h>
 
 void print256d(__m256d x) {
   alignas(32) double y[4];
