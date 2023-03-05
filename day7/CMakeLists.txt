@@ -4,7 +4,7 @@ function(add_simd_executable name)
     PUBLIC
         cxx_std_11
     )
-    target_compile_options(simdcheck
+    target_compile_options(${name}
     PUBLIC
         $<$<CXX_COMPILER_ID:MSVC>:/arch:AVX>
         $<$<CXX_COMPILER_ID:GNU>:-march=native>
@@ -21,7 +21,7 @@ function(add_simd_object name)
     PUBLIC
         cxx_std_11
     )
-    target_compile_options(simdcheck
+    target_compile_options(${name}
     PUBLIC
         $<$<CXX_COMPILER_ID:MSVC>:/arch:AVX>
         $<$<CXX_COMPILER_ID:GNU>:-march=native>
