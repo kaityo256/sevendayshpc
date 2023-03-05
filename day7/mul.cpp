@@ -12,6 +12,6 @@ void print256d(__m256d x) {
 int main(void) {
   __m256d v1 =  _mm256_set_pd(3.0, 2.0, 1.0, 0.0);
   __m256d v2 =  _mm256_set_pd(7.0, 6.0, 5.0, 4.0);
-  __m256d v3 = v1 * v2;
+  __m256d v3 = _mm256_mul_pd(v1, v2);
   print256d(v3);
 }

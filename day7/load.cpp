@@ -14,6 +14,6 @@ __attribute__((aligned(32))) double a[] = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.
 int main(void) {
   __m256d v1 = _mm256_load_pd(a);
   __m256d v2 = _mm256_load_pd(a + 4);
-  __m256d v3 = v1 + v2;
+  __m256d v3 = _mm256_add_pd(v1, v2);
   print256d(v3);
 }
