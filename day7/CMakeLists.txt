@@ -7,8 +7,8 @@ function(add_simd_executable name)
     target_compile_options(${name}
     PUBLIC
         $<$<CXX_COMPILER_ID:MSVC>:/arch:AVX>
-        $<$<CXX_COMPILER_ID:GNU>:-march=native>
-        $<$<CXX_COMPILER_ID:Clang>:-march=native>
+        $<$<CXX_COMPILER_ID:GNU>:-mavx>
+        $<$<CXX_COMPILER_ID:Clang>:-mavx>
     )
 endfunction()
 
@@ -24,8 +24,8 @@ function(add_simd_object name)
     target_compile_options(${name}
     PUBLIC
         $<$<CXX_COMPILER_ID:MSVC>:/arch:AVX>
-        $<$<CXX_COMPILER_ID:GNU>:-march=native>
-        $<$<CXX_COMPILER_ID:Clang>:-march=native>
+        $<$<CXX_COMPILER_ID:GNU>:-mavx>
+        $<$<CXX_COMPILER_ID:Clang>:-mavx>
     )
 endfunction()
 
