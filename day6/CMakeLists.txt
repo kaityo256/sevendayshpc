@@ -11,7 +11,7 @@ PUBLIC
 )
 
 add_executable(gs_omp2 gs_omp2.cpp)
-target_link_libraries(gs_omp1
+target_link_libraries(gs_omp2
 PUBLIC
     OpenMP::OpenMP_CXX
 )
