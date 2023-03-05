@@ -6,7 +6,7 @@
 #endif  // _WIN32
 
 void print256d(__m256d x) {
-  double alignas(32) y[4];
+  alignas(32) double y[4];
   _mm256_store_pd(y, x);
   printf("%f %f %f %f\n", y[3], y[2], y[1], y[0]);
 }
