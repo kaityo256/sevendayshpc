@@ -99,12 +99,12 @@ __m256d add(__m256d v1, __m256d v2) {
 g++ -mavx2 -O2 -S add.cpp
 ```
 
-アセンブリはこうなる。
+アセンブリはこうなる(c++filtを通して、かつ余計なラベルは削除してある。以下同様)。
 
 ```asm
-__Z3addDv4_dS_:
-  vaddpd  %ymm1, %ymm0, %ymm0
-  ret
+add(double vector[4], double vector[4]):
+        vaddpd  %ymm1, %ymm0, %ymm0
+        ret
 ```
 
 `vaddpd`はSIMDの足し算を行う命令であり、ちゃんとYMMレジスタの足し算が呼ばれていることがわかる。
@@ -178,11 +178,11 @@ g++ -mavx2 -O2 -S setpd.cpp
 ```
 
 ```asm
-__Z5setpddddd:
-  vunpcklpd %xmm3, %xmm2, %xmm2
-  vunpcklpd %xmm1, %xmm0, %xmm0
-  vinsertf128 $0x1, %xmm2, %ymm0, %ymm0
-  ret
+setpd(double, double, double, double):
+        vunpcklpd       %xmm3, %xmm2, %xmm2
+        vunpcklpd       %xmm1, %xmm0, %xmm1
+        vinsertf128     $0x1, %xmm2, %ymm1, %ymm0
+        ret
 ```
 
 これは、
@@ -249,10 +249,10 @@ g++ -O2 -mavx2 -S loadasm.cpp
 例によって、少し最適化をかけておく。
 
 ```asm
-__Z4loadPdi:
-  movslq  %esi, %rsi
-  vmovapd (%rdi,%rsi,8), %ymm0
-  ret
+load(double*, int):
+        movslq  %esi, %rsi
+        vmovapd (%rdi,%rsi,8), %ymm0
+        ret
 ```
 
 `ymm0`レジスタに、`vmovapd`一発でデータがロードされていることがわかる。

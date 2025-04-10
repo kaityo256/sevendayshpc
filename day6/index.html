@@ -276,7 +276,7 @@ href="https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs.cpp">https:/
 <p>ただし、デバッグのために最終結果だけファイルに出力している。コンパイルして<code>perf</code>でプロファイルをとってみよう。まず、<code>perf record</code>で記録を取る。</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> g++ <span class="at">-O3</span> <span class="at">-mavx2</span> <span class="at">-std</span><span class="op">=</span>c++11 <span class="at">-fopenmp</span> gs.cpp <span class="at">-o</span> gs.out</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> perf record ./gs.out</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="ex">2527</span> [ms]</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="ex">2527</span> <span class="pp">[</span><span class="ss">ms</span><span class="pp">]</span></span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span>
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="bu">[</span> perf record: Woken <span class="er">up</span> <span class="ex">1</span> times to write data ]</span>
 <span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="bu">[</span> perf record: Captured <span class="er">and</span> <span class="ex">wrote</span> 0.113 MB perf.data <span class="er">(</span><span class="ex">~4953</span> samples<span class="kw">)</span> <span class="ex">]</span></span></code></pre></div>
@@ -337,7 +337,7 @@ class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#
 <p>実行してみよう。スレッド数は環境変数<code>OMP_NUM_THREADS</code>で指定する。12コア2ソケットマシンなので、全体で24コアあるから、24スレッドで走らせてみよう。ついでにtimeコマンドをかましてCPUがどれだけ使われているかも見てみる。</p>
 <div class="sourceCode" id="cb13"><pre
 class="sourceCode sh"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> time OMP_NUM_THREADS=24 ./gs_omp1.out</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="ex">24</span> threads 24078 [ms]</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="ex">24</span> threads 24078 <span class="pp">[</span><span class="ss">ms</span><span class="pp">]</span></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="va">OMP_NUM_THREADS</span><span class="op">=</span>24 <span class="ex">./gs_omp1.out</span>  573.12s user 1.72s system 2384% cpu 24.103 total</span></code></pre></div>
 <p>2384%、つまり24コア使われているのは間違いなさそうだが、シリアルコードで2527msだったのが、24078ms、つまり<strong>並列化により10倍遅くなった</strong>ことになる。ついでに結果が正しいことも確認しておこう(<strong>基本！</strong>)。</p>
@@ -367,7 +367,7 @@ class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#
 <p>同じような計算をしてみよう。</p>
 <div class="sourceCode" id="cb16"><pre
 class="sourceCode sh"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> time OMP_NUM_THREADS=24 ./gs_omp2.out</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="ex">24</span> threads 411 [ms]</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="ex">24</span> threads 411 <span class="pp">[</span><span class="ss">ms</span><span class="pp">]</span></span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span>
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="va">OMP_NUM_THREADS</span><span class="op">=</span>24 <span class="ex">./gs_omp2.out</span>  9.16s user 0.02s system 2194% cpu 0.418 total</span>
 <span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
@@ -376,7 +376,7 @@ class="sourceCode sh"><code class="sourceCode bash"><span id="cb16-1"><a href="#
 ちなみに、12スレッド実行にしても、実行時間がたいして変わらない。</p>
 <div class="sourceCode" id="cb17"><pre
 class="sourceCode sh"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> time OMP_NUM_THREADS=12 ./gs_omp2.out</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="ex">12</span> threads 410 [ms]</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="ex">12</span> threads 410 <span class="pp">[</span><span class="ss">ms</span><span class="pp">]</span></span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span>
 <span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="va">OMP_NUM_THREADS</span><span class="op">=</span>12 <span class="ex">./gs_omp2.out</span>  4.91s user 0.01s system 1185% cpu 0.415 total</span></code></pre></div>
 <p>並列数が半分になって、実行時間がたいしてかわらないので、並列化効率も51%にまで改善した。このように、</p>
@@ -390,7 +390,7 @@ class="sourceCode sh"><code class="sourceCode bash"><span id="cb17-1"><a href="#
 パイプをつないだ場合には標準出力に結果を流す(<code>--stdio</code>)。<code>--sort</code>は、ソートするキーを指定する。デフォルトでは関数ごとに表示されるが、<code>dso</code>を指定すると、シェアードライブラリごとにまとめてくれる。</p>
 <div class="sourceCode" id="cb18"><pre
 class="sourceCode sh"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> OMP_NUM_THREADS=1 perf record ./gs_omp1.out</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="ex">1</span> threads 3690 [ms]</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="ex">1</span> threads 3690 <span class="pp">[</span><span class="ss">ms</span><span class="pp">]</span></span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="bu">[</span> perf record: Woken <span class="er">up</span> <span class="ex">1</span> times to write data ]</span>
 <span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="bu">[</span> perf record: Captured <span class="er">and</span> <span class="ex">wrote</span> 0.157 MB perf.data <span class="er">(</span><span class="ex">~6859</span> samples<span class="kw">)</span> <span class="ex">]</span></span>
@@ -401,16 +401,16 @@ class="sourceCode sh"><code class="sourceCode bash"><span id="cb18-1"><a href="#
 <span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="co"># ........  .................</span></span>
 <span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
 <span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>    <span class="ex">68.91%</span>  gs_omp1.out</span>
-<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>    <span class="ex">22.04%</span>  [kernel.kallsyms]</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>    <span class="ex">22.04%</span>  <span class="pp">[</span><span class="ss">kernel.kallsyms</span><span class="pp">]</span></span>
 <span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>     <span class="ex">6.51%</span>  libgomp.so.1.0.0</span>
 <span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>     <span class="ex">2.52%</span>  libc-2.11.3.so</span>
-<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>     <span class="ex">0.03%</span>  [obdclass]</span></code></pre></div>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>     <span class="ex">0.03%</span>  <span class="pp">[</span><span class="ss">obdclass</span><span class="pp">]</span></span></code></pre></div>
 <p>「Overhead」が、全体の時間に占める割合だが、自分のプログラムである<code>gs_omp1.out</code>が68%しか占めていないことがわかる。
 <code>libgomp.so.1.0.0</code>はOpenMPの実装である。
 同じことをスレッド並列していないコード<code>gs.out</code>でやるとこうなる。</p>
 <div class="sourceCode" id="cb19"><pre
 class="sourceCode sh"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> perf record ./gs.out</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="ex">2422</span> [ms]</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="ex">2422</span> <span class="pp">[</span><span class="ss">ms</span><span class="pp">]</span></span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span>
 <span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="bu">[</span> perf record: Woken <span class="er">up</span> <span class="ex">1</span> times to write data ]</span>
 <span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="bu">[</span> perf record: Captured <span class="er">and</span> <span class="ex">wrote</span> 0.109 MB perf.data <span class="er">(</span><span class="ex">~4758</span> samples<span class="kw">)</span> <span class="ex">]</span></span>
@@ -420,15 +420,15 @@ class="sourceCode sh"><code class="sourceCode bash"><span id="cb19-1"><a href="#
 <span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="co"># ........  .................</span></span>
 <span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
 <span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    <span class="ex">99.77%</span>  gs.out</span>
-<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>     <span class="ex">0.21%</span>  [kernel.kallsyms]</span>
-<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>     <span class="ex">0.02%</span>  [obdclass]</span></code></pre></div>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>     <span class="ex">0.21%</span>  <span class="pp">[</span><span class="ss">kernel.kallsyms</span><span class="pp">]</span></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>     <span class="ex">0.02%</span>  <span class="pp">[</span><span class="ss">obdclass</span><span class="pp">]</span></span></code></pre></div>
 <p>つまり、ここで増えた<code>kernel.kallsyms</code>とか<code>libgomp.so.1.0.0</code>が、スレッド並列化によるオーバーヘッドであることがわかる。
 実際、3690
 msの68.91%は2542msであり、シリアルコードの実行時間とほぼ同じであることがわかる。</p>
 <p>同様なことを外側にディレクティブを入れた場合でやってみると、変なオーバーヘッドがないことがわかる。</p>
 <div class="sourceCode" id="cb20"><pre
 class="sourceCode sh"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> OMP_NUM_THREADS=1 perf record ./gs_omp2.out</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="ex">2342</span> [ms]</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="ex">2342</span> <span class="pp">[</span><span class="ss">ms</span><span class="pp">]</span></span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span>
 <span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="bu">[</span> perf record: Woken <span class="er">up</span> <span class="ex">1</span> times to write data ]</span>
 <span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="bu">[</span> perf record: Captured <span class="er">and</span> <span class="ex">wrote</span> 0.106 MB perf.data <span class="er">(</span><span class="ex">~4615</span> samples<span class="kw">)</span> <span class="ex">]</span></span>
@@ -439,7 +439,7 @@ class="sourceCode sh"><code class="sourceCode bash"><span id="cb20-1"><a href="#
 <span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="co"># ........  .................</span></span>
 <span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
 <span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>    <span class="ex">99.21%</span>  gs_omp2.out</span>
-<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>     <span class="ex">0.39%</span>  [kernel.kallsyms]</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>     <span class="ex">0.39%</span>  <span class="pp">[</span><span class="ss">kernel.kallsyms</span><span class="pp">]</span></span>
 <span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>     <span class="ex">0.30%</span>  libgomp.so.1.0.0</span>
 <span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>     <span class="ex">0.13%</span>  libc-2.11.3.so</span></code></pre></div>
 <p>内側と外側、それぞれにディレクティブを入れた場合について、スレッド数を増やして行った場合、計算にかかったコストと、それ以外のオーバーヘッドをグラフにした。</p>
@@ -470,20 +470,20 @@ ns、同期コストが5.7nsである。計算したのは12コア2ソケット�
 <p>というわけで、サイズを一辺二倍にしてみよう。</p>
 <div class="sourceCode" id="cb21"><pre
 class="sourceCode sh"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> ./gs.out</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="ex">10032</span> [ms]</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="ex">10032</span> <span class="pp">[</span><span class="ss">ms</span><span class="pp">]</span></span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span>
 <span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> OMP_NUM_THREADS=12 ./gs_omp2.out</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="ex">12</span> threads 1104 [ms]</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="ex">12</span> threads 1104 <span class="pp">[</span><span class="ss">ms</span><span class="pp">]</span></span>
 <span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span>
 <span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> OMP_NUM_THREADS=24 ./gs_omp2.out</span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="ex">24</span> threads 1023 [ms]</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="ex">24</span> threads 1023 <span class="pp">[</span><span class="ss">ms</span><span class="pp">]</span></span>
 <span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span></code></pre></div>
 <p>二次元系なので、計算が単純に4倍重くなった。
 同期コストはほぼ変わらないため、相対的に並列化効率は良くなる。この場合は、12スレッドで並列化効率76%、24スレッドで41%である。
 サイズを増やせば増やすほど効率が高くなることが想像できよう。</p>
-<p>一般論として、スレッド並列において同期コストが見えてしまった時、そのコストをなんとかしようと努力するのは、苦労のわりに実入りが少ない。なので、そういう時には計算するモデルを見直し、同期コストが見えないほど重い計算をすれば良い。繰り返しになるが<strong>並列化効率で困ったらウィースケーリングに逃げてサイズで殴れ！</strong>。せっかく「並列化」という武器を手に入れたのだから、その武器を手に入れる前の敵とばかり戦うのではなく、その武器が最大限輝く敵を探す方が有益である。</p>
+<p>一般論として、スレッド並列において同期コストが見えてしまった時、そのコストをなんとかしようと努力するのは、苦労のわりに実入りが少ない。なので、そういう時には計算するモデルを見直し、同期コストが見えないほど重い計算をすれば良い。繰り返しになるが<strong>並列化効率で困ったらウィークスケーリングに逃げてサイズで殴れ！</strong>。せっかく「並列化」という武器を手に入れたのだから、その武器を手に入れる前の敵とばかり戦うのではなく、その武器が最大限輝く敵を探す方が有益である。</p>
 <p>本当はOpenMPについてもう少し真面目に、たとえばNUMA最適化やLoop
 Fusion/Fission/Collapseなども扱おうかと思ったのだが、正直面倒くさくなった。個人的な感想で申し訳ないのだが、ディレクティブベースの最適化はコンパイラが何をやっているかが分かりづらく、隔靴掻痒の感があってどうしても好きになれない。</p>
 <p>OpenMPには様々な構文があり、実にいろいろなことができる。OpenMPについてはネットに良い文献が多数落ちているが、例えばIntelによる以下の文献がわかりやすかったので参照されたい。</p>
@@ -497,7 +497,7 @@ href="http://www.r-ccs.riken.jp/r-ccssite/wp-content/uploads/2017/04/tokuronA_17
 <p>スレッド数が増えた時に、スレッドの同期コストが問題になると書いた。同期とは「待ち合わせ」のことである。修学旅行などで自由行動があったりするが、次の場所に移動する際には一度集合場所に集まって、全員がそろっているか確認しなければならない。この時、先に集合場所についた人は、後から来る人を待つことになる。この待ち時間が同期コストである。そう思うと、同期待ちの時にはCPUは遊んでいそうな気がするが、実際にほとんど同期待ちでCPUが「遊んでいる」はずのコードをtimeコマンドで実行してみると、</p>
 <div class="sourceCode" id="cb22"><pre
 class="sourceCode sh"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> time OMP_NUM_THREADS=24 ./gs_omp1.out</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="ex">24</span> threads 24078 [ms]</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="ex">24</span> threads 24078 <span class="pp">[</span><span class="ss">ms</span><span class="pp">]</span></span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="ex">conf000.dat</span></span>
 <span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="va">OMP_NUM_THREADS</span><span class="op">=</span>24 <span class="ex">./gs_omp1.out</span>  573.12s user 1.72s system 2384% cpu 24.103 total</span></code></pre></div>
 <p>と、24コアのCPUを2384%使っており、「ほぼ全てのCPUコアが忙しく動いていた」ことがわかる。これが何をやっているのか見てみよう。
@@ -519,7 +519,7 @@ gomp_barrier_wait」という項目があるので、それを選ぶ。こんな
 <figcaption aria-hidden="true">バリア命令のアセンブリ</figcaption>
 </figure>
 <p>非常に単純なコードだが、気になる命令がある。<code>lock</code>だ。実は<code>lock</code>は命令ではなく、命令のプリフィックスである。「後に続く命令をアトミックにしてください」という修飾語のようなものだ。
-<code>lock</code>の後には、<code>inc</code>や<code>xchg</code>、そしてここで出てくる`subl’など、いわゆる「read-modify-write」命令が入る。
+<code>lock</code>の後には、<code>inc</code>や<code>xchg</code>、そしてここで出てくる<code>subl</code>など、いわゆる「read-modify-write」命令が入る。
 「read-modify-write」とは、「メモリから何かを読み出し、修正して、書き戻す」という一連の動作である。普通はこの動作はアトミックにならない。
 アトミックとは「不可分である、分けられない」という意味である。アトミックでない場合、この一連の動作の合間に他のスレッドの動作が割り込んでくる可能性がある。
 マルチスレッドでこういうことが起きるといろいろ困ることがある。よく言われるのが銀行のATMの例だ。今、100万円の貯金がある口座から、2つのATMからほぼ同時に1万円を
@@ -576,10 +576,10 @@ class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#
 class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> num_threads <span class="op">=</span> omp_get_max_threads<span class="op">();</span></span></code></pre></div>
 <p>時間計測はなんでも良いが、ここでは<code>std::chrono::system_clock::now</code>で計測しよう。</p>
 <div class="sourceCode" id="cb28"><pre
-class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="kw">auto</span> s <span class="op">=</span> <span class="bu">std::</span>chrono<span class="bu">::</span>system_clock<span class="bu">::</span>now<span class="op">();</span></span>
+class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="kw">auto</span> s <span class="op">=</span> <span class="bu">std::</span>chrono::system_clock::now<span class="op">();</span></span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="co">// なにか時間を計測したい処理</span></span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="kw">auto</span> e <span class="op">=</span> <span class="bu">std::</span>chrono<span class="bu">::</span>system_clock<span class="bu">::</span>now<span class="op">();</span></span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="kw">auto</span> elapsed <span class="op">=</span> <span class="bu">std::</span>chrono<span class="bu">::</span>duration_cast<span class="op">&lt;</span><span class="bu">std::</span>chrono<span class="bu">::</span>milliseconds<span class="op">&gt;(</span>e <span class="op">-</span> s<span class="op">).</span>count<span class="op">();</span></span></code></pre></div>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="kw">auto</span> e <span class="op">=</span> <span class="bu">std::</span>chrono::system_clock::now<span class="op">();</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="kw">auto</span> elapsed <span class="op">=</span> <span class="bu">std::</span>chrono::duration_cast<span class="op">&lt;</span><span class="bu">std::</span>chrono::milliseconds<span class="op">&gt;(</span>e <span class="op">-</span> s<span class="op">).</span>count<span class="op">();</span></span></code></pre></div>
 <p>これで<code>elapsed</code>にミリ秒単位の値が入る。このようにして作ったハイブリッド版の反応拡散方程式ソルバが<code>gs_hybrid.cpp</code>である。</p>
 <p><a
 href="https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_hybrid.cpp">https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_hybrid.cpp</a></p>
@@ -593,7 +593,7 @@ class="sourceCode sh"><code class="sourceCode bash"><span id="cb30-1"><a href="#
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Sytem Size = 324</span></span>
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 2 Process x 2 Threads</span></span>
 <span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Domain = 2 x 1</span></span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="ex">2</span> 2 4635 [ms]</span></code></pre></div>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="ex">2</span> 2 4635 <span class="pp">[</span><span class="ss">ms</span><span class="pp">]</span></span></code></pre></div>
 <p>これを、手元のスパコンでベンチマークを取ってみよう。石はIntel(R)
 Xeon(R) CPU E5-2680 v3 @ 2.50GHz、12コアが2ソケットで1ノードである。
 まずは1ノードで、1プロセス1スレッドの計算から、スレッド数だけ2,3,4,6…と増やした場合と、プロセス数だけ2,3,4,6…と増やした場合の結果である。</p>

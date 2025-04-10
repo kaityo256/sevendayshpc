@@ -161,11 +161,11 @@ class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#c
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>アセンブリを見てみる。少し最適化したほうがアセンブリが読みやすい。</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">g++</span> <span class="at">-mavx2</span> <span class="at">-O2</span> <span class="at">-S</span> add.cpp</span></code></pre></div>
-<p>アセンブリはこうなる。</p>
+<p>アセンブリはこうなる(c++filtを通して、かつ余計なラベルは削除してある。以下同様)。</p>
 <div class="sourceCode" id="cb7"><pre
-class="sourceCode asm"><code class="sourceCode fasm"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">__Z3addDv4_dS_:</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  vaddpd  <span class="op">%</span><span class="kw">ymm1</span><span class="op">,</span> <span class="op">%</span><span class="kw">ymm0</span><span class="op">,</span> <span class="op">%</span><span class="kw">ymm0</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">ret</span></span></code></pre></div>
+class="sourceCode asm"><code class="sourceCode fasm"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="bu">add</span><span class="op">(</span>double vector<span class="op">[</span><span class="dv">4</span><span class="op">],</span> double vector<span class="op">[</span><span class="dv">4</span><span class="op">]):</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>        vaddpd  <span class="op">%</span><span class="kw">ymm1</span><span class="op">,</span> <span class="op">%</span><span class="kw">ymm0</span><span class="op">,</span> <span class="op">%</span><span class="kw">ymm0</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">ret</span></span></code></pre></div>
 <p><code>vaddpd</code>はSIMDの足し算を行う命令であり、ちゃんとYMMレジスタの足し算が呼ばれていることがわかる。</p>
 <p>実際に4要素同時に足し算できることを確認しよう(<code>add.cpp</code>)。</p>
 <div class="sourceCode" id="cb8"><pre
@@ -218,11 +218,11 @@ class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#
 <div class="sourceCode" id="cb13"><pre
 class="sourceCode sh"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">g++</span> <span class="at">-mavx2</span> <span class="at">-O2</span> <span class="at">-S</span> setpd.cpp</span></code></pre></div>
 <div class="sourceCode" id="cb14"><pre
-class="sourceCode asm"><code class="sourceCode fasm"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">__Z5setpddddd:</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  vunpcklpd <span class="op">%</span><span class="kw">xmm3</span><span class="op">,</span> <span class="op">%</span><span class="kw">xmm2</span><span class="op">,</span> <span class="op">%</span><span class="kw">xmm2</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  vunpcklpd <span class="op">%</span><span class="kw">xmm1</span><span class="op">,</span> <span class="op">%</span><span class="kw">xmm0</span><span class="op">,</span> <span class="op">%</span><span class="kw">xmm0</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="bu">vinsertf128</span> <span class="op">$</span><span class="bn">0</span>x1<span class="op">,</span> <span class="op">%</span><span class="kw">xmm2</span><span class="op">,</span> <span class="op">%</span><span class="kw">ymm0</span><span class="op">,</span> <span class="op">%</span><span class="kw">ymm0</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">ret</span></span></code></pre></div>
+class="sourceCode asm"><code class="sourceCode fasm"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>setpd<span class="op">(</span>double<span class="op">,</span> double<span class="op">,</span> double<span class="op">,</span> double<span class="op">):</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>        vunpcklpd       <span class="op">%</span><span class="kw">xmm3</span><span class="op">,</span> <span class="op">%</span><span class="kw">xmm2</span><span class="op">,</span> <span class="op">%</span><span class="kw">xmm2</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>        vunpcklpd       <span class="op">%</span><span class="kw">xmm1</span><span class="op">,</span> <span class="op">%</span><span class="kw">xmm0</span><span class="op">,</span> <span class="op">%</span><span class="kw">xmm1</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">vinsertf128</span>     <span class="op">$</span><span class="bn">0</span>x1<span class="op">,</span> <span class="op">%</span><span class="kw">xmm2</span><span class="op">,</span> <span class="op">%</span><span class="kw">ymm1</span><span class="op">,</span> <span class="op">%</span><span class="kw">ymm0</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">ret</span></span></code></pre></div>
 <p>これは、</p>
 <ol type="1">
 <li>aとbをxmm2レジスタにパック</li>
@@ -272,10 +272,10 @@ class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#
 class="sourceCode sh"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="ex">g++</span> <span class="at">-O2</span> <span class="at">-mavx2</span> <span class="at">-S</span> loadasm.cpp</span></code></pre></div>
 <p>例によって、少し最適化をかけておく。</p>
 <div class="sourceCode" id="cb19"><pre
-class="sourceCode asm"><code class="sourceCode fasm"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">__Z4loadPdi:</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  movslq  <span class="op">%</span><span class="kw">esi</span><span class="op">,</span> <span class="op">%</span><span class="kw">rsi</span></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="bu">vmovapd</span> <span class="op">(%</span><span class="kw">rdi</span><span class="op">,%</span><span class="kw">rsi</span><span class="op">,</span><span class="dv">8</span><span class="op">),</span> <span class="op">%</span><span class="kw">ymm0</span></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">ret</span></span></code></pre></div>
+class="sourceCode asm"><code class="sourceCode fasm"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="bu">load</span><span class="op">(</span>double<span class="op">*,</span> int<span class="op">):</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>        movslq  <span class="op">%</span><span class="kw">esi</span><span class="op">,</span> <span class="op">%</span><span class="kw">rsi</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">vmovapd</span> <span class="op">(%</span><span class="kw">rdi</span><span class="op">,%</span><span class="kw">rsi</span><span class="op">,</span><span class="dv">8</span><span class="op">),</span> <span class="op">%</span><span class="kw">ymm0</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">ret</span></span></code></pre></div>
 <p><code>ymm0</code>レジスタに、<code>vmovapd</code>一発でデータがロードされていることがわかる。</p>
 <p>ここでは読み出しを見たが、書き戻し(<code>_mm256_store_pd</code>)も同様である。</p>
 <p>さて、これでSIMD化の基礎は終わりである。ようするにデータを複数個とってきて、SIMDレジスタに乗せて、
@@ -403,7 +403,7 @@ Intrinsics Guide</a>が便利である。</p>
 適当に乱数を生成して配列<code>a[N]</code>と<code>b[N]</code>に保存し、ついでに答えも<code>ans[N]</code>に保存しておく。</p>
 <div class="sourceCode" id="cb26"><pre
 class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>mt19937<span class="op"> </span>mt<span class="op">;</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>mt19937 mt<span class="op">;</span></span>
 <span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>uniform_real_distribution<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> ud<span class="op">(</span><span class="fl">0.0</span><span class="op">,</span> <span class="fl">1.0</span><span class="op">);</span></span>
 <span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> N<span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
 <span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    a<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> ud<span class="op">(</span>mt<span class="op">);</span></span>
@@ -479,7 +479,7 @@ class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#
 <span id="cb28-42"><a href="#cb28-42" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
 <span id="cb28-43"><a href="#cb28-43" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb28-44"><a href="#cb28-44" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb28-45"><a href="#cb28-45" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>mt19937<span class="op"> </span>mt<span class="op">;</span></span>
+<span id="cb28-45"><a href="#cb28-45" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>mt19937 mt<span class="op">;</span></span>
 <span id="cb28-46"><a href="#cb28-46" aria-hidden="true" tabindex="-1"></a>  <span class="bu">std::</span>uniform_real_distribution<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> ud<span class="op">(</span><span class="fl">0.0</span><span class="op">,</span> <span class="fl">1.0</span><span class="op">);</span></span>
 <span id="cb28-47"><a href="#cb28-47" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> N<span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
 <span id="cb28-48"><a href="#cb28-48" aria-hidden="true" tabindex="-1"></a>    a<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> ud<span class="op">(</span>mt<span class="op">);</span></span>
@@ -662,7 +662,7 @@ class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#
 <span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>    calc_euler<span class="op">();</span></span>
 <span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>    t <span class="op">+=</span> dt<span class="op">;</span></span>
 <span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">((</span>i <span class="op">%</span> <span class="dv">1000</span><span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>      <span class="bu">std::</span>cout<span class="op"> &lt;&lt;</span> t <span class="op">&lt;&lt;</span> <span class="st">&quot; &quot;</span> <span class="op">&lt;&lt;</span> energy<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>      <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> t <span class="op">&lt;&lt;</span> <span class="st">&quot; &quot;</span> <span class="op">&lt;&lt;</span> energy<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
 <span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span></code></pre></div>
 <p>平均エネルギーの時間発展はこうなる。</p>
@@ -781,9 +781,9 @@ class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb49-1"><a href="#
 <div class="sourceCode" id="cb50"><pre
 class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> dump<span class="op">()</span> <span class="op">{</span></span>
 <span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> N<span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
-<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout<span class="op"> &lt;&lt;</span> r<span class="op">[</span>i<span class="op">].</span>x <span class="op">&lt;&lt;</span> <span class="st">&quot; &quot;</span><span class="op">;</span></span>
-<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout<span class="op"> &lt;&lt;</span> r<span class="op">[</span>i<span class="op">].</span>y <span class="op">&lt;&lt;</span> <span class="st">&quot; &quot;</span><span class="op">;</span></span>
-<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout<span class="op"> &lt;&lt;</span> r<span class="op">[</span>i<span class="op">].</span>z <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> r<span class="op">[</span>i<span class="op">].</span>x <span class="op">&lt;&lt;</span> <span class="st">&quot; &quot;</span><span class="op">;</span></span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> r<span class="op">[</span>i<span class="op">].</span>y <span class="op">&lt;&lt;</span> <span class="st">&quot; &quot;</span><span class="op">;</span></span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> r<span class="op">[</span>i<span class="op">].</span>z <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
 <span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
 <span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>時間発展後に座標をダンプして、その結果を比較しよう。シリアル版を<a
