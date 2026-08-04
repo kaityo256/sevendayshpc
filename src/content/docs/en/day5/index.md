@@ -607,7 +607,7 @@ Because data must be processed before and after transmission, the code is fairly
 
 Let `gather2d.cpp` contain all of the above. Since it is somewhat long, here is a link to the complete source.
 
-[https://github.com/kaityo256/sevendayshpc/blob/master/day5/gather2d.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day5/gather2d.cpp)
+[https://github.com/kaityo256/sevendayshpc/blob/main/examples/day5/gather2d.cpp](https://github.com/kaityo256/sevendayshpc/blob/main/examples/day5/gather2d.cpp)
 
 Its `main` function is shown below.
 
@@ -703,7 +703,7 @@ Vertical communication is nearly identical, except that it also forwards the dat
 
 An implementation of this algorithm is available here.
 
-[https://github.com/kaityo256/sevendayshpc/blob/master/day5/sendrecv.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day5/sendrecv.cpp)
+[https://github.com/kaityo256/sevendayshpc/blob/main/examples/day5/sendrecv.cpp](https://github.com/kaityo256/sevendayshpc/blob/main/examples/day5/sendrecv.cpp)
 
 The output is as follows.
 

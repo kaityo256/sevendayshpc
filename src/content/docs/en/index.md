@@ -106,5 +106,3 @@ Copyright (C) 2018-present Hiroshi Watanabe
 This text and its illustrations, including the PowerPoint files, are licensed under the [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).
 
 The source code in this repository is licensed under the [MIT License](https://opensource.org/licenses/MIT).
-
-The HTML edition uses [github-markdown-css](https://github.com/sindresorhus/github-markdown-css) for styling.

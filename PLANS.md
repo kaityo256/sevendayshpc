@@ -1,8 +1,8 @@
-# Astro Starlight移行計画
+# Astro Starlight構成・運用方針
 
 ## 1. 目的と基本方針
 
-Web版をPandocによるHTML直接生成からAstro Starlightへ移行し、完全な英語版を追加する。生成した静的サイトは`docs/`へ出力し、事前チェックに合格したものだけをGitHub ActionsからGitHub Pagesへデプロイする。
+Web版はPandocによるHTML直接生成からAstro Starlightへ移行済みで、日本語版と英語版を提供している。生成した静的サイトは`docs/`へ出力し、事前チェックに合格したものだけをGitHub ActionsからGitHub Pagesへデプロイする。
 
 本移行では以下を確定事項とする。
 
@@ -16,12 +16,11 @@ Web版をPandocによるHTML直接生成からAstro Starlightへ移行し、完�
 - Astroの本番出力先は`docs/`とする。
 - `docs/`は生成物としてGit管理しない。
 - GitHub PagesのSourceは「GitHub Actions」に設定し、ワークフローが`docs/`をPages artifactとしてアップロードする。ブランチの`/docs`を直接公開する方式は使用しない。
-- Re:VIEWは日本語PDFの生成にのみ使用し、英語PDFは作成しない。
-- C++サンプルと既存のビルド動作はWeb移行によって変更しない。
+- C++サンプルは`examples/`で管理し、ルートのCMakeプロジェクトから一括ビルドできる状態を維持する。
 
-英語題名は暫定的に **Become an HPC Programmer in Seven Days!** とし、英語トップページ確定前に最終確認する。
+英語題名は **Become an HPC Programmer in Seven Days!** とする。
 
-## 2. 目標ディレクトリ構成
+## 2. ディレクトリ構成
 
 ```text
 .
@@ -52,24 +51,28 @@ Web版をPandocによるHTML直接生成からAstro Starlightへ移行し、完�
 │   │   └── index.astro
 │   └── styles/
 │       └── custom.css
+├── examples/
+│   ├── day1/                   # C++、CMake設定、データなど
+│   ├── day3/
+│   ├── ...
+│   └── day7/
 ├── site-assets/
-│   └── images/
-│       └── en/                 # 作成済みの英語画像だけを置く
+│   ├── images/
+│   │   ├── ja/                 # 日本語PNGの正本
+│   │   └── en/                 # 作成済みの英語画像だけを置く
+│   └── sources/                # PowerPointなど画像の編集元
 ├── tools/
 │   ├── prepare-public.mjs
 │   └── check-site.mjs
 ├── .generated/
 │   └── public/                 # 自動生成するpublicDir（Git管理外）
 ├── docs/                       # Astro出力（Git管理外、デプロイ対象）
-├── day1/, ..., day7/           # 既存プログラムと日本語画像
-├── preface/, postface/         # 既存の日本語画像
-├── review/                     # 日本語PDF生成環境
 └── .github/workflows/pages.yml
 ```
 
-既存の章ディレクトリは、プログラム、CMake設定、データ、グラフ、PowerPoint原稿、日本語PNGの保管場所として維持する。MarkdownだけをStarlightのコンテンツコレクションへ移動する。
+日本語Markdownは`src/content/docs/ja/`、英語Markdownは`src/content/docs/en/`を正本とする。共有サンプルは`examples/`、公開画像は`site-assets/images/`、画像の編集元は`site-assets/sources/`で役割別に管理する。
 
-## 3. Astroとコンテンツの移行
+## 3. Astroとコンテンツ
 
 ### 3.1 Starlight設定
 
@@ -84,13 +87,12 @@ Web版をPandocによるHTML直接生成からAstro Starlightへ移行し、完�
 
 ### 3.2 日本語原稿
 
-- ルート、preface、Day 1〜Day 7、postfaceのMarkdownを`src/content/docs/ja/`へ移行する。公開切り替えまでは既存Markdownも残す。
+- ルート、preface、Day 1〜Day 7、postfaceのMarkdownを`src/content/docs/ja/`へ移行し、これを日本語原稿の正本とする。
 - 各ページに`title`、`description`、サイドバー順序・表示名のfrontmatterを追加する。
 - Starlightのタイトルと重複する先頭の`#`見出しは削除する。
 - 章間リンクを新しいルートに合わせる。
 - 文章、数式、コードブロック、実行結果、参考文献、キャプションは、表示上必要な修正を除いて維持する。
 - Pandoc固有の指定と、生成済みHTMLを前提とした記述を除去する。
-- Re:VIEWは既存の日本語Markdownを入力元としたまま維持する。Astro移行の公開確認後、正本の重複を解消する段階で入力経路を改めて検討する。
 
 ### 3.3 英語原稿
 
@@ -100,7 +102,7 @@ Web版をPandocによるHTML直接生成からAstro Starlightへ移行し、完�
 - HPC分野で一般的な英語表現を統一して使用する。
 - 日本語だけの参考リンクは、信頼できる英語版が存在すれば差し替える。相当する資料がなければ原典を維持する。
 - 共有サンプルコードは言語非依存とする。共有ファイル内の日本語コメントは必要に応じて英語化するが、動作と出力は変えない。
-- 英語用Re:VIEW設定や英語PDFターゲットは追加しない。
+- 英語PDFターゲットは追加しない。
 
 初期用語表：
 
@@ -117,13 +119,13 @@ Web版をPandocによるHTML直接生成からAstro Starlightへ移行し、完�
 ## 4. 画像とダウンロード可能なサンプル
 
 - `tools/prepare-public.mjs`が開発・本番ビルド前に`.generated/public/`を構築する。
-- 各章の`fig/`にある日本語画像を`.generated/public/ja/<chapter>/fig/`へコピーする。
+- `site-assets/images/ja/<chapter>/`にある日本語画像を`.generated/public/ja/<chapter>/fig/`へコピーする。
 - 英語用画像は、まず日本語画像一式を`.generated/public/en/<chapter>/fig/`へコピーし、その後`site-assets/images/en/<chapter>/`に存在する同名ファイルで上書きする。
 - 日本語Markdownは常に`/sevendayshpc/ja/<chapter>/fig/<file>`を参照する。
 - 英語Markdownは常に`/sevendayshpc/en/<chapter>/fig/<file>`を参照する。英語画像を追加してもMarkdownは変更しない。
 - 画像内の文字が日本語の間も、英語Markdownのaltテキストは最初から英訳する。
-- 本文からリンクするプログラムなどは、章ごとの公開ディレクトリへコピーする。
-- PowerPointは画像の編集元として保持し、従来から意図的に公開している場合を除いてWebの配布対象にはしない。
+- `examples/<chapter>/`にあるプログラムなどは、章ごとの公開ディレクトリへコピーする。
+- PowerPointなどの編集元は`site-assets/sources/<chapter>/`に保持し、Webの配布対象にはしない。
 
 ## 5. ローカルコマンドと事前チェック
 
@@ -138,21 +140,20 @@ npm run check:astro  Astroの型・コンテンツ検証
 npm run check:site   生成サイトと内部参照の検証
 ```
 
-`npm run check`は以下を検出した場合に失敗させる。
+`npm run check`は以下を検出した場合に失敗する。
 
 - Astro設定またはfrontmatterが不正
 - 必須の日英ページが不足
 - 日英のルート構成が不一致
 - ローカル画像、配布ファイル、CSS、JavaScriptが不足
-- 生成HTML内の内部リンクまたはフラグメントリンク切れ
+- 生成HTML内の内部リンク先ファイルの不足
 - `lang`指定またはlocaleパスが不正
-- 対応言語への切り替え先が不足
 - Astro本番ビルドの失敗
 - 生成対象ページまたは公開アセットが不足している
 
-外部HTTPリンクは相手サイトの障害で不安定になるため、コミットごとの必須チェックにはしない。外部リンク検査は別コマンドまたは定期実行の非ブロッキングなワークフローにする。
+フラグメントリンクのID、言語切り替えUIの対応先、外部HTTPリンクは現在の自動検査の対象外とする。外部リンクは相手サイトの障害で不安定になるため、コミットごとの必須チェックには含めない。
 
-Pandoc版を削除する前に、Day 1、Day 5、Day 7を代表ページとして次を比較する。
+表示確認ではDay 1、Day 5、Day 7を代表ページとして次を確認する。
 
 - 見出しと章内目次
 - C++、shell、diff、Ruby、assemblyのコードブロック
@@ -166,15 +167,15 @@ Pandoc版を削除する前に、Day 1、Day 5、Day 7を代表ページとし�
 
 `.github/workflows/pages.yml`にbuild jobとdeploy jobを分けて定義する。
 
-Pull Requestおよびpushでは次を実行する。
+Pull Request、push、手動実行では次を実行する。
 
 1. リポジトリをcheckoutする。
 2. npm cacheを有効にしてNode.js 22をセットアップする。
 3. `npm ci`を実行する。
 4. `npm run check`を実行する。
-5. 全チェック成功後に`docs/`をGitHub Pages artifactとしてアップロードする。
+5. Pull Request以外では、全チェック成功後に`docs/`をGitHub Pages artifactとしてアップロードする。
 
-デフォルトブランチへのpush時だけ、続けて公式Pages Actionでartifactをデプロイする。
+デフォルトブランチへのpushおよび手動実行では、続けて公式Pages Actionでartifactをデプロイする。
 
 追加要件：
 
@@ -184,29 +185,35 @@ Pull Requestおよびpushでは次を実行する。
 - `github-pages` environmentとPages用concurrencyを使用する。
 - Pull Requestからはデプロイしない。
 - 公式Actionは確認済みmajor versionへ固定し、Dependabotで更新を提案させる。
-- Repository Settings > Pages > Sourceを「GitHub Actions」に変更する。
+- Repository Settings > Pages > Sourceは「GitHub Actions」に設定済みである。
 
-## 7. 実施順序
+## 7. 実施状況
 
-1. **Astro基盤**：設定、コンテンツスキーマ、言語選択ページ、CSS、アセット準備処理、最小限の日本語ページを追加する。
-2. **日本語移行**：全Markdownを移動して表示を確認し、Re:VIEWの入力経路を更新する。
-3. **アセット整備**：言語別画像と配布ファイルを生成し、英語側の日本語画像フォールバックを確認する。
-4. **英語版作成**：トップ、preface、Day 1〜Day 7、postfaceを章ごとに翻訳・技術レビューする。
-5. **事前チェック**：Astro検証、日英ルート一致、アセット、生成サイトの内部リンク検証を実装する。
-6. **Pages workflow**：Pull Requestではビルドと検査、デフォルトブランチではデプロイまで実行する。
-7. **公開切り替え**：preview確認後にマージし、Pages SourceをGitHub Actionsへ変更して、`/`、`/ja/`、`/en/`、代表章、画像、ダウンロードを確認する。
-8. **旧Web生成の撤去**：Starlight版の公開確認後に、コミット済みPandoc HTML、Pandocテンプレート、不要なMakefileのWebターゲットを削除する。日本語PDFで必要なものは残す。
+以下は実施済みである。
 
-## 8. 完了条件
+1. **Astro基盤**：設定、コンテンツスキーマ、言語選択ページ、CSS、アセット準備処理を追加した。
+2. **日英原稿**：トップ、preface、Day 1〜Day 7、postfaceを日英それぞれの正本として配置した。
+3. **アセット整備**：共有サンプル、日本語画像、英語画像、画像編集元を役割別に分離し、英語側の日本語画像フォールバックを実装した。
+4. **事前チェック**：Astro検証、日英ページ構成、アセット、生成サイトの内部参照検査を実装した。
+5. **Pages workflow**：Pull Requestではビルドと検査、デフォルトブランチへのpushと手動実行ではデプロイまで行う構成にした。
+6. **公開切り替え**：Pages SourceをGitHub Actionsへ変更し、言語選択ページ、日本語版、英語版を公開した。
+7. **旧生成系の撤去**：Pandoc HTML、Pandocテンプレート、旧Makefile、旧PDF生成環境を削除した。
+8. **サンプルビルド**：CMake、GCC、OpenMPI、OpenMPを使用して全ターゲットのビルド成功を確認した。
 
-- `/sevendayshpc/`で言語を選択できる。
-- `/sevendayshpc/ja/`に完全な日本語Web版がある。
-- `/sevendayshpc/en/`に完全な英語Web版がある。
-- 全ページで同じ章の対応言語へ切り替えられる。
-- 既存画像がすべて表示され、未翻訳の英語画像は日本語画像へフォールバックし、英語altテキストを持つ。
-- 数式、コードブロック、内部リンク、プログラムのダウンロードが動作する。
-- clean checkoutから`npm ci && npm run check`が成功する。
-- Pull Requestではチェックだけが実行され、デプロイされない。
-- デフォルトブランチへのpushで`docs/`がGitHub Actionsからデプロイされる。
-- 公開サイトがPCとモバイルの手動スモークテストに合格する。
-- 既存の日本語PDF生成を維持し、英語PDFは生成しない。
+## 8. 現在の確認項目
+
+自動検査で次を継続して保証する。
+
+- `/sevendayshpc/ja/`と`/sevendayshpc/en/`に必要な全ページが生成される。
+- 既存画像が表示され、未翻訳の英語画像は日本語画像へフォールバックする。
+- 数式、コードブロック、内部リンク先ファイル、プログラムのダウンロードに必要な公開物が生成される。
+- `npm ci && npm run check`が成功する。
+- Pull Requestではチェックだけを実行し、デプロイしない。
+- デフォルトブランチへのpushと手動実行ではGitHub Actionsからデプロイする。
+
+次の項目は自動検査では保証せず、必要に応じて手動確認する。
+
+- PCとモバイルでの表示。
+- 日本語検索と英語検索の検索品質。
+- 同じ章を保った言語切り替え。
+- フラグメントリンクと外部HTTPリンク。

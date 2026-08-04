@@ -650,7 +650,7 @@ MPIは書いた通りに動く。なので、通信アルゴリズムが決ま�
 
 以上をすべてまとめたコードを`gather2d.cpp`としよう。やや大きいので、ウェブへのリンクを貼っておく。
 
-[https://github.com/kaityo256/sevendayshpc/blob/master/day5/gather2d.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day5/gather2d.cpp)
+[https://github.com/kaityo256/sevendayshpc/blob/main/examples/day5/gather2d.cpp](https://github.com/kaityo256/sevendayshpc/blob/main/examples/day5/gather2d.cpp)
 
 main関数だけ書いておくとこんな感じ。
 
@@ -748,7 +748,7 @@ void sendrecv_x(std::vector<int> &local_data, MPIinfo &mi) {
 
 このアルゴリズムを実装するとこんな感じになる。
 
-[https://github.com/kaityo256/sevendayshpc/blob/master/day5/sendrecv.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day5/sendrecv.cpp)
+[https://github.com/kaityo256/sevendayshpc/blob/main/examples/day5/sendrecv.cpp](https://github.com/kaityo256/sevendayshpc/blob/main/examples/day5/sendrecv.cpp)
 
 実行結果はこんな感じ。
 

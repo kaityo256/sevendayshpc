@@ -856,7 +856,7 @@ void dump() {
 }
 ```
 
-時間発展後に座標をダンプして、その結果を比較しよう。シリアル版を[mag.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day7/magnetic/mag.cpp)、SIMD版を[mag_simd.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day7/magnetic/mag_simd.cpp)としておき、以下のようにコンパイル、実行、結果の比較をする。
+時間発展後に座標をダンプして、その結果を比較しよう。シリアル版を[mag.cpp](https://github.com/kaityo256/sevendayshpc/blob/main/examples/day7/magnetic/mag.cpp)、SIMD版を[mag_simd.cpp](https://github.com/kaityo256/sevendayshpc/blob/main/examples/day7/magnetic/mag_simd.cpp)としておき、以下のようにコンパイル、実行、結果の比較をする。
 
 ```sh
 $ g++ -std=c++11 -O3 -mavx2 -mfma mag.cpp -o a.out
@@ -990,6 +990,6 @@ L13:
 
 `vpermpd`がシャッフル命令である。ループボディがかなり小さいが、このループは100000回まわるため、25000回しかまわらないコンパイラによる自動SIMD化ルーチンには勝てない。大雑把な話、ループボディの計算コストが半分だが、回転数が4倍なので2倍負けた、という感じである。
 
-上記の例のように、「いま手元にあるコード」をがんばって「そのままSIMD化」して高速化しても、データ構造を変えるとコンパイラがあっさり自動SIMD化できて負けることがある。多くの場合「SIMD化」はデータ構造のグローバルな変更を伴う。先のコードのAoS版である[mag.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day7/magnetic/mag.cpp)と、SoA版である[mag_soa.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day7/magnetic/mag_soa.cpp)は、全く同じことをしているが **全書き換え** になっている。今回はコードが短いから良いが、10万行とかあるコードだと「やっぱりSoAの方が早いから全書き換えで！」と気軽には言えないだろう。また、デバイスによってデータ構造の向き不向きもある。例えば「CPUではAoSの方が早いが、GPGPUではSoAの方が早い」なんてこともざらにある。こういう場合には、ホットスポットルーチンに入る前にAoS←→SoAの相互変換をしたりすることも検討するが、もちろんその分オーバーヘッドもあるので面倒くさいところである。
+上記の例のように、「いま手元にあるコード」をがんばって「そのままSIMD化」して高速化しても、データ構造を変えるとコンパイラがあっさり自動SIMD化できて負けることがある。多くの場合「SIMD化」はデータ構造のグローバルな変更を伴う。先のコードのAoS版である[mag.cpp](https://github.com/kaityo256/sevendayshpc/blob/main/examples/day7/magnetic/mag.cpp)と、SoA版である[mag_soa.cpp](https://github.com/kaityo256/sevendayshpc/blob/main/examples/day7/magnetic/mag_soa.cpp)は、全く同じことをしているが **全書き換え** になっている。今回はコードが短いから良いが、10万行とかあるコードだと「やっぱりSoAの方が早いから全書き換えで！」と気軽には言えないだろう。また、デバイスによってデータ構造の向き不向きもある。例えば「CPUではAoSの方が早いが、GPGPUではSoAの方が早い」なんてこともざらにある。こういう場合には、ホットスポットルーチンに入る前にAoS←→SoAの相互変換をしたりすることも検討するが、もちろんその分オーバーヘッドもあるので面倒くさいところである。
 
 まぁ、以上のようにいろいろ面倒なことを書いたが、ちゃんと手を動かして上記を試してみた方には「SIMD化は(原理的には)簡単だ」ということには同意してもらえると思う。MPIもSIMD化も同じである。いろいろ考えることがあって面倒だが、やること自体は単純なので難しくはない。今回はシャッフル命令を取り上げたが、他にもマスク処理やgather/scatter、pack/unpackなど、SIMDには実に様々な命令がある。しかし、「そういう命令欲しいな」と思って調べたらたいがいある。あとは対応する組み込み関数を呼べばよい。要するに「やるだけ」である。ただし、MPI化は「やれば並列計算ができ、かつプロセスあたりの計算量を増やせばいくらでも並列化効率を上げられる」ことが期待されるのに対して、SIMD化は「やっても性能が向上するかはわからず、下手に手を出すよりコンパイラに任せた方が早い」なんてこともある。全くSIMD化されていないコードに対してSIMD化で得られるゲインは、256bitなら4倍、512ビットでも8倍程度しかなく、現実にはその半分も出れば御の字であろう。SIMD化はやってて楽しい作業であるが、手間とコストが釣り合うかどうかは微妙だな、というのが筆者の実感である。

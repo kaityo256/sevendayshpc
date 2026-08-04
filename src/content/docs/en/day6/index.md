@@ -214,7 +214,7 @@ The following discussion therefore assumes Linux, where `perf` is available. The
 
 For our serial code, let us use the Gray-Scott model computation from Day 4. `gs.cpp` removes intermediate file output so that only the computation itself is counted, and also measures the execution time.
 
-[https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs.cpp)
+[https://github.com/kaityo256/sevendayshpc/blob/main/examples/day6/gs.cpp](https://github.com/kaityo256/sevendayshpc/blob/main/examples/day6/gs.cpp)
 
 For debugging, however, it does write the final result to a file. Let us compile it and profile it with `perf`. First, record a profile with `perf record`.
 
@@ -268,7 +268,7 @@ When using thread parallelism, we must check whether dependencies exist between 
 
 First, let us put a directive on the inner loop. We need only insert the `#pragma omp parallel for` directive immediately before the target loop.
 
-[https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp1.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp1.cpp)
+[https://github.com/kaityo256/sevendayshpc/blob/main/examples/day6/gs_omp1.cpp](https://github.com/kaityo256/sevendayshpc/blob/main/examples/day6/gs_omp1.cpp)
 
 ```cpp
 void calc(vd &u, vd &v, vd &u2, vd &v2) {
@@ -309,7 +309,7 @@ It looks fine.
 
 Next, let us parallelize the outer loop.
 
-[https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp2.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp2.cpp)
+[https://github.com/kaityo256/sevendayshpc/blob/main/examples/day6/gs_omp2.cpp](https://github.com/kaityo256/sevendayshpc/blob/main/examples/day6/gs_omp2.cpp)
 
 ```cpp
 void calc(vd &u, vd &v, vd &u2, vd &v2) {
@@ -584,7 +584,7 @@ const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(e - s
 
 This stores a value in milliseconds in `elapsed`. The hybrid version of the reaction-diffusion equation solver created in this way is `gs_hybrid.cpp`.
 
-[https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_hybrid.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_hybrid.cpp)
+[https://github.com/kaityo256/sevendayshpc/blob/main/examples/day6/gs_hybrid.cpp](https://github.com/kaityo256/sevendayshpc/blob/main/examples/day6/gs_hybrid.cpp)
 
 In the author's environment, MPI is on the search path, so it can be compiled with the following options.
 

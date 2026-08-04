@@ -18,35 +18,31 @@ async function exists(target) {
   }
 }
 
-async function copySection(section, locale) {
-  const source = path.join(root, section);
+async function copyExamples(section, locale) {
+  const source = path.join(root, "examples", section);
   const destination = path.join(output, locale, section);
   await mkdir(destination, { recursive: true });
 
-  for (const entry of await readdir(source, { withFileTypes: true })) {
-    if (entry.name === "README.md" || entry.name === "index.html") continue;
+  if (!(await exists(source))) return;
+  await cp(source, destination, {
+    filter: (entry) => path.basename(entry) !== ".gitignore",
+    force: true,
+    recursive: true,
+  });
+}
 
-    if (entry.name === "fig") {
-      const figureDestination = path.join(destination, "fig");
-      await mkdir(figureDestination, { recursive: true });
-      for (const figure of await readdir(path.join(source, "fig"), {
-        withFileTypes: true,
-      })) {
-        if (
-          !figure.isFile() ||
-          !/\.(png|jpg|jpeg|gif|svg)$/i.test(figure.name)
-        ) {
-          continue;
-        }
-        await cp(
-          path.join(source, "fig", figure.name),
-          path.join(figureDestination, figure.name),
-        );
-      }
+async function copyImages(sourceLocale, destinationLocale, section) {
+  const source = path.join(root, "site-assets", "images", sourceLocale, section);
+  if (!(await exists(source))) return;
+
+  const destination = path.join(output, destinationLocale, section, "fig");
+  await mkdir(destination, { recursive: true });
+  for (const entry of await readdir(source, { withFileTypes: true })) {
+    if (!entry.isFile() || !/\.(png|jpg|jpeg|gif|svg)$/i.test(entry.name)) {
       continue;
     }
-
     await cp(path.join(source, entry.name), path.join(destination, entry.name), {
+      force: true,
       recursive: true,
     });
   }
@@ -57,19 +53,13 @@ await mkdir(output, { recursive: true });
 await writeFile(path.join(output, ".nojekyll"), "");
 
 for (const locale of ["ja", "en"]) {
-  for (const section of sections) await copySection(section, locale);
+  for (const section of sections) await copyExamples(section, locale);
 }
 
-const overrides = path.join(root, "site-assets", "images", "en");
-if (await exists(overrides)) {
-  for (const entry of await readdir(overrides, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-    await cp(
-      path.join(overrides, entry.name),
-      path.join(output, "en", entry.name, "fig"),
-      { recursive: true, force: true },
-    );
-  }
+for (const section of sections) {
+  await copyImages("ja", "ja", section);
+  await copyImages("ja", "en", section);
+  await copyImages("en", "en", section);
 }
 
 await cp(path.join(root, "LICENSE"), path.join(output, "LICENSE"));

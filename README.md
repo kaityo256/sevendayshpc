@@ -17,7 +17,7 @@ MPI、OpenMP、SIMDを題材に、スーパーコンピュータ向け並列プ�
 6. ハイブリッド並列
 7. SIMD化
 
-各章のサンプルプログラム、CMake設定、図版などは `day1/` から `day7/` にあります。Web版の原稿は `src/content/docs/ja/` と `src/content/docs/en/` で管理しています。
+各章のサンプルプログラムとCMake設定は `examples/`、Web版の原稿は `src/content/docs/ja/` と `src/content/docs/en/`、図版は `site-assets/` で管理しています。
 
 ## ライセンス
 

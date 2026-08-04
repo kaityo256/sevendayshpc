@@ -219,7 +219,7 @@ flat-MPIをやっている場合は、各プロセスごとに独立な論理メ
 
 まず、シリアルコードとしてDay 4で使ったGray Scottモデルの計算を使おう。純粋に計算のみをカウントするため、途中のファイル出力を削除し、また実行時間を測定するようにしたものが`gs.cpp`である。
 
-[https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs.cpp)
+[https://github.com/kaityo256/sevendayshpc/blob/main/examples/day6/gs.cpp](https://github.com/kaityo256/sevendayshpc/blob/main/examples/day6/gs.cpp)
 
 ただし、デバッグのために最終結果だけファイルに出力している。コンパイルして`perf`でプロファイルをとってみよう。まず、`perf record`で記録を取る。
 
@@ -272,7 +272,7 @@ void calc(vd &u, vd &v, vd &u2, vd &v2) {
 
 まずは内側のループにディレクティブを入れてみよう。`#pragma omp parallel for`というディレクティブを対象ループの直前に入れるだけでよい。
 
-[https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp1.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp1.cpp)
+[https://github.com/kaityo256/sevendayshpc/blob/main/examples/day6/gs_omp1.cpp](https://github.com/kaityo256/sevendayshpc/blob/main/examples/day6/gs_omp1.cpp)
 
 ```cpp
 void calc(vd &u, vd &v, vd &u2, vd &v2) {
@@ -313,7 +313,7 @@ diff conf000.org conf000.dat
 
 次に、外側を並列化してみよう。
 
-[https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp2.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_omp2.cpp)
+[https://github.com/kaityo256/sevendayshpc/blob/main/examples/day6/gs_omp2.cpp](https://github.com/kaityo256/sevendayshpc/blob/main/examples/day6/gs_omp2.cpp)
 
 ```cpp
 void calc(vd &u, vd &v, vd &u2, vd &v2) {
@@ -591,7 +591,7 @@ const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(e - s
 
 これで`elapsed`にミリ秒単位の値が入る。このようにして作ったハイブリッド版の反応拡散方程式ソルバが`gs_hybrid.cpp`である。
 
-[https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_hybrid.cpp](https://github.com/kaityo256/sevendayshpc/blob/master/day6/gs_hybrid.cpp)
+[https://github.com/kaityo256/sevendayshpc/blob/main/examples/day6/gs_hybrid.cpp](https://github.com/kaityo256/sevendayshpc/blob/main/examples/day6/gs_hybrid.cpp)
 
 筆者の環境ではMPIにパスが通してあるので、以下のようなオプションでコンパイルできる。
 
