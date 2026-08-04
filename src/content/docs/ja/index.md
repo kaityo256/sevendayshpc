@@ -115,5 +115,3 @@ This article and pictures are licensed under a [Creative Commons Attribution 4.0
 本リポジトリに含まれるプログラムは、[MITライセンス](https://opensource.org/licenses/MIT)で提供する。
 
 The source codes in this repository are licensed under [the MIT License](https://opensource.org/licenses/MIT).
-
-なお、HTML版の作成に際し、CSSとして[github-markdown-css](https://github.com/sindresorhus/github-markdown-css)を利用しています。
