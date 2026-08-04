@@ -23,6 +23,6 @@
     "katex": "^0.18.1",
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   }
 }
