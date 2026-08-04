@@ -6,3 +6,10 @@
 
 # CMake
 build/
+
+# Astro
+node_modules/
+dist/
+.astro/
+.generated/
+/docs/

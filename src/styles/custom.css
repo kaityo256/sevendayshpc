@@ -1,0 +1,14 @@
+@import "katex/dist/katex.min.css";
+
+.sl-markdown-content img {
+  display: block;
+  height: auto;
+  margin-inline: auto;
+  max-width: 100%;
+}
+
+.sl-markdown-content table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}

@@ -1,0 +1,33 @@
+---
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta
+      name="description"
+      content="一週間でなれる！スパコンプログラマ / Become an HPC Programmer in Seven Days!"
+    />
+    <title>一週間でなれる！スパコンプログラマ</title>
+    <style>
+      :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+      body { align-items: center; display: flex; justify-content: center; margin: 0; min-height: 100vh; }
+      main { max-width: 48rem; padding: 2rem; text-align: center; }
+      nav { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-top: 2rem; }
+      a { border: 1px solid currentColor; border-radius: 0.5rem; min-width: 9rem; padding: 0.8rem 1.2rem; text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>一週間でなれる！スパコンプログラマ</h1>
+      <p lang="en">Become an HPC Programmer in Seven Days!</p>
+      <nav aria-label="Language selection">
+        <a href={`${base}/ja/`} lang="ja">日本語</a>
+        <a href={`${base}/en/`} lang="en">English</a>
+      </nav>
+    </main>
+  </body>
+</html>
