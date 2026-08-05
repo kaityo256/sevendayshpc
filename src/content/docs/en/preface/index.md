@@ -13,7 +13,7 @@ This article is for people who do not have a supercomputer expert nearby. Its go
 
 ## Why use a supercomputer?
 
-Why use a supercomputer in the first place? Because it is there. If you are reading the original Japanese edition, you are quite likely in Japan, which gives you access to some of the world’s leading supercomputers. Japan is a major supercomputing nation. The TOP500 website shows the countries hosting the world’s five hundred fastest systems. In June 2018, China led with 206 sites, the United States was second with 124, and Japan ranked third with 36. A country that ranks third in the number of TOP500 systems and has repeatedly hosted the world’s number-one system can reasonably be called one of the world’s major supercomputing nations.
+Why use a supercomputer in the first place? Because it’s there. Using a supercomputer doesn’t just allow you to perform large-scale calculations. It also expands your imagination.
 
 I once had the following experience while collaborating with a researcher overseas. I proposed a calculation to my collaborator. He replied that it would be interesting, but computationally far too expensive. When I told him, “It would take about a day on our supercomputer,” he was astonished. This was more than an example of Japan having abundant computational resources. It suggests that **the upper limit of a person’s imagination is set by the scale of the computing resources they use every day**. I believe this is extremely important.
 
