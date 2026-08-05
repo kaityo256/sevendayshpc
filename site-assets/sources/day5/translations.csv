@@ -1,0 +1,25 @@
+﻿day,slide_number,shape_id,shape_name,shape_type,japanese,english,status,notes
+day5,2,18,テキスト ボックス 17,textbox,シリアル版,Serial version,approved,
+day5,2,19,テキスト ボックス 18,textbox,MPI版,MPI version,approved,
+day5,2,22,テキスト ボックス 21,textbox,時間,Time,approved,
+day5,3,7,テキスト ボックス 6,textbox,元の世界\n(グローバルデータ),Original world\n(global data),approved,
+day5,3,9,テキスト ボックス 8,textbox,各プロセスは「のりしろ」部分込みの領域を保持する,Each process stores its region including halos,approved,layout check
+day5,3,368,テキスト ボックス 367,textbox,4プロセスで分割,Split across 4 processes,approved,
+day5,3,369,テキスト ボックス 368,textbox,ランク0,Rank 0,approved,
+day5,3,370,テキスト ボックス 369,textbox,ランク1,Rank 1,approved,
+day5,3,371,テキスト ボックス 370,textbox,ランク2,Rank 2,approved,
+day5,3,372,テキスト ボックス 371,textbox,ランク3,Rank 3,approved,
+day5,4,76,テキスト ボックス 75,textbox,1. 送信バッファの作成,1. Create send buffers,approved,
+day5,4,96,テキスト ボックス 95,textbox,「のりしろ」以外のデータを一次元配列に,Put non-halo data into a one-dimensional array,approved,layout check
+day5,4,97,テキスト ボックス 96,textbox,2. MPI_Gatherで集める,2. Gather with MPI_Gather,approved,
+day5,4,231,テキスト ボックス 230,textbox,3. 受け取ったデータを並び替える,3. Rearrange the received data,approved,
+day5,4,365,テキスト ボックス 364,textbox,データ集約完了！,Data gathering complete!,approved,
+day5,5,353,テキスト ボックス 352,textbox,この領域を,This region,approved,
+day5,5,354,テキスト ボックス 353,textbox,この「のりしろ」\nに送る,Send to this halo,approved,
+day5,5,355,テキスト ボックス 354,textbox,自分の左側ののりしろに、左側のプロセスからデータが保存される,Data from the left process is stored in your left halo,approved,layout check
+day5,5,356,テキスト ボックス 355,textbox,左から受け取り、右に送る通信,Communication that receives from the left and sends to the right,approved,layout check
+day5,6,94,テキスト ボックス 93,textbox,1. 左右の通信が終わった状態,1. After left-right communication has finished,approved,layout check
+day5,6,95,テキスト ボックス 94,textbox,2. 左右からもらったデータごと\n　上に送る (下からももらう),2. Send the data received from left and right\nupward (and receive from below),approved,layout check
+day5,6,204,テキスト ボックス 203,textbox,2. 上辺に加え、斜めのデータも\n　送ることができた,"2. In addition to the top edge,\ndiagonal data has also been sent",approved,layout check
+day5,6,211,テキスト ボックス 210,textbox,上のプロセス,Upper process,approved,
+day5,6,212,テキスト ボックス 211,textbox,下のプロセス,Lower process,approved,

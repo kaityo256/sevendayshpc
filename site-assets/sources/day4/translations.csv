@@ -1,0 +1,80 @@
+﻿day,slide_number,shape_id,shape_name,shape_type,japanese,english,status,notes
+day4,1,3,テキスト ボックス 2,textbox,馬鹿パラは通信がほぼ不要,Embarrassingly parallel workloads require almost no communication,approved,layout check
+day4,1,10,正方形/長方形 9,autoshape,初期化,Initialization,approved,
+day4,1,36,テキスト ボックス 35,grouped_shape,プロセス,Process,approved,
+day4,1,49,テキスト ボックス 48,grouped_shape,プロセス,Process,approved,
+day4,1,52,テキスト ボックス 51,grouped_shape,プロセス,Process,approved,
+day4,1,59,テキスト ボックス 58,textbox,初期化以外では通信しない,No communication except during initialization,approved,layout check
+day4,1,60,テキスト ボックス 59,textbox,馬鹿パラは信頼性が不要,Embarrassingly parallel workloads do not require reliability,approved,layout check
+day4,1,61,正方形/長方形 60,autoshape,初期化,Initialization,approved,
+day4,1,64,テキスト ボックス 63,grouped_shape,プロセス,Process,approved,
+day4,1,67,テキスト ボックス 66,textbox,プロセス,Process,approved,
+day4,1,70,テキスト ボックス 69,grouped_shape,プロセス,Process,approved,
+day4,1,75,テキスト ボックス 74,textbox,ノード故障,Node failure,approved,
+day4,1,76,テキスト ボックス 75,textbox,失敗した計算だけやり直せば良い,Only the failed calculation needs to be rerun,approved,layout check
+day4,2,2,正方形/長方形 1,grouped_shape,プロセス1,Process 1,approved,
+day4,2,4,正方形/長方形 3,grouped_shape,プロセス2,Process 2,approved,
+day4,2,5,正方形/長方形 4,grouped_shape,プロセス3,Process 3,approved,
+day4,2,6,正方形/長方形 5,grouped_shape,プロセス4,Process 4,approved,
+day4,2,14,正方形/長方形 13,grouped_shape,プロセス1,Process 1,approved,
+day4,2,15,正方形/長方形 14,grouped_shape,プロセス2,Process 2,approved,
+day4,2,16,正方形/長方形 15,grouped_shape,プロセス3,Process 3,approved,
+day4,2,17,正方形/長方形 16,grouped_shape,プロセス4,Process 4,approved,
+day4,2,19,正方形/長方形 18,grouped_shape,プロセス1,Process 1,approved,
+day4,2,20,正方形/長方形 19,grouped_shape,プロセス2,Process 2,approved,
+day4,2,21,正方形/長方形 20,grouped_shape,プロセス3,Process 3,approved,
+day4,2,22,正方形/長方形 21,grouped_shape,プロセス4,Process 4,approved,
+day4,2,55,テキスト ボックス 54,textbox,非自明並列 (全体通信),Non-trivial parallelism\n(global communication),approved,layout check
+day4,2,56,テキスト ボックス 55,textbox,非自明並列 (局所通信),Non-trivial parallelism\n(local communication),approved,layout check
+day4,2,57,テキスト ボックス 56,textbox,1ステップ,1 step,approved,
+day4,2,58,テキスト ボックス 57,textbox,高速フーリエ変換(FFT)など,"Fast Fourier transform (FFT), etc.",approved,layout check
+day4,2,59,正方形/長方形 58,grouped_shape,プロセス1,Process 1,approved,
+day4,2,60,正方形/長方形 59,grouped_shape,プロセス2,Process 2,approved,
+day4,2,65,正方形/長方形 64,grouped_shape,プロセス3,Process 3,approved,
+day4,2,66,正方形/長方形 65,grouped_shape,プロセス4,Process 4,approved,
+day4,2,83,テキスト ボックス 82,textbox,1ステップ,1 step,approved,
+day4,2,86,テキスト ボックス 85,textbox,領域分割など,"Domain decomposition, etc.",approved,
+day4,3,19,テキスト ボックス 18,textbox,一様加熱\n(固定境界),Uniform heating\n(fixed boundary),approved,layout check
+day4,3,20,テキスト ボックス 19,textbox,温度固定\n(周期境界),Fixed temperature\n(periodic boundary),approved,layout check
+day4,3,21,テキスト ボックス 20,textbox,棒全体を加熱する\n両端を同じ温度に固定する,Heat the entire rod\nFix both ends at the same temperature,approved,layout check
+day4,3,22,テキスト ボックス 21,textbox,リング状の金属の左を高温、右を低温に固定,Fix the left side of a metal ring at high temperature and the right side at low temperature,approved,layout check
+day4,3,24,テキスト ボックス 23,textbox,座標,Coordinate,approved,
+day4,3,28,テキスト ボックス 27,textbox,温度,Temperature,approved,
+day4,3,33,テキスト ボックス 32,textbox,温度,Temperature,approved,
+day4,3,42,テキスト ボックス 41,textbox,定常状態,Steady state,approved,
+day4,4,24,テキスト ボックス 23,textbox,ある点の、次の時刻の状態を計算するには、\n両脇の点の情報が必要になる,"To compute the next-time state of a point,\ninformation from both neighboring points is needed",approved,layout check
+day4,4,39,テキスト ボックス 38,textbox,元の世界\n(グローバルデータ),Original world\n(global data),approved,
+day4,4,58,テキスト ボックス 57,textbox,「のりしろ」付きで領域分割,Domain decomposition with halos,approved,layout check
+day4,4,78,テキスト ボックス 77,textbox,まず端の情報を交換,First exchange boundary information,approved,layout check
+day4,4,105,テキスト ボックス 104,textbox,もらった情報をもとに、次の時刻の端の点の状態が計算できる,"Using the received information, the next-time state of the boundary points can be computed",approved,layout check
+day4,5,2,テキスト ボックス 1,textbox,並列プログラムのファイルの吐き方,Ways for a parallel program to write files,approved,layout check
+day4,5,3,テキスト ボックス 2,textbox,1. 全プロセス勝手に吐く,1. Each process writes independently,approved,layout check
+day4,5,5,正方形/長方形 4,grouped_shape,プロセス1,Process 1,approved,
+day4,5,17,正方形/長方形 16,grouped_shape,プロセス2,Process 2,approved,
+day4,5,21,正方形/長方形 20,grouped_shape,プロセス3,Process 3,approved,
+day4,5,25,正方形/長方形 24,grouped_shape,プロセス4,Process 4,approved,
+day4,5,30,テキスト ボックス 29,textbox,コーディングが楽,Easy to code,approved,
+day4,5,31,テキスト ボックス 30,textbox,ステップ数 x プロセス数の\n大量のファイルが出力される,A large number of files are output:\nsteps x processes,approved,layout check
+day4,5,32,テキスト ボックス 31,textbox,2.  一つのファイルに追記,2. Append to a single file,approved,
+day4,5,34,正方形/長方形 33,autoshape,プロセス1,Process 1,approved,
+day4,5,37,正方形/長方形 36,autoshape,プロセス2,Process 2,approved,
+day4,5,38,正方形/長方形 37,autoshape,プロセス3,Process 3,approved,
+day4,5,39,正方形/長方形 38,autoshape,プロセス4,Process 4,approved,
+day4,5,45,テキスト ボックス 44,textbox,ファイル数が減る,Fewer files,approved,
+day4,5,47,テキスト ボックス 46,textbox,プロセス数が多いと遅い,Slow with many processes,approved,
+day4,5,48,テキスト ボックス 47,textbox,3.  一度まとめてから吐く,"3. Gather once, then write",approved,
+day4,5,49,正方形/長方形 48,autoshape,プロセス1,Process 1,approved,
+day4,5,52,正方形/長方形 51,autoshape,プロセス2,Process 2,approved,
+day4,5,53,正方形/長方形 52,autoshape,プロセス3,Process 3,approved,
+day4,5,54,正方形/長方形 53,autoshape,プロセス4,Process 4,approved,
+day4,5,60,テキスト ボックス 59,textbox,ファイル出力がまとめて\n一回なので早い,"File output is gathered\nand done once, so it is fast",approved,layout check
+day4,5,62,テキスト ボックス 61,textbox,メモリを消費する,Consumes memory,approved,
+day4,6,2,テキスト ボックス 1,textbox,Eagerプロトコル,Eager protocol,approved,
+day4,6,3,テキスト ボックス 2,textbox,Rendezvousプロトコル,Rendezvous protocol,approved,
+day4,6,8,四角形吹き出し 7,autoshape,今から1MBのデータ送っていいですか？,May I send 1 MB of data now?,approved,
+day4,6,9,四角形吹き出し 8,autoshape,いいですよ,Go ahead.,approved,
+day4,6,10,四角形吹き出し 9,autoshape,ではこれから送ります,Then I will send it now.,approved,
+day4,6,12,テキスト ボックス 11,textbox,ハンドシェイク,Handshake,approved,
+day4,6,16,テキスト ボックス 15,textbox,相手から直接データを受け取る,Receive data directly from the sender,approved,layout check
+day4,6,23,テキスト ボックス 22,textbox,決められた場所にデータを置く,Place data in a predetermined location,approved,layout check
+day4,6,24,テキスト ボックス 23,textbox,受信側のタイミングで受け取りに行く,Receive it when the receiver is ready,approved,layout check

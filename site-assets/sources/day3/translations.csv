@@ -1,0 +1,13 @@
+﻿day,slide_number,shape_id,shape_name,shape_type,japanese,english,status,notes
+day3,1,9,テキスト ボックス 8,textbox,ストロングスケーリング,Strong scaling,approved,
+day3,1,10,テキスト ボックス 9,textbox,ウィークスケーリング,Weak scaling,approved,
+day3,1,13,テキスト ボックス 12,textbox,トータルの計算量を固定したまま並列数を増やし、実行時間を短縮する,"Keep the total amount of computation fixed, increase parallelism, and reduce execution time",approved,layout check
+day3,1,14,テキスト ボックス 13,textbox,並列単位あたりの計算量を固定して並列数を増やし、トータルサイズを稼ぐ,"Keep computation per parallel unit fixed, increase parallelism, and increase the total size",approved,layout check
+day3,1,24,テキスト ボックス 23,textbox,プロセス1,Process 1,approved,
+day3,1,25,テキスト ボックス 24,textbox,プロセス2,Process 2,approved,
+day3,1,26,テキスト ボックス 25,textbox,プロセス3,Process 3,approved,
+day3,1,27,テキスト ボックス 26,textbox,プロセス4,Process 4,approved,
+day3,1,28,テキスト ボックス 27,textbox,プロセス1,Process 1,approved,
+day3,1,29,テキスト ボックス 28,textbox,プロセス2,Process 2,approved,
+day3,1,30,テキスト ボックス 29,textbox,プロセス3,Process 3,approved,
+day3,1,31,テキスト ボックス 30,textbox,プロセス4,Process 4,approved,

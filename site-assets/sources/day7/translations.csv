@@ -1,0 +1,29 @@
+﻿day,slide_number,shape_id,shape_name,shape_type,japanese,english,status,notes
+day7,1,2,テキスト ボックス 1,textbox,スーパースカラ,Superscalar,approved,
+day7,1,3,テキスト ボックス 2,textbox,ハードウェアにがんばらせる,Make the hardware work hard,approved,
+day7,1,5,テキスト ボックス 4,textbox,コンパイラにがんばらせる,Make the compiler work hard,approved,
+day7,1,7,テキスト ボックス 6,textbox,プログラマにがんばらせる,Make the programmer work hard,approved,
+day7,1,9,角丸四角形 8,autoshape,実行\nユニット,Execution\nunit,approved,
+day7,1,10,角丸四角形 9,autoshape,実行\nユニット,Execution\nunit,approved,
+day7,1,13,角丸四角形 12,autoshape,命令キュー,Instruction queue,approved,
+day7,1,14,テキスト ボックス 13,textbox,振り分け,Dispatch,approved,
+day7,1,20,テキスト ボックス 19,textbox,実行ユニットが増えると\n命令振り分けで死ぬ,"As execution units increase,\ninstruction dispatch becomes the bottleneck",approved,layout check
+day7,1,21,テキスト ボックス 20,textbox,命令の後方互換性を保てる,Instruction backward compatibility is preserved,approved,layout check
+day7,1,29,角丸四角形 28,autoshape,実行\nユニット,Execution\nunit,approved,
+day7,1,30,角丸四角形 29,autoshape,実行\nユニット,Execution\nunit,approved,
+day7,1,31,正方形/長方形 30,autoshape,命令A,Instruction A,approved,
+day7,1,32,正方形/長方形 31,autoshape,命令B,Instruction B,approved,
+day7,1,34,テキスト ボックス 33,textbox,VLIWの一つの命令,One VLIW instruction,approved,
+day7,1,39,テキスト ボックス 38,textbox,依存関係チェックが不要\n→ ハードウェアが簡単に,No dependency checking needed\n-> hardware becomes simpler,approved,layout check
+day7,1,40,テキスト ボックス 39,textbox,神のように賢いコンパイラが必要\n後方互換性を失う,Requires a godlike smart compiler\nLoses backward compatibility,approved,layout check
+day7,1,43,角丸四角形 42,autoshape,実行\nユニット,Execution\nunit,approved,
+day7,1,46,テキスト ボックス 45,textbox,ハードウェアは簡単\n後方互換性も保てる,Hardware is simple\nBackward compatibility is preserved,approved,layout check
+day7,1,47,テキスト ボックス 46,textbox,プログラムが大変,Programming is hard,approved,
+day7,1,52,正方形/長方形 51,autoshape,命令A,Instruction A,approved,
+day7,1,53,正方形/長方形 52,autoshape,命令B,Instruction B,approved,
+day7,1,54,テキスト ボックス 53,textbox,命令を複数取ってきて、\nスケジューラが振り分ける,"Fetch multiple instructions,\nand the scheduler dispatches them",approved,layout check
+day7,1,55,テキスト ボックス 54,textbox,事前に並列実行できる命令を\nひとつにまとめておく,Bundle instructions that can run in parallel\ninto one instruction in advance,approved,layout check
+day7,1,59,テキスト ボックス 58,textbox,データA,Data A,approved,
+day7,1,60,テキスト ボックス 59,textbox,データB,Data B,approved,
+day7,1,62,テキスト ボックス 61,textbox,SIMD命令,SIMD instruction,approved,
+day7,1,63,テキスト ボックス 62,textbox,複数のデータに同じ演算を\n一度に行う,Apply the same operation to multiple data items\nat once,approved,layout check

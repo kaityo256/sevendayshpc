@@ -10,6 +10,7 @@ build/
 # Python
 .venv/
 .uv-cache/
+__pycache__/
 
 # Astro
 node_modules/

@@ -1,0 +1,39 @@
+﻿day,slide_number,shape_id,shape_name,shape_type,japanese,english,status,notes
+day1,1,4,角丸四角形 3,grouped_shape,スレッド,Thread,approved,
+day1,1,5,テキスト ボックス 4,grouped_shape,プロセス,Process,approved,
+day1,1,6,角丸四角形 5,grouped_shape,スレッド,Thread,approved,
+day1,1,7,角丸四角形 6,grouped_shape,スレッド,Thread,approved,
+day1,1,8,角丸四角形 7,grouped_shape,スレッド,Thread,approved,
+day1,1,9,正方形/長方形 8,grouped_shape,メモリ,Memory,approved,
+day1,1,21,角丸四角形 20,grouped_shape,スレッド,Thread,approved,
+day1,1,22,テキスト ボックス 21,grouped_shape,プロセス,Process,approved,
+day1,1,23,角丸四角形 22,grouped_shape,スレッド,Thread,approved,
+day1,1,24,角丸四角形 23,grouped_shape,スレッド,Thread,approved,
+day1,1,25,角丸四角形 24,grouped_shape,スレッド,Thread,approved,
+day1,1,26,正方形/長方形 25,grouped_shape,メモリ,Memory,approved,
+day1,1,32,テキスト ボックス 31,textbox,オペレーティング・システム (OS),Operating system (OS),approved,
+day1,2,4,角丸四角形 3,grouped_shape,スレッド,Thread,approved,
+day1,2,5,テキスト ボックス 4,grouped_shape,プロセス,Process,approved,
+day1,2,6,角丸四角形 5,grouped_shape,スレッド,Thread,approved,
+day1,2,7,角丸四角形 6,grouped_shape,スレッド,Thread,approved,
+day1,2,8,角丸四角形 7,grouped_shape,スレッド,Thread,approved,
+day1,2,9,正方形/長方形 8,grouped_shape,メモリ,Memory,approved,
+day1,2,17,テキスト ボックス 16,textbox,スレッド並列,Thread parallelism,approved,
+day1,2,21,テキスト ボックス 20,textbox,気軽に試すことができる\n簡単にできる時は簡単,Easy to try casually\nSimple when it is simple,approved,layout check
+day1,2,22,テキスト ボックス 21,textbox,ノードをまたぐことができない\n性能を出すのは意外に大変,Cannot span multiple nodes\nGetting performance is surprisingly hard,approved,layout check
+day1,2,39,正方形/長方形 38,grouped_shape,プロセス,Process,approved,
+day1,2,50,正方形/長方形 49,grouped_shape,プロセス,Process,approved,
+day1,2,51,テキスト ボックス 50,textbox,プロセス並列,Process parallelism,approved,
+day1,2,58,正方形/長方形 57,grouped_shape,プロセス,Process,approved,
+day1,2,59,正方形/長方形 58,grouped_shape,プロセス,Process,approved,
+day1,2,63,テキスト ボックス 62,textbox,通信,Communication,approved,
+day1,2,64,テキスト ボックス 63,textbox,通信,Communication,approved,
+day1,2,65,テキスト ボックス 64,textbox,通信,Communication,approved,
+day1,2,66,テキスト ボックス 65,textbox,通信,Communication,approved,
+day1,2,69,テキスト ボックス 68,textbox,ノードをまたぐことができる,Can span multiple nodes,approved,
+day1,2,71,正方形/長方形 70,autoshape,書いた通りに並列化される,Parallelized exactly as written,approved,layout check
+day1,2,72,正方形/長方形 71,autoshape,明示的に通信を書かなければならない,Communication must be written explicitly,approved,layout check
+day1,3,5,テキスト ボックス 4,textbox,あそこで流れてるジョブ、\n俺のなんすよwww,"That job running over there?\nIt's mine, haha.",approved,layout check
+day1,3,6,テキスト ボックス 5,textbox,スパコンが使えると楽しい,Using a supercomputer is fun,approved,
+day1,4,6,テキスト ボックス 5,textbox,あそこで流れてるジョブ、\n俺のなんすよwww,"That job running over there?\nIt's mine, haha.",approved,layout check
+day1,4,8,正方形/長方形 7,autoshape,一週間でなれる！スパコンプログラマ,Become an HPC Programmer in Seven Days!,approved,layout check

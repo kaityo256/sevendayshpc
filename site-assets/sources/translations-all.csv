@@ -1,0 +1,277 @@
+﻿day,slide_number,shape_id,shape_name,shape_type,japanese,english,status,notes
+day1,1,4,角丸四角形 3,grouped_shape,スレッド,Thread,approved,
+day1,1,5,テキスト ボックス 4,grouped_shape,プロセス,Process,approved,
+day1,1,6,角丸四角形 5,grouped_shape,スレッド,Thread,approved,
+day1,1,7,角丸四角形 6,grouped_shape,スレッド,Thread,approved,
+day1,1,8,角丸四角形 7,grouped_shape,スレッド,Thread,approved,
+day1,1,9,正方形/長方形 8,grouped_shape,メモリ,Memory,approved,
+day1,1,21,角丸四角形 20,grouped_shape,スレッド,Thread,approved,
+day1,1,22,テキスト ボックス 21,grouped_shape,プロセス,Process,approved,
+day1,1,23,角丸四角形 22,grouped_shape,スレッド,Thread,approved,
+day1,1,24,角丸四角形 23,grouped_shape,スレッド,Thread,approved,
+day1,1,25,角丸四角形 24,grouped_shape,スレッド,Thread,approved,
+day1,1,26,正方形/長方形 25,grouped_shape,メモリ,Memory,approved,
+day1,1,32,テキスト ボックス 31,textbox,オペレーティング・システム (OS),Operating system (OS),approved,
+day1,2,4,角丸四角形 3,grouped_shape,スレッド,Thread,approved,
+day1,2,5,テキスト ボックス 4,grouped_shape,プロセス,Process,approved,
+day1,2,6,角丸四角形 5,grouped_shape,スレッド,Thread,approved,
+day1,2,7,角丸四角形 6,grouped_shape,スレッド,Thread,approved,
+day1,2,8,角丸四角形 7,grouped_shape,スレッド,Thread,approved,
+day1,2,9,正方形/長方形 8,grouped_shape,メモリ,Memory,approved,
+day1,2,17,テキスト ボックス 16,textbox,スレッド並列,Thread parallelism,approved,
+day1,2,21,テキスト ボックス 20,textbox,気軽に試すことができる\n簡単にできる時は簡単,Easy to try casually\nSimple when it is simple,approved,layout check
+day1,2,22,テキスト ボックス 21,textbox,ノードをまたぐことができない\n性能を出すのは意外に大変,Cannot span multiple nodes\nGetting performance is surprisingly hard,approved,layout check
+day1,2,39,正方形/長方形 38,grouped_shape,プロセス,Process,approved,
+day1,2,50,正方形/長方形 49,grouped_shape,プロセス,Process,approved,
+day1,2,51,テキスト ボックス 50,textbox,プロセス並列,Process parallelism,approved,
+day1,2,58,正方形/長方形 57,grouped_shape,プロセス,Process,approved,
+day1,2,59,正方形/長方形 58,grouped_shape,プロセス,Process,approved,
+day1,2,63,テキスト ボックス 62,textbox,通信,Communication,approved,
+day1,2,64,テキスト ボックス 63,textbox,通信,Communication,approved,
+day1,2,65,テキスト ボックス 64,textbox,通信,Communication,approved,
+day1,2,66,テキスト ボックス 65,textbox,通信,Communication,approved,
+day1,2,69,テキスト ボックス 68,textbox,ノードをまたぐことができる,Can span multiple nodes,approved,
+day1,2,71,正方形/長方形 70,autoshape,書いた通りに並列化される,Parallelized exactly as written,approved,layout check
+day1,2,72,正方形/長方形 71,autoshape,明示的に通信を書かなければならない,Communication must be written explicitly,approved,layout check
+day1,3,5,テキスト ボックス 4,textbox,あそこで流れてるジョブ、\n俺のなんすよwww,"That job running over there?\nIt's mine, haha.",approved,layout check
+day1,3,6,テキスト ボックス 5,textbox,スパコンが使えると楽しい,Using a supercomputer is fun,approved,
+day1,4,6,テキスト ボックス 5,textbox,あそこで流れてるジョブ、\n俺のなんすよwww,"That job running over there?\nIt's mine, haha.",approved,layout check
+day1,4,8,正方形/長方形 7,autoshape,一週間でなれる！スパコンプログラマ,Become an HPC Programmer in Seven Days!,approved,layout check
+day2,1,9,テキスト ボックス 8,textbox,利用者,User,approved,
+day2,1,10,テキスト ボックス 9,textbox,ログインノード,Login node,approved,
+day2,1,11,テキスト ボックス 10,textbox,ジョブスケジューラ,Job scheduler,approved,
+day2,1,17,テキスト ボックス 16,textbox,ログイン,Login,approved,
+day2,1,19,テキスト ボックス 18,textbox,計算ノード,Compute node,approved,
+day2,1,26,テキスト ボックス 25,textbox,スパコン,Supercomputer,approved,
+day2,1,27,テキスト ボックス 26,textbox,ジョブ,Job,approved,
+day2,2,8,テキスト ボックス 7,textbox,ジョブの実行方法,How to run the job,approved,
+day2,2,10,テキスト ボックス 9,textbox,ジョブの要求資源,Resources requested by the job,approved,
+day2,2,17,テキスト ボックス 16,textbox,ジョブスクリプトの用意,Prepare the job script,approved,
+day2,2,18,テキスト ボックス 17,textbox,ジョブの投入,Submit the job,approved,
+day2,3,6,テキスト ボックス 5,textbox,大規模計算は大縄跳び,Large-scale computing is like group jump rope,approved,layout check
+day2,3,7,テキスト ボックス 6,textbox,一人でもこけたら全体が失敗してしまう,"If even one person trips, the whole thing fails",approved,layout check
+day2,4,11,テキスト ボックス 10,textbox,ユーザ,User,approved,
+day2,4,15,テキスト ボックス 14,textbox,ログインノード,Login node,approved,
+day2,4,16,テキスト ボックス 15,textbox,ファイルシステム,File system,approved,
+day2,4,19,テキスト ボックス 18,textbox,インターネット,Internet,approved,
+day2,4,32,テキスト ボックス 31,textbox,計算ノード,Compute node,approved,
+day2,4,33,テキスト ボックス 32,textbox,計算ノード,Compute node,approved,
+day2,4,34,テキスト ボックス 33,textbox,計算ノード,Compute node,approved,
+day2,4,35,テキスト ボックス 34,textbox,計算ノード,Compute node,approved,
+day2,4,36,テキスト ボックス 35,textbox,高速ネットワーク\n(InfiniBand等),"High-speed network\n(InfiniBand, etc.)",approved,layout check
+day2,5,7,テキスト ボックス 6,textbox,グローバルファイルシステム,Global file system,approved,
+day2,5,8,テキスト ボックス 7,textbox,計算ノード,Compute node,approved,
+day2,5,34,テキスト ボックス 33,textbox,ここが大混雑,This becomes heavily congested,approved,
+day2,6,7,テキスト ボックス 6,textbox,まず出向先近くのホテルに行く\n(ステージイン),First go to a hotel near the assignment site\n(stage-in),approved,layout check
+day2,6,10,テキスト ボックス 9,textbox,ホテル\n(ローカルファイルシステム),Hotel\n(local file system),approved,
+day2,6,14,テキスト ボックス 13,textbox,自宅\n(グローバルファイルシステム),Home\n(global file system),approved,
+day2,6,16,テキスト ボックス 15,textbox,出向先\n(計算ノード),Assignment site\n(compute node),approved,
+day2,6,28,テキスト ボックス 27,textbox,出向中はホテルと会社の往復\n(ローカルファイルにのみアクセス),"During the assignment, travel only between the hotel and office\n(access only local files)",approved,layout check
+day2,6,35,テキスト ボックス 34,textbox,出向が終わったら家に帰る\n(ステージアウト),Return home when the assignment ends\n(stage-out),approved,layout check
+day2,6,36,テキスト ボックス 35,textbox,ジョブ開始時,At job start,approved,
+day2,6,37,テキスト ボックス 36,textbox,ジョブ実行中,Job running,approved,
+day2,6,38,テキスト ボックス 37,textbox,ジョブ終了時,At job end,approved,
+day2,7,48,正方形/長方形 47,autoshape,Aさんのジョブ\n(実行中),User A's job\n(running),approved,
+day2,7,57,正方形/長方形 56,autoshape,Aさんのジョブ\n(実行中),User A's job\n(running),approved,
+day2,7,58,正方形/長方形 57,autoshape,Aさんのジョブ\n(実行中),User A's job\n(running),approved,
+day2,7,59,正方形/長方形 58,autoshape,Aさんのジョブ\n(実行中),User A's job\n(running),approved,
+day2,7,63,正方形/長方形 62,autoshape,Aさんのジョブ,User A's job,approved,
+day2,7,64,正方形/長方形 63,autoshape,Aさんのジョブ,User A's job,approved,
+day2,7,65,正方形/長方形 64,autoshape,Aさんのジョブ,User A's job,approved,
+day2,7,66,正方形/長方形 65,autoshape,Aさんのジョブ,User A's job,approved,
+day2,7,67,正方形/長方形 66,autoshape,Aさんのジョブ,User A's job,approved,
+day2,7,68,正方形/長方形 67,autoshape,Aさんのジョブ,User A's job,approved,
+day2,7,69,正方形/長方形 68,autoshape,Bさんのジョブ,User B's job,approved,
+day2,7,73,テキスト ボックス 72,textbox,待ち行列,Queue,approved,
+day2,7,75,テキスト ボックス 74,textbox,Aさん,User A,approved,
+day2,7,77,テキスト ボックス 76,textbox,Bさん,User B,approved,
+day2,7,79,テキスト ボックス 78,textbox,スタミナ,Stamina,approved,
+day2,7,81,テキスト ボックス 80,textbox,スタミナ,Stamina,approved,
+day2,7,89,正方形/長方形 88,autoshape,Aさんのジョブ\n(実行中),User A's job\n(running),approved,
+day2,7,90,正方形/長方形 89,autoshape,Aさんのジョブ\n(実行中),User A's job\n(running),approved,
+day2,7,91,正方形/長方形 90,autoshape,Aさんのジョブ\n(実行中),User A's job\n(running),approved,
+day2,7,92,正方形/長方形 91,autoshape,Aさんのジョブ\n(実行中),User A's job\n(running),approved,
+day2,7,93,正方形/長方形 92,autoshape,Aさんのジョブ,User A's job,approved,
+day2,7,94,正方形/長方形 93,autoshape,Aさんのジョブ,User A's job,approved,
+day2,7,95,正方形/長方形 94,autoshape,Aさんのジョブ,User A's job,approved,
+day2,7,96,正方形/長方形 95,autoshape,Aさんのジョブ,User A's job,approved,
+day2,7,97,正方形/長方形 96,autoshape,Aさんのジョブ,User A's job,approved,
+day2,7,98,正方形/長方形 97,autoshape,Aさんのジョブ,User A's job,approved,
+day2,7,99,正方形/長方形 98,autoshape,Bさんのジョブ,User B's job,approved,
+day2,7,101,テキスト ボックス 100,textbox,待ち行列,Queue,approved,
+day2,7,103,テキスト ボックス 102,textbox,Aさん,User A,approved,
+day2,7,105,テキスト ボックス 104,textbox,Bさん,User B,approved,
+day2,7,107,テキスト ボックス 106,textbox,スタミナ,Stamina,approved,
+day2,7,109,テキスト ボックス 108,textbox,スタミナ,Stamina,approved,
+day2,8,15,正方形/長方形 14,autoshape,1ノードジョブ\n(実行中),1-node job\n(running),approved,
+day2,8,18,テキスト ボックス 17,textbox,現在時刻,Current time,approved,
+day2,8,20,テキスト ボックス 19,textbox,終了予定時刻,Estimated end time,approved,
+day2,8,22,正方形/長方形 21,autoshape,4ノードジョブ,4-node job,approved,
+day2,8,23,正方形/長方形 22,autoshape,短い\n2ノードジョブ,Short\n2-node job,approved,
+day2,8,24,テキスト ボックス 23,textbox,空き資源,Free resources,approved,
+day2,8,25,テキスト ボックス 24,textbox,空き資源,Free resources,approved,
+day2,8,26,テキスト ボックス 25,textbox,空き資源,Free resources,approved,
+day2,8,38,正方形/長方形 37,autoshape,1ノードジョブ\n(実行中),1-node job\n(running),approved,
+day2,8,40,テキスト ボックス 39,textbox,現在時刻,Current time,approved,
+day2,8,42,テキスト ボックス 41,textbox,終了予定時刻,Estimated end time,approved,
+day2,8,43,正方形/長方形 42,autoshape,4ノードジョブ,4-node job,approved,
+day2,8,47,テキスト ボックス 46,textbox,空き資源,Free resources,approved,
+day2,8,48,正方形/長方形 47,autoshape,長い\n1ノードジョブ,Long\n1-node job,approved,
+day2,8,49,正方形/長方形 48,autoshape,短い\n2ノードジョブ,Short\n2-node job,approved,
+day2,8,50,正方形/長方形 49,autoshape,長い\n1ノードジョブ,Long\n1-node job,approved,
+day2,8,53,テキスト ボックス 52,textbox,1ノードジョブが実行中\n4ノードジョブが待っている\nその後に短い2ノードジョブが来た,A 1-node job is running\nA 4-node job is waiting\nThen a short 2-node job arrives,approved,layout check
+day2,8,56,テキスト ボックス 55,textbox,計画通り,As planned,approved,
+day2,8,58,テキスト ボックス 57,textbox,後から投げられた2ノードジョブが\n前のジョブを追い越して実行される\n(バックフィル),A later 2-node job overtakes the earlier job and runs\n(backfill),approved,layout check
+day3,1,9,テキスト ボックス 8,textbox,ストロングスケーリング,Strong scaling,approved,
+day3,1,10,テキスト ボックス 9,textbox,ウィークスケーリング,Weak scaling,approved,
+day3,1,13,テキスト ボックス 12,textbox,トータルの計算量を固定したまま並列数を増やし、実行時間を短縮する,"Keep the total amount of computation fixed, increase parallelism, and reduce execution time",approved,layout check
+day3,1,14,テキスト ボックス 13,textbox,並列単位あたりの計算量を固定して並列数を増やし、トータルサイズを稼ぐ,"Keep computation per parallel unit fixed, increase parallelism, and increase the total size",approved,layout check
+day3,1,24,テキスト ボックス 23,textbox,プロセス1,Process 1,approved,
+day3,1,25,テキスト ボックス 24,textbox,プロセス2,Process 2,approved,
+day3,1,26,テキスト ボックス 25,textbox,プロセス3,Process 3,approved,
+day3,1,27,テキスト ボックス 26,textbox,プロセス4,Process 4,approved,
+day3,1,28,テキスト ボックス 27,textbox,プロセス1,Process 1,approved,
+day3,1,29,テキスト ボックス 28,textbox,プロセス2,Process 2,approved,
+day3,1,30,テキスト ボックス 29,textbox,プロセス3,Process 3,approved,
+day3,1,31,テキスト ボックス 30,textbox,プロセス4,Process 4,approved,
+day4,1,3,テキスト ボックス 2,textbox,馬鹿パラは通信がほぼ不要,Embarrassingly parallel workloads require almost no communication,approved,layout check
+day4,1,10,正方形/長方形 9,autoshape,初期化,Initialization,approved,
+day4,1,36,テキスト ボックス 35,grouped_shape,プロセス,Process,approved,
+day4,1,49,テキスト ボックス 48,grouped_shape,プロセス,Process,approved,
+day4,1,52,テキスト ボックス 51,grouped_shape,プロセス,Process,approved,
+day4,1,59,テキスト ボックス 58,textbox,初期化以外では通信しない,No communication except during initialization,approved,layout check
+day4,1,60,テキスト ボックス 59,textbox,馬鹿パラは信頼性が不要,Embarrassingly parallel workloads do not require reliability,approved,layout check
+day4,1,61,正方形/長方形 60,autoshape,初期化,Initialization,approved,
+day4,1,64,テキスト ボックス 63,grouped_shape,プロセス,Process,approved,
+day4,1,67,テキスト ボックス 66,textbox,プロセス,Process,approved,
+day4,1,70,テキスト ボックス 69,grouped_shape,プロセス,Process,approved,
+day4,1,75,テキスト ボックス 74,textbox,ノード故障,Node failure,approved,
+day4,1,76,テキスト ボックス 75,textbox,失敗した計算だけやり直せば良い,Only the failed calculation needs to be rerun,approved,layout check
+day4,2,2,正方形/長方形 1,grouped_shape,プロセス1,Process 1,approved,
+day4,2,4,正方形/長方形 3,grouped_shape,プロセス2,Process 2,approved,
+day4,2,5,正方形/長方形 4,grouped_shape,プロセス3,Process 3,approved,
+day4,2,6,正方形/長方形 5,grouped_shape,プロセス4,Process 4,approved,
+day4,2,14,正方形/長方形 13,grouped_shape,プロセス1,Process 1,approved,
+day4,2,15,正方形/長方形 14,grouped_shape,プロセス2,Process 2,approved,
+day4,2,16,正方形/長方形 15,grouped_shape,プロセス3,Process 3,approved,
+day4,2,17,正方形/長方形 16,grouped_shape,プロセス4,Process 4,approved,
+day4,2,19,正方形/長方形 18,grouped_shape,プロセス1,Process 1,approved,
+day4,2,20,正方形/長方形 19,grouped_shape,プロセス2,Process 2,approved,
+day4,2,21,正方形/長方形 20,grouped_shape,プロセス3,Process 3,approved,
+day4,2,22,正方形/長方形 21,grouped_shape,プロセス4,Process 4,approved,
+day4,2,55,テキスト ボックス 54,textbox,非自明並列 (全体通信),Non-trivial parallelism\n(global communication),approved,layout check
+day4,2,56,テキスト ボックス 55,textbox,非自明並列 (局所通信),Non-trivial parallelism\n(local communication),approved,layout check
+day4,2,57,テキスト ボックス 56,textbox,1ステップ,1 step,approved,
+day4,2,58,テキスト ボックス 57,textbox,高速フーリエ変換(FFT)など,"Fast Fourier transform (FFT), etc.",approved,layout check
+day4,2,59,正方形/長方形 58,grouped_shape,プロセス1,Process 1,approved,
+day4,2,60,正方形/長方形 59,grouped_shape,プロセス2,Process 2,approved,
+day4,2,65,正方形/長方形 64,grouped_shape,プロセス3,Process 3,approved,
+day4,2,66,正方形/長方形 65,grouped_shape,プロセス4,Process 4,approved,
+day4,2,83,テキスト ボックス 82,textbox,1ステップ,1 step,approved,
+day4,2,86,テキスト ボックス 85,textbox,領域分割など,"Domain decomposition, etc.",approved,
+day4,3,19,テキスト ボックス 18,textbox,一様加熱\n(固定境界),Uniform heating\n(fixed boundary),approved,layout check
+day4,3,20,テキスト ボックス 19,textbox,温度固定\n(周期境界),Fixed temperature\n(periodic boundary),approved,layout check
+day4,3,21,テキスト ボックス 20,textbox,棒全体を加熱する\n両端を同じ温度に固定する,Heat the entire rod\nFix both ends at the same temperature,approved,layout check
+day4,3,22,テキスト ボックス 21,textbox,リング状の金属の左を高温、右を低温に固定,Fix the left side of a metal ring at high temperature and the right side at low temperature,approved,layout check
+day4,3,24,テキスト ボックス 23,textbox,座標,Coordinate,approved,
+day4,3,28,テキスト ボックス 27,textbox,温度,Temperature,approved,
+day4,3,33,テキスト ボックス 32,textbox,温度,Temperature,approved,
+day4,3,42,テキスト ボックス 41,textbox,定常状態,Steady state,approved,
+day4,4,24,テキスト ボックス 23,textbox,ある点の、次の時刻の状態を計算するには、\n両脇の点の情報が必要になる,"To compute the next-time state of a point,\ninformation from both neighboring points is needed",approved,layout check
+day4,4,39,テキスト ボックス 38,textbox,元の世界\n(グローバルデータ),Original world\n(global data),approved,
+day4,4,58,テキスト ボックス 57,textbox,「のりしろ」付きで領域分割,Domain decomposition with halos,approved,layout check
+day4,4,78,テキスト ボックス 77,textbox,まず端の情報を交換,First exchange boundary information,approved,layout check
+day4,4,105,テキスト ボックス 104,textbox,もらった情報をもとに、次の時刻の端の点の状態が計算できる,"Using the received information, the next-time state of the boundary points can be computed",approved,layout check
+day4,5,2,テキスト ボックス 1,textbox,並列プログラムのファイルの吐き方,Ways for a parallel program to write files,approved,layout check
+day4,5,3,テキスト ボックス 2,textbox,1. 全プロセス勝手に吐く,1. Each process writes independently,approved,layout check
+day4,5,5,正方形/長方形 4,grouped_shape,プロセス1,Process 1,approved,
+day4,5,17,正方形/長方形 16,grouped_shape,プロセス2,Process 2,approved,
+day4,5,21,正方形/長方形 20,grouped_shape,プロセス3,Process 3,approved,
+day4,5,25,正方形/長方形 24,grouped_shape,プロセス4,Process 4,approved,
+day4,5,30,テキスト ボックス 29,textbox,コーディングが楽,Easy to code,approved,
+day4,5,31,テキスト ボックス 30,textbox,ステップ数 x プロセス数の\n大量のファイルが出力される,A large number of files are output:\nsteps x processes,approved,layout check
+day4,5,32,テキスト ボックス 31,textbox,2.  一つのファイルに追記,2. Append to a single file,approved,
+day4,5,34,正方形/長方形 33,autoshape,プロセス1,Process 1,approved,
+day4,5,37,正方形/長方形 36,autoshape,プロセス2,Process 2,approved,
+day4,5,38,正方形/長方形 37,autoshape,プロセス3,Process 3,approved,
+day4,5,39,正方形/長方形 38,autoshape,プロセス4,Process 4,approved,
+day4,5,45,テキスト ボックス 44,textbox,ファイル数が減る,Fewer files,approved,
+day4,5,47,テキスト ボックス 46,textbox,プロセス数が多いと遅い,Slow with many processes,approved,
+day4,5,48,テキスト ボックス 47,textbox,3.  一度まとめてから吐く,"3. Gather once, then write",approved,
+day4,5,49,正方形/長方形 48,autoshape,プロセス1,Process 1,approved,
+day4,5,52,正方形/長方形 51,autoshape,プロセス2,Process 2,approved,
+day4,5,53,正方形/長方形 52,autoshape,プロセス3,Process 3,approved,
+day4,5,54,正方形/長方形 53,autoshape,プロセス4,Process 4,approved,
+day4,5,60,テキスト ボックス 59,textbox,ファイル出力がまとめて\n一回なので早い,"File output is gathered\nand done once, so it is fast",approved,layout check
+day4,5,62,テキスト ボックス 61,textbox,メモリを消費する,Consumes memory,approved,
+day4,6,2,テキスト ボックス 1,textbox,Eagerプロトコル,Eager protocol,approved,
+day4,6,3,テキスト ボックス 2,textbox,Rendezvousプロトコル,Rendezvous protocol,approved,
+day4,6,8,四角形吹き出し 7,autoshape,今から1MBのデータ送っていいですか？,May I send 1 MB of data now?,approved,
+day4,6,9,四角形吹き出し 8,autoshape,いいですよ,Go ahead.,approved,
+day4,6,10,四角形吹き出し 9,autoshape,ではこれから送ります,Then I will send it now.,approved,
+day4,6,12,テキスト ボックス 11,textbox,ハンドシェイク,Handshake,approved,
+day4,6,16,テキスト ボックス 15,textbox,相手から直接データを受け取る,Receive data directly from the sender,approved,layout check
+day4,6,23,テキスト ボックス 22,textbox,決められた場所にデータを置く,Place data in a predetermined location,approved,layout check
+day4,6,24,テキスト ボックス 23,textbox,受信側のタイミングで受け取りに行く,Receive it when the receiver is ready,approved,layout check
+day5,2,18,テキスト ボックス 17,textbox,シリアル版,Serial version,approved,
+day5,2,19,テキスト ボックス 18,textbox,MPI版,MPI version,approved,
+day5,2,22,テキスト ボックス 21,textbox,時間,Time,approved,
+day5,3,7,テキスト ボックス 6,textbox,元の世界\n(グローバルデータ),Original world\n(global data),approved,
+day5,3,9,テキスト ボックス 8,textbox,各プロセスは「のりしろ」部分込みの領域を保持する,Each process stores its region including halos,approved,layout check
+day5,3,368,テキスト ボックス 367,textbox,4プロセスで分割,Split across 4 processes,approved,
+day5,3,369,テキスト ボックス 368,textbox,ランク0,Rank 0,approved,
+day5,3,370,テキスト ボックス 369,textbox,ランク1,Rank 1,approved,
+day5,3,371,テキスト ボックス 370,textbox,ランク2,Rank 2,approved,
+day5,3,372,テキスト ボックス 371,textbox,ランク3,Rank 3,approved,
+day5,4,76,テキスト ボックス 75,textbox,1. 送信バッファの作成,1. Create send buffers,approved,
+day5,4,96,テキスト ボックス 95,textbox,「のりしろ」以外のデータを一次元配列に,Put non-halo data into a one-dimensional array,approved,layout check
+day5,4,97,テキスト ボックス 96,textbox,2. MPI_Gatherで集める,2. Gather with MPI_Gather,approved,
+day5,4,231,テキスト ボックス 230,textbox,3. 受け取ったデータを並び替える,3. Rearrange the received data,approved,
+day5,4,365,テキスト ボックス 364,textbox,データ集約完了！,Data gathering complete!,approved,
+day5,5,353,テキスト ボックス 352,textbox,この領域を,This region,approved,
+day5,5,354,テキスト ボックス 353,textbox,この「のりしろ」\nに送る,Send to this halo,approved,
+day5,5,355,テキスト ボックス 354,textbox,自分の左側ののりしろに、左側のプロセスからデータが保存される,Data from the left process is stored in your left halo,approved,layout check
+day5,5,356,テキスト ボックス 355,textbox,左から受け取り、右に送る通信,Communication that receives from the left and sends to the right,approved,layout check
+day5,6,94,テキスト ボックス 93,textbox,1. 左右の通信が終わった状態,1. After left-right communication has finished,approved,layout check
+day5,6,95,テキスト ボックス 94,textbox,2. 左右からもらったデータごと\n　上に送る (下からももらう),2. Send the data received from left and right\nupward (and receive from below),approved,layout check
+day5,6,204,テキスト ボックス 203,textbox,2. 上辺に加え、斜めのデータも\n　送ることができた,"2. In addition to the top edge,\ndiagonal data has also been sent",approved,layout check
+day5,6,211,テキスト ボックス 210,textbox,上のプロセス,Upper process,approved,
+day5,6,212,テキスト ボックス 211,textbox,下のプロセス,Lower process,approved,
+day6,2,11,テキスト ボックス 10,textbox,最初に「楽そうだから」と思って\n仕事を引き受けすぎると・・・,If you accept too much work at first\nbecause it looks easy...,approved,layout check
+day6,2,12,角丸四角形吹き出し 11,autoshape,これもお願いね,Please handle this too.,approved,
+day6,2,13,円形吹き出し 12,autoshape,これ頼むよ,Can you take care of this?,approved,
+day6,2,15,角丸四角形吹き出し 14,autoshape,いいっすよ～,Sure.,approved,
+day6,2,16,テキスト ボックス 15,textbox,いつの間にか「担当者」になって\n大変なことに・・・,"Before you know it, you become\n""the person in charge"" and things get painful...",approved,layout check
+day6,2,17,角丸四角形吹き出し 16,autoshape,この件、君が\n担当って聞いたんで,I heard you're in charge\nof this.,approved,layout check
+day6,2,19,テキスト ボックス 18,textbox,ファーストタッチの原則,First-touch policy,approved,
+day6,3,4,テキスト ボックス 3,textbox,シングルノード(12コア x 2ソケット)でのスケーリング,Scaling on a single node (12 cores x 2 sockets),approved,layout check
+day6,3,5,テキスト ボックス 4,textbox,実行時間,Execution time,approved,
+day6,3,6,テキスト ボックス 5,textbox,並列化効率,Parallel efficiency,approved,
+day7,1,2,テキスト ボックス 1,textbox,スーパースカラ,Superscalar,approved,
+day7,1,3,テキスト ボックス 2,textbox,ハードウェアにがんばらせる,Make the hardware work hard,approved,
+day7,1,5,テキスト ボックス 4,textbox,コンパイラにがんばらせる,Make the compiler work hard,approved,
+day7,1,7,テキスト ボックス 6,textbox,プログラマにがんばらせる,Make the programmer work hard,approved,
+day7,1,9,角丸四角形 8,autoshape,実行\nユニット,Execution\nunit,approved,
+day7,1,10,角丸四角形 9,autoshape,実行\nユニット,Execution\nunit,approved,
+day7,1,13,角丸四角形 12,autoshape,命令キュー,Instruction queue,approved,
+day7,1,14,テキスト ボックス 13,textbox,振り分け,Dispatch,approved,
+day7,1,20,テキスト ボックス 19,textbox,実行ユニットが増えると\n命令振り分けで死ぬ,"As execution units increase,\ninstruction dispatch becomes the bottleneck",approved,layout check
+day7,1,21,テキスト ボックス 20,textbox,命令の後方互換性を保てる,Instruction backward compatibility is preserved,approved,layout check
+day7,1,29,角丸四角形 28,autoshape,実行\nユニット,Execution\nunit,approved,
+day7,1,30,角丸四角形 29,autoshape,実行\nユニット,Execution\nunit,approved,
+day7,1,31,正方形/長方形 30,autoshape,命令A,Instruction A,approved,
+day7,1,32,正方形/長方形 31,autoshape,命令B,Instruction B,approved,
+day7,1,34,テキスト ボックス 33,textbox,VLIWの一つの命令,One VLIW instruction,approved,
+day7,1,39,テキスト ボックス 38,textbox,依存関係チェックが不要\n→ ハードウェアが簡単に,No dependency checking needed\n-> hardware becomes simpler,approved,layout check
+day7,1,40,テキスト ボックス 39,textbox,神のように賢いコンパイラが必要\n後方互換性を失う,Requires a godlike smart compiler\nLoses backward compatibility,approved,layout check
+day7,1,43,角丸四角形 42,autoshape,実行\nユニット,Execution\nunit,approved,
+day7,1,46,テキスト ボックス 45,textbox,ハードウェアは簡単\n後方互換性も保てる,Hardware is simple\nBackward compatibility is preserved,approved,layout check
+day7,1,47,テキスト ボックス 46,textbox,プログラムが大変,Programming is hard,approved,
+day7,1,52,正方形/長方形 51,autoshape,命令A,Instruction A,approved,
+day7,1,53,正方形/長方形 52,autoshape,命令B,Instruction B,approved,
+day7,1,54,テキスト ボックス 53,textbox,命令を複数取ってきて、\nスケジューラが振り分ける,"Fetch multiple instructions,\nand the scheduler dispatches them",approved,layout check
+day7,1,55,テキスト ボックス 54,textbox,事前に並列実行できる命令を\nひとつにまとめておく,Bundle instructions that can run in parallel\ninto one instruction in advance,approved,layout check
+day7,1,59,テキスト ボックス 58,textbox,データA,Data A,approved,
+day7,1,60,テキスト ボックス 59,textbox,データB,Data B,approved,
+day7,1,62,テキスト ボックス 61,textbox,SIMD命令,SIMD instruction,approved,
+day7,1,63,テキスト ボックス 62,textbox,複数のデータに同じ演算を\n一度に行う,Apply the same operation to multiple data items\nat once,approved,layout check

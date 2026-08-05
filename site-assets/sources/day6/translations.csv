@@ -1,0 +1,11 @@
+﻿day,slide_number,shape_id,shape_name,shape_type,japanese,english,status,notes
+day6,2,11,テキスト ボックス 10,textbox,最初に「楽そうだから」と思って\n仕事を引き受けすぎると・・・,If you accept too much work at first\nbecause it looks easy...,approved,layout check
+day6,2,12,角丸四角形吹き出し 11,autoshape,これもお願いね,Please handle this too.,approved,
+day6,2,13,円形吹き出し 12,autoshape,これ頼むよ,Can you take care of this?,approved,
+day6,2,15,角丸四角形吹き出し 14,autoshape,いいっすよ～,Sure.,approved,
+day6,2,16,テキスト ボックス 15,textbox,いつの間にか「担当者」になって\n大変なことに・・・,"Before you know it, you become\n""the person in charge"" and things get painful...",approved,layout check
+day6,2,17,角丸四角形吹き出し 16,autoshape,この件、君が\n担当って聞いたんで,I heard you're in charge\nof this.,approved,layout check
+day6,2,19,テキスト ボックス 18,textbox,ファーストタッチの原則,First-touch policy,approved,
+day6,3,4,テキスト ボックス 3,textbox,シングルノード(12コア x 2ソケット)でのスケーリング,Scaling on a single node (12 cores x 2 sockets),approved,layout check
+day6,3,5,テキスト ボックス 4,textbox,実行時間,Execution time,approved,
+day6,3,6,テキスト ボックス 5,textbox,並列化効率,Parallel efficiency,approved,
