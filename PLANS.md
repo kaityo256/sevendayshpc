@@ -493,15 +493,17 @@ PowerPointの対訳表作成や英語スライド生成は、通常のPagesデ�
 6. **公開切り替え**：Pages SourceをGitHub Actionsへ変更し、言語選択ページ、日本語版、英語版を公開した。
 7. **旧生成系の撤去**：Pandoc HTML、Pandocテンプレート、旧Makefile、旧PDF生成環境を削除した。
 8. **サンプルビルド**：CMake、GCC、OpenMPI、OpenMPを使用して全ターゲットのビルド成功を確認した。
+9. **図版テキストの抽出**：`day1`から`day7`までの`fig.pptx`から日本語テキストを抽出し、章別`translations.csv`、`translations-all.csv`、`translation-report.md`を作成した。
+10. **図版対訳の確認**：対訳表を確認し、全翻訳行の`status`を`approved`へ変更した。
+11. **英語スライドの生成**：`tools/apply-pptx-translations.py`により、各日本語スライドの直後に英語版を追加した`fig-ja-en.pptx`を`day1`から`day7`まで作成した。
+12. **英語スライドの機械検査**：英語スライドに抽出可能な日本語が残っていないこと、スライド数が元の2倍であることを確認した。さらに`tools/check-fix-pptx-layout.py`でテキスト枠のはみ出しリスクと重なりを検査し、可能な範囲でAutoFitとフォントサイズ調整を反映した。
+13. **レイアウト未解決項目の記録**：自動修正できない、または目視確認が必要な候補を`site-assets/sources/pptx-layout-issues.md`へ記録した。
 
 以下は今後実施する。
 
-1. **図版テキストの抽出**：`day1`から`day7`までの`fig.pptx`から日本語テキストを抽出する。
-2. **対訳表の作成**：各章の`translations.csv`、全章の`translations-all.csv`、`translation-report.md`を生成する。
-3. **対訳の確認**：本文との用語統一、訳語の正確性、レイアウト上の懸念を人間が確認し、`status`を`approved`へ変更する。
-4. **英語スライドの生成**：各日本語スライドの直後に英語版を追加した`fig-ja-en.pptx`を作成する。
-5. **英語PNGの生成**：英語スライドをPNGとして書き出し、`site-assets/images/en/<chapter>/`へ配置する。
-6. **図版の目視確認**：PCとモバイルで、英語画像の文字切れ、配置、数式、線、色を確認する。
+1. **レイアウト未解決項目の確認**：`site-assets/sources/pptx-layout-issues.md`に記録された項目をPowerPoint上で目視確認し、必要なものだけ手動で修正する。
+2. **英語PNGの生成**：英語スライドをPNGとして書き出し、`site-assets/images/en/<chapter>/`へ配置する。
+3. **図版の目視確認**：PCとモバイルで、英語画像の文字切れ、配置、数式、線、色を確認する。
 
 ## 8. 現在の確認項目
 
@@ -521,6 +523,9 @@ PowerPointの対訳表作成や英語スライド生成は、通常のPagesデ�
 - 対訳表の必須列と`status`が正しい。
 - 元の`fig.pptx`が対訳表作成処理によって変更されていない。
 - 未承認の翻訳がPowerPointへ反映されていない。
+- `fig-ja-en.pptx`のスライド数が元の`fig.pptx`の2倍である。
+- 英語スライドに、通常のテキスト抽出で取得できる日本語が残っていない。
+- レイアウト検査で自動修正できない項目が`pptx-layout-issues.md`に記録されている。
 - 英語画像が存在する場合は、日本語画像の代わりに英語側へ公開される。
 - 英語画像が存在しない場合は、日本語画像へのフォールバックが維持される。
 
