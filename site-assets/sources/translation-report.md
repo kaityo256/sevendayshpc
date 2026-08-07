@@ -1,6 +1,6 @@
 # Figure Translation Extraction Report
 
-This report was generated from `site-assets/sources/day*/fig.pptx`.
+This report was generated from `site-assets/sources/day*/fig-ja-en.pptx`.
 The original PowerPoint files were read only and were not modified.
 
 ## Summary

@@ -306,22 +306,8 @@ def duplicate_and_translate_pptx(pptx_path: Path, output_path: Path, rows_by_sli
 
 
 def main() -> int:
-    all_missing = []
-    for pptx_path in sorted(SOURCES_DIR.glob("day*/fig.pptx")):
-        day_dir = pptx_path.parent
-        csv_path = day_dir / "translations.csv"
-        output_path = day_dir / "fig-ja-en.pptx"
-        rows_by_slide = load_rows(csv_path)
-        missing = duplicate_and_translate_pptx(pptx_path, output_path, rows_by_slide)
-        all_missing.extend(f"{day_dir.name}: {item}" for item in missing)
-        print(f"Wrote {output_path.relative_to(ROOT)}")
-
-    if all_missing:
-        print("Missing replacement targets:")
-        for item in all_missing:
-            print(f"- {item}")
-        return 1
-    return 0
+    print("fig-ja-en.pptx is the canonical PowerPoint source. This generator is no longer used.")
+    return 1
 
 
 if __name__ == "__main__":

@@ -63,14 +63,14 @@ Web版はPandocによるHTML直接生成からAstro Starlightへ移行済みで�
 │   │   └── en/                 # 作成済みの英語画像だけを置く
 │   └── sources/
 │       ├── day1/
-│       │   ├── fig.pptx        # 日本語図版の編集元
+│       │   ├── fig-ja-en.pptx  # 日本語・英語図版の編集元
 │       │   └── translations.csv
 │       ├── day2/
-│       │   ├── fig.pptx
+│       │   ├── fig-ja-en.pptx
 │       │   └── translations.csv
 │       ├── ...
 │       ├── day7/
-│       │   ├── fig.pptx
+│       │   ├── fig-ja-en.pptx
 │       │   └── translations.csv
 │       ├── translations-all.csv
 │       └── translation-report.md
@@ -152,20 +152,20 @@ Web版はPandocによるHTML直接生成からAstro Starlightへ移行済みで�
 
 ### 4.2 PowerPoint図版の管理
 
-`site-assets/sources/day1/`から`site-assets/sources/day7/`までの各ディレクトリに、日本語図版の編集元である`fig.pptx`を置く。
+`site-assets/sources/day1/`から`site-assets/sources/day7/`までの各ディレクトリに、日本語・英語図版の編集元である`fig-ja-en.pptx`を置き、これをPowerPoint図版の正本とする。
 
 ```text
 site-assets/sources/
-├── day1/fig.pptx
-├── day2/fig.pptx
-├── day3/fig.pptx
-├── day4/fig.pptx
-├── day5/fig.pptx
-├── day6/fig.pptx
-└── day7/fig.pptx
+├── day1/fig-ja-en.pptx
+├── day2/fig-ja-en.pptx
+├── day3/fig-ja-en.pptx
+├── day4/fig-ja-en.pptx
+├── day5/fig-ja-en.pptx
+├── day6/fig-ja-en.pptx
+└── day7/fig-ja-en.pptx
 ```
 
-各`fig.pptx`では、原則として1スライドを1図に対応させる。
+各`fig-ja-en.pptx`では、原則として日本語スライドと対応する英語スライドを連続して配置し、1スライドを1図に対応させる。
 
 英語図版の作成は、次の二段階で行う。
 
@@ -176,7 +176,7 @@ site-assets/sources/
 
 ### 4.3 対訳表の作成
 
-`tools/extract-pptx-translations.py`は、`day1`から`day7`までの各`fig.pptx`を順番に処理し、編集可能な日本語テキストを抽出する。
+`tools/extract-pptx-translations.py`は、`day1`から`day7`までの各`fig-ja-en.pptx`を順番に処理し、編集可能な日本語テキストを抽出する。
 
 抽出対象には、少なくとも次を含める。
 
@@ -303,9 +303,9 @@ PowerPoint反映処理は、原則としてすべての翻訳対象行が`approv
 
 ### 4.6 英語スライドへの反映
 
-`tools/apply-pptx-translations.py`は、確認済みの対訳表を使用して英語スライドを作成する。
+`tools/apply-pptx-translations.py`は、確認済みの対訳表を使用して英語スライドを作成した旧ワークフロー用のスクリプトである。現在は`fig-ja-en.pptx`をPowerPoint図版の正本とし、必要な修正はこのファイルへ反映する。
 
-各`fig.pptx`について、元の日本語スライドを維持し、その直後に同じ図の英語版を挿入する。
+各`fig-ja-en.pptx`では、元の日本語スライドを維持し、その直後に同じ図の英語版を置く。
 
 変換前：
 
@@ -336,7 +336,7 @@ PowerPoint反映処理は、原則としてすべての翻訳対象行が`approv
 - `status`が`approved`でない行は反映しない。
 - 対訳表に存在しない日本語は変更しない。
 - 置換できなかった項目をレポートする。
-- 元の`fig.pptx`を上書きしない。
+- 正本を意図せず上書きしない。
 - 変換後のPowerPointは別名で保存する。
 - 英文が図形からはみ出す場合は、改行、テキスト枠、フォントサイズを調整する。
 - フォントサイズを縮小する場合も、原則として元の70%未満にはしない。
@@ -359,7 +359,7 @@ PowerPointからPNGへの変換は、PowerPointまたはLibreOfficeなど、レ�
 
 `site-assets/sources/translation-report.md`には、少なくとも次を記録する。
 
-1. 各`fig.pptx`のスライド数
+1. 各`fig-ja-en.pptx`のスライド数
 2. 各ファイルから抽出したテキスト件数
 3. 日本語を含む図形の件数
 4. 翻訳案を作成した件数
@@ -375,7 +375,7 @@ PowerPointからPNGへの変換は、PowerPointまたはLibreOfficeなど、レ�
 - `day1`から`day7`まで、すべての`translations.csv`が存在する。
 - `translations-all.csv`が存在する。
 - `translation-report.md`が存在する。
-- 元の`fig.pptx`が変更されていない。
+- 正本の`fig-ja-en.pptx`が意図しない形で変更されていない。
 - CSVが`day`、`slide_number`、`shape_id`の順に並んでいる。
 - 初回生成時の全行の`status`が`draft`である。
 - `english`が空欄の行には、その理由が`notes`に記載されている。
@@ -434,7 +434,7 @@ Pythonスクリプトをnpm scriptsから呼び出す場合も、実体は`tools
 
 図版翻訳を必須チェックへ含める段階では、さらに次を検出する。
 
-- `day1`から`day7`までの`fig.pptx`または対訳表の不足
+- `day1`から`day7`までの`fig-ja-en.pptx`または対訳表の不足
 - 対訳表の必須列の不足
 - 不正な`status`
 - 同じ図形を示す行の重複
@@ -495,17 +495,15 @@ PowerPointの対訳表作成や英語スライド生成は、通常のPagesデ�
 6. **公開切り替え**：Pages SourceをGitHub Actionsへ変更し、言語選択ページ、日本語版、英語版を公開した。
 7. **旧生成系の撤去**：Pandoc HTML、Pandocテンプレート、旧Makefile、旧PDF生成環境を削除した。
 8. **サンプルビルド**：CMake、GCC、OpenMPI、OpenMPを使用して全ターゲットのビルド成功を確認した。
-9. **図版テキストの抽出**：`day1`から`day7`までの`fig.pptx`から日本語テキストを抽出し、章別`translations.csv`、`translations-all.csv`、`translation-report.md`を作成した。
+9. **図版テキストの抽出**：`day1`から`day7`までの`fig-ja-en.pptx`から日本語テキストを抽出し、章別`translations.csv`、`translations-all.csv`、`translation-report.md`を作成した。
 10. **図版対訳の確認**：対訳表を確認し、全翻訳行の`status`を`approved`へ変更した。
 11. **英語スライドの生成**：`tools/apply-pptx-translations.py`により、各日本語スライドの直後に英語版を追加した`fig-ja-en.pptx`を`day1`から`day7`まで作成した。
 12. **英語スライドの機械検査**：英語スライドに抽出可能な日本語が残っていないこと、スライド数が元の2倍であることを確認した。さらに`tools/check-fix-pptx-layout.py`でテキスト枠のはみ出しリスクと重なりを検査し、可能な範囲でAutoFitとフォントサイズ調整を反映した。
 13. **レイアウト未解決項目の記録**：自動修正できない、または目視確認が必要な候補を`site-assets/sources/pptx-layout-issues.md`へ記録した。
+14. **図版翻訳の完了**：`day1`から`day7`までの図版翻訳をすべて完了し、英語PNGを`site-assets/images/en/<chapter>/`へ配置した。
+15. **図版の手動確認**：PowerPoint上の未解決候補と、PC・モバイル表示での英語画像の文字切れ、配置、数式、線、色を目視確認した。
 
-以下は今後実施する。
-
-1. **レイアウト未解決項目の確認**：`site-assets/sources/pptx-layout-issues.md`に記録された項目をPowerPoint上で目視確認し、必要なものだけ手動で修正する。
-2. **英語PNGの生成**：英語スライドをPNGとして書き出し、`site-assets/images/en/<chapter>/`へ配置する。
-3. **図版の目視確認**：PCとモバイルで、英語画像の文字切れ、配置、数式、線、色を確認する。
+現時点で、Astro移行、日英Web版、図版翻訳、英語画像生成、手動確認まで完了している。
 
 ## 8. 現在の確認項目
 
@@ -520,16 +518,15 @@ PowerPointの対訳表作成や英語スライド生成は、通常のPagesデ�
 
 図版翻訳について、対訳表作成後は次を継続して確認する。
 
-- `day1`から`day7`までの各`fig.pptx`に対応する`translations.csv`が存在する。
+- `day1`から`day7`までの各`fig-ja-en.pptx`に対応する`translations.csv`が存在する。
 - `translations-all.csv`と章別CSVの内容が一致する。
 - 対訳表の必須列と`status`が正しい。
-- 元の`fig.pptx`が対訳表作成処理によって変更されていない。
+- 正本の`fig-ja-en.pptx`が対訳表作成処理によって意図せず変更されていない。
 - 未承認の翻訳がPowerPointへ反映されていない。
-- `fig-ja-en.pptx`のスライド数が元の`fig.pptx`の2倍である。
+- `fig-ja-en.pptx`に日本語スライドと対応する英語スライドが揃っている。
 - 英語スライドに、通常のテキスト抽出で取得できる日本語が残っていない。
-- レイアウト検査で自動修正できない項目が`pptx-layout-issues.md`に記録されている。
-- 英語画像が存在する場合は、日本語画像の代わりに英語側へ公開される。
-- 英語画像が存在しない場合は、日本語画像へのフォールバックが維持される。
+- レイアウト検査で自動修正できない項目が`pptx-layout-issues.md`に記録され、手動確認済みである。
+- 英語画像が日本語画像の代わりに英語側へ公開される。
 
 次の項目は自動検査では保証せず、必要に応じて手動確認する。
 

@@ -1,7 +1,6 @@
 # PowerPoint Layout Check Report
 
-Checked only the generated English slides in `fig-ja-en.pptx` files.
-The original `fig.pptx` files were not modified.
+Checked only the English slides in `fig-ja-en.pptx` files.
 
 ## Fixed Automatically
 

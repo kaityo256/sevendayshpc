@@ -349,7 +349,7 @@ def write_report(path: Path, rows_by_day: dict[str, list[Row]], stats_by_day: di
     lines = [
         "# Figure Translation Extraction Report",
         "",
-        "This report was generated from `site-assets/sources/day*/fig.pptx`.",
+        "This report was generated from `site-assets/sources/day*/fig-ja-en.pptx`.",
         "The original PowerPoint files were read only and were not modified.",
         "",
         "## Summary",
@@ -415,7 +415,7 @@ def main() -> int:
     rows_by_day: dict[str, list[Row]] = {}
     stats_by_day: dict[str, Counter] = {}
 
-    for pptx_path in sorted(SOURCES_DIR.glob("day*/fig.pptx")):
+    for pptx_path in sorted(SOURCES_DIR.glob("day*/fig-ja-en.pptx")):
         day = pptx_path.parent.name
         rows, stats = extract_rows(day, pptx_path)
         rows_by_day[day] = rows
