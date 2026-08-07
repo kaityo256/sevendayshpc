@@ -1,4 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#5b21b6"/>
-  <path d="M16 18h32v8H24v8h20v8H24v12h-8z" fill="#fff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" role="img" aria-label="Seven Days HPC favicon">
+  <defs>
+    <linearGradient id="blue" x1="185" y1="90" x2="1068" y2="1168" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#07358f"/>
+      <stop offset="0.52" stop-color="#002e8b"/>
+      <stop offset="1" stop-color="#043a99"/>
+    </linearGradient>
+  </defs>
+  <rect x="87" y="87" width="1080" height="1080" rx="156" fill="url(#blue)"/>
+  <path
+    d="M251 232h623v133L466 1026H270L655 386H251z"
+    fill="#fff"
+  />
+  <g fill="none" stroke="#fff" stroke-width="31" stroke-linecap="square">
+    <path d="M780 760h190"/>
+    <path d="M780 972h190"/>
+    <path d="M780 760v212"/>
+    <path d="M996 760v212"/>
+  </g>
+  <g fill="#fff">
+    <rect x="720" y="700" width="120" height="122" rx="22"/>
+    <rect x="933" y="700" width="120" height="122" rx="22"/>
+    <rect x="720" y="903" width="120" height="122" rx="22"/>
+    <rect x="933" y="903" width="120" height="122" rx="22"/>
+  </g>
 </svg>
