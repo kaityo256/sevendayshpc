@@ -6,6 +6,7 @@ sidebar:
 ---
 
 <!--- abstract --->
+
 You do not necessarily need to know how a supercomputer is organized in order to use one. Still, if you are going to use a supercomputer, it is worth learning briefly what one is. As often happens with words like this, however, what qualifies as a “supercomputer” varies greatly from person to person. The explanation here is only the author's definition; others may have different definitions. Rather than teaching you how to accomplish a particular task, this chapter presents things that someone who has never used a supercomputer will probably benefit from knowing before doing so. There are no hands-on exercises. Feel free to read it casually as background material.
 <!--- end --->
 
@@ -13,7 +14,7 @@ You do not necessarily need to know how a supercomputer is organized in order to
 
 An ordinary PC consists of a CPU, memory, a network interface, disks, and so on. A supercomputer likewise has CPUs, memory, a network, and disks.
 The individual parts are somewhat higher-end, but fundamentally they are the same as those in an ordinary PC. What differs is how they are connected.
-In a supercomputer, a CPU and its memory together are called a *node*. The main body of the supercomputer consists of many such nodes connected by a high-speed network. An ordinary PC has storage near its CPU, but modern supercomputer nodes are often diskless and instead connect over the network to a large file system.
+In a supercomputer, a CPU and its memory together are called a _node_. The main body of the supercomputer consists of many such nodes connected by a high-speed network. An ordinary PC has storage near its CPU, but modern supercomputer nodes are often diskless and instead connect over the network to a large file system.
 
 ![Organization of a supercomputer](/sevendayshpc/en/day2/fig/kousei.png)
 
@@ -28,7 +29,7 @@ Conversely, if each node failed about once per year, some node would fail roughl
 
 ![Large-scale computing as a team jump-rope exercise](/sevendayshpc/en/day2/fig/nawatobi.png)
 
-Large-scale computing is therefore like a team jump-rope exercise: doing useful calculations with a substantial number of nodes requires an extremely reliable system. Supercomputers have many other distinctive qualities and engineering techniques, but high reliability is crucial above all. News occasionally appears about a “budget supercomputer” built from game consoles or inexpensive chips. In reality, a substantial portion of a supercomputer's cost lies not only in its compute units but also in reliability and networking. Cutting costs there naturally produces a machine unable to perform calculations that require those properties. If your desired calculation works on a budget supercomputer, then by all means choose one. But do not compare only peak performance and price and immediately conclude that supercomputers are expensive. As *The Little Prince* says, what is essential is invisible to the eye.
+Large-scale computing is therefore like a team jump-rope exercise: doing useful calculations with a substantial number of nodes requires an extremely reliable system. Supercomputers have many other distinctive qualities and engineering techniques, but high reliability is crucial above all. News occasionally appears about a “budget supercomputer” built from game consoles or inexpensive chips. In reality, a substantial portion of a supercomputer's cost lies not only in its compute units but also in reliability and networking. Cutting costs there naturally produces a machine unable to perform calculations that require those properties. If your desired calculation works on a budget supercomputer, then by all means choose one. But do not compare only peak performance and price and immediately conclude that supercomputers are expensive. As _The Little Prince_ says, what is essential is invisible to the eye.
 
 ## Aside: Memory Errors on Blue Gene/L
 
@@ -50,9 +51,9 @@ A bit error therefore caused the system to crash.
 According to a [manual](https://asc.llnl.gov/computing_resources/bluegenel/basics/) from Lawrence Livermore National Laboratory, which installed Blue Gene/L, a full-machine calculation on 200,000 cores was estimated to crash from a cosmic-ray-induced L1 bit error about once every six hours on average.
 Users had three options:
 
-* Give up: six hours applies to the full machine, so a calculation using, for example, 10,000 cores would have a mean time between failures of about 120 hours. Simply running the calculation and accepting an occasional failure was a realistic choice.
-* Use memory-protection mode: Blue Gene/L offered a “write-through mode” that apparently protected against L1 bit errors in software by using L2 cache or main memory. It required no user intervention, but reportedly reduced performance by about 10% to 40%.
-* Receive an exception and handle it in the application: in this mode, the OS raised an exception when L1 detected a bit error, leaving recovery to the user.
+- Give up: six hours applies to the full machine, so a calculation using, for example, 10,000 cores would have a mean time between failures of about 120 hours. Simply running the calculation and accepting an occasional failure was a realistic choice.
+- Use memory-protection mode: Blue Gene/L offered a “write-through mode” that apparently protected against L1 bit errors in software by using L2 cache or main memory. It required no user intervention, but reportedly reduced performance by about 10% to 40%.
+- Receive an exception and handle it in the application: in this mode, the OS raised an exception when L1 detected a bit error, leaving recovery to the user.
 
 Users normally either accepted the risk or used write-through mode when its performance penalty was tolerable. The Livermore team that ran a long full-machine Blue Gene/L calculation and won the 2007 Gordon Bell Prize chose to handle exceptions in its own application.
 Specifically, they kept checkpoint data in part of memory and wrote code that restarted from the latest checkpoint after receiving an exception. According to their [paper](https://dl.acm.org/citation.cfm?id=1362700), the approximately three-day full-machine calculation received exceptions and restarted several times. I once spoke with a member of the team and remember hearing that making recovery safe regardless of where in the program an exception arrived was difficult.
@@ -86,7 +87,7 @@ Frankly, despite Japan's status as a supercomputing power, it is not easy for a 
 
 ![A job scheduler](/sevendayshpc/en/day2/fig/supercomputer.png)
 
-You are the only user of your local PC, so you may run any program whenever you like. A supercomputer, however, is a computing resource shared by many people. Allowing everyone to run programs however they pleased would be disastrous, so some traffic control is necessary. The *job scheduler* provides that control. Programs on a supercomputer are executed in units called *jobs*. A user first prepares a shell script called a *job script*. It is like a letter describing how to run the program. The user then asks the job scheduler from a login node to execute the job, rather like putting an envelope in a mailbox. The job enters a waiting queue. Considering past usage, the requested number of nodes, execution time, and other factors, the scheduler decides which waiting job should run next and where.
+You are the only user of your local PC, so you may run any program whenever you like. A supercomputer, however, is a computing resource shared by many people. Allowing everyone to run programs however they pleased would be disastrous, so some traffic control is necessary. The _job scheduler_ provides that control. Programs on a supercomputer are executed in units called _jobs_. A user first prepares a shell script called a _job script_. It is like a letter describing how to run the program. The user then asks the job scheduler from a login node to execute the job, rather like putting an envelope in a mailbox. The job enters a waiting queue. Considering past usage, the requested number of nodes, execution time, and other factors, the scheduler decides which waiting job should run next and where.
 
 ## Writing a Job Script
 
@@ -96,7 +97,7 @@ As noted above, programs are compiled and executed in different places on a supe
 In addition to an executable, the user prepares a job script and submits it to the scheduler to request execution.
 The script states the resources the job requires and how it should run. Based on those resources, the scheduler decides when and where to execute it.
 When its turn arrives, the job script is executed as a shell script and runs the job.
-The transition of a queued job into the running state is called *dispatch*.
+The transition of a queued job into the running state is called _dispatch_.
 
 At the beginning of a job script, resource requests are written as special comments.
 The precise syntax depends on both the scheduler and the operating policy of the supercomputer site, so consult the site's documentation when using a real machine.
@@ -134,12 +135,12 @@ qsub go.sh
 
 The job is now submitted. Use the job-status command—`qstat` for PBS—to confirm that it is waiting to run.
 
-Some supercomputers contain several kinds of nodes, such as high-memory “fat” nodes or nodes equipped with GPGPUs. In that case, execution units called *queues* are configured for the different node types, and you should select the appropriate queue.
+Some supercomputers contain several kinds of nodes, such as high-memory “fat” nodes or nodes equipped with GPGPUs. In that case, execution units called _queues_ are configured for the different node types, and you should select the appropriate queue.
 
 ## Fair Share
 
 The scheduler determines the planned time and place of a waiting job.
-When a preceding job finishes, the job at the head of the queue basically runs next, but many other factors also apply. One important concept is *fair share*.
+When a preceding job finishes, the job at the head of the queue basically runs next, but many other factors also apply. One important concept is _fair share_.
 
 Consider a cluster with four compute nodes.
 User A first submits ten one-node jobs. Four jobs begin running on the four nodes and six enter the queue.
@@ -156,7 +157,7 @@ Users running many jobs therefore lose priority, and a later job submitted by so
 What about the instant A's four jobs start? Almost no computation has yet occurred, so A's stamina has not fallen.
 If stamina decreased only according to the actual execution time accumulated so far, A's next job would still be scheduled next despite A currently occupying four nodes.
 After time passed and A's stamina actually declined, rescheduling would eventually prioritize B's job, but this seems inconvenient.
-Some schedulers therefore reduce stamina as soon as a job starts, by the product of its node count and *planned execution time*.
+Some schedulers therefore reduce stamina as soon as a job starts, by the product of its node count and _planned execution time_.
 In the schedule's current plan, B's job then runs next.
 An actual job may finish before its planned execution time. In that case, the scheduler restores the corresponding amount of A's stamina and schedules again.
 
@@ -172,7 +173,7 @@ Suppose we have four nodes and allow jobs requesting one through four nodes.
 A one-node job starts first, followed by submission of a four-node job. The four-node job must wait until every node is free. Another one-node job is then submitted.
 If the scheduler simply chooses the next runnable job in the queue, it sees three free nodes plus a four-node job and a one-node job, so it runs the one-node job.
 If one-node and four-node jobs continue to be mixed this way, only the one-node jobs may run and the four-node job may wait forever.
-Conversely, if the scheduler reserves the next turn for the four-node job while one node is occupied, three nodes remain wasted until that earlier job ends. *Backfilling* improves this situation.
+Conversely, if the scheduler reserves the next turn for the four-node job while one node is occupied, three nodes remain wasted until that earlier job ends. _Backfilling_ improves this situation.
 
 Jobs state a planned execution time.
 The scheduler therefore knows when a currently running job is expected to finish.
@@ -194,7 +195,7 @@ Even in a queue allowing 24-hour jobs, splitting a calculation into six four-hou
 Each job then writes a checkpoint when it finishes, and the next reads that checkpoint and continues.
 If the next job starts before the preceding one finishes, it fails.
 If an early job among the six fails, the remaining jobs should not run either.
-To support this situation, many schedulers provide *job chains* or *job chaining*.
+To support this situation, many schedulers provide _job chains_ or _job chaining_.
 This specifies dependencies between jobs, such as “do not run this job until that one finishes” or “do not run the next job if the previous one fails.”
 The exact syntax depends on the scheduler. Generally, it uses the job ID assigned at submission and submits the next job with a condition such as “run after the job with this ID exits successfully.”
 For PBS, for example:
@@ -218,7 +219,7 @@ Here `afterok` means “after successful completion.” Besides using backfillin
 ![File access also uses the network](/sevendayshpc/en/day2/fig/crowded.png)
 
 We have already seen that a supercomputer broadly consists of login nodes, compute nodes, and a file system connected by a high-speed network. The file system is mounted on login nodes, where users work. Whether it is also visible from compute nodes depends on the machine's design.
-If a file system is visible from both the login nodes and every compute node, it may be called a *global file system*. Reading and writing it from compute nodes traverses the network, so some network topologies can suffer congestion.
+If a file system is visible from both the login nodes and every compute node, it may be called a _global file system_. Reading and writing it from compute nodes traverses the network, so some network topologies can suffer congestion.
 In particular, when a large job reads or writes files simultaneously from many nodes, communication links may saturate and lose performance, or contention with other jobs may degrade performance. File I/O then becomes a bottleneck and slows simulations.
 To prevent this, compute nodes may have small but fast local file systems.
 A local file system is visible only from its compute node, not even from a login node.
@@ -234,7 +235,7 @@ The scheduler therefore handles this too.
 
 The job script states which files each process needs and which files should ultimately be returned to the global file system.
 The scheduler reads this information and copies files between the global and local file systems.
-This operation is called *staging*. Copying files to local storage before execution is *stage-in*; retrieving them from local storage after execution is *stage-out*.
+This operation is called _staging_. Copying files to local storage before execution is _stage-in_; retrieving them from local storage after execution is _stage-out_.
 Staging methods vary by supercomputer site, so consult the documentation for details. The essential idea is this: if every compute node reads and writes a globally visible file system, network links along the way may become congested. Place files near the compute nodes instead, and transfer them between the compute nodes and global file system only once before and once after the job.
 By analogy, suppose an employee is assigned for a month to a distant office. Commuting is possible but arduous, so they rent a monthly apartment nearby. Then the long journey is needed only at the beginning and end.
 
@@ -242,7 +243,7 @@ By analogy, suppose an employee is assigned for a month to a distant office. Com
 
 If you never produce an enormous number of files, you may not need to think much about file systems. Nevertheless, a file system is an important component of a supercomputer and worth understanding at least roughly.
 
-What is a file system in the first place? When we open a file by clicking it or display its contents with `cat`, we rarely consider where or how it is stored on the disk. A hard disk, for example, stores information on circular platters divided into wedge-shaped regions called sectors. Files are stored in units of sectors. To obtain a file's data, the system must first determine which sectors contain it and then read those sectors. A file may be split across several sectors, in which case all of them must be read. The file system performs this work on our behalf. It manages two main kinds of information: the file data itself, of course, and index information describing which file is located where. This index information is called *metadata*.
+What is a file system in the first place? When we open a file by clicking it or display its contents with `cat`, we rarely consider where or how it is stored on the disk. A hard disk, for example, stores information on circular platters divided into wedge-shaped regions called sectors. Files are stored in units of sectors. To obtain a file's data, the system must first determine which sectors contain it and then read those sectors. A file may be split across several sectors, in which case all of them must be read. The file system performs this work on our behalf. It manages two main kinds of information: the file data itself, of course, and index information describing which file is located where. This index information is called _metadata_.
 
 When working in a terminal, you probably run `ls` routinely. This asks the file system which files are in the current directory. Since no file contents are updated, only metadata is needed. A large supercomputer file system may contain an enormous number of files, making even the index lookup needed to find their locations substantial work. On one supercomputer file system, metadata operations became visibly slower as the total file count grew; an `ls` command could take several seconds or even more than ten seconds to return. Because a slow `ls` makes work extremely frustrating, metadata performance is directly tied to user happiness.
 
@@ -252,7 +253,7 @@ NFS is convenient for relatively small systems, but becomes extremely slow as th
 
 In any case, a supercomputer needs a scalable parallel file system that can rapidly serve requests from a very large number of clients. Lustre is now widely used for this purpose. A distinctive feature of Lustre is its separation of servers that manage metadata from those that manage file contents. This allows it to serve the flood of requests from many clients quickly. In the author's experience, Lustre seems especially fast at responding to metadata queries.
 
-Let us briefly examine how Lustre works. A *Metadata Server* (MDS) manages the index information for files. The metadata itself is stored in a *Metadata Target* (MDT). An *Object Storage Server* (OSS) manages file contents, which are stored in *Object Storage Targets* (OSTs).
+Let us briefly examine how Lustre works. A _Metadata Server_ (MDS) manages the index information for files. The metadata itself is stored in a _Metadata Target_ (MDT). An _Object Storage Server_ (OSS) manages file contents, which are stored in _Object Storage Targets_ (OSTs).
 
 ![How Lustre works](/sevendayshpc/en/day2/fig/lustre.png)
 
@@ -264,8 +265,8 @@ Finally, readers with access to a Lustre file system can experiment briefly with
 
 ```sh
 $ df -T /home
-ファイルシス        タイプ  1K-ブロック   使用   使用可   使用% マウント位置
-path/to/mds:/home lustre XXXXXXXXXX YYYYYYY ZZZZZ   PP%   /home
+Filesystem        Type    1K-blocks   Used    Available Use%  Mounted on
+path/to/mds:/home lustre  XXXXXXXXXX  YYYYYYY ZZZZZ     PP%   /home
 ```
 
 The type of `/home` is `lustre`. The numbers and other details have been intentionally obscured. Create an arbitrary directory—for example, `temp`—and enter it.
@@ -286,22 +287,22 @@ test.txt
 Now invoke the Lustre client command `lfs`. Here we will obtain the file ID.
 
 ```sh
-$ lfs path2fid test.txt  
+$ lfs path2fid test.txt
 [0x20005cf46:0x1794e:0x0]
 ```
 
-Lustre manages a file using its *File Identifier* (FID). In Lustre 2.x, an FID is represented by 128 bits.
+Lustre manages a file using its _File Identifier_ (FID). In Lustre 2.x, an FID is represented by 128 bits.
 The first 64 bits are the sequence, the next 32 bits are the object ID, and the final 32 bits are the version. Here, `0x20005cf46` is the sequence, `0x1794e` is the object ID, and `0x0` is the version number.
 
 Appending to or renaming the file does not change its FID.
 
 ```sh
 $ echo 1 >> test.txt
-$ lfs path2fid test.txt  
+$ lfs path2fid test.txt
 [0x20005cf46:0x1794e:0x0]
 
-$ mv test.txt test2.txt  
-$ lfs path2fid test2.txt  
+$ mv test.txt test2.txt
+$ lfs path2fid test2.txt
 [0x20005cf46:0x1794e:0x0]
 ```
 
