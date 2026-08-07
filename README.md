@@ -1,28 +1,51 @@
-# 一週間でなれる！スパコンプログラマ
+# Become an HPC Programmer in Seven Days!
 
-MPI、OpenMP、SIMDを題材に、スーパーコンピュータ向け並列プログラミングを7日間で学ぶためのオンライン教材です。日本語版と英語版を公開しています。
+[日本語版](README.ja.md)
 
-- [Web版（言語選択）](https://kaityo256.github.io/sevendayshpc/)
-- [日本語版](https://kaityo256.github.io/sevendayshpc/ja/)
+This is an online learning resource for parallel programming on supercomputers and HPC systems. It covers MPI, OpenMP, and SIMD over a seven-day course, and is published in both Japanese and English.
+
+- [Japanese version](https://kaityo256.github.io/sevendayshpc/ja/)
 - [English version](https://kaityo256.github.io/sevendayshpc/en/)
-- [日本語PDF版](https://github.com/kaityo256/sevendayshpc/releases/latest/download/sevendayshpc.pdf)
 
-## 内容
+## Contents
 
-1. 環境構築
-2. スパコンの使い方
-3. 自明並列
-4. 領域分割による非自明並列
-5. 二次元反応拡散方程式
-6. ハイブリッド並列
-7. SIMD化
+1. Environment setup
+2. Using a supercomputer
+3. Embarrassingly parallel computation
+4. Nontrivial parallelism with domain decomposition
+5. Two-dimensional reaction-diffusion equations
+6. Hybrid parallel programming
+7. SIMD optimization
 
-各章のサンプルプログラムとCMake設定は `examples/`、Web版の原稿は `src/content/docs/ja/` と `src/content/docs/en/`、図版は `site-assets/` で管理しています。
+Example programs and CMake settings are under `examples/`. The web edition source documents are under `src/content/docs/ja/` and `src/content/docs/en/`. Site assets are managed under `site-assets/`.
 
-## ライセンス
+## Development
+
+Install dependencies:
+
+```sh
+npm ci
+```
+
+Run the site checks and build:
+
+```sh
+npm run check
+```
+
+If you have an MPI development environment, build the C++ examples with:
+
+```sh
+cmake -S . -B build
+cmake --build build
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) before submitting changes.
+
+## License
 
 Copyright (C) 2018-present Hiroshi Watanabe
 
-文章と図版（PowerPointファイルを含む）は [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/) で提供します。
+Text and figures, including PowerPoint files, are distributed under the [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).
 
-本リポジトリに含まれるプログラムは [MIT License](LICENSE) で提供します。
+Programs in this repository are distributed under the [MIT License](LICENSE).
