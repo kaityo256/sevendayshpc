@@ -6,12 +6,13 @@ sidebar:
 ---
 
 <!--- abstract --->
+
 So far, we have used MPI for "process parallelism" as our means of parallelization.
 As mentioned at the beginning, another means of parallelization is "thread parallelism."
 Process parallelism uses a distributed-memory model, while thread parallelism uses a shared-memory model.
 Since thread parallelism alone cannot span nodes, process parallelism is normally essential when we talk about
 "using a supercomputer."
-Parallelization using *only* MPI-based process parallelism is called "flat MPI."
+Parallelization using _only_ MPI-based process parallelism is called "flat MPI."
 In contrast, parallelization that combines process parallelism and thread parallelism is called "hybrid parallelism."
 Naturally, hybrid parallelism is more troublesome than either process parallelism or thread parallelism alone,
 so we would rather avoid it if possible. Depending on the application and problem size, however,
@@ -34,9 +35,9 @@ so the process does not have to be aware of physical memory.
 This mechanism is called **virtual memory**.
 The advantages of virtual memory include:
 
-* Because the OS manages memory, multiple processes do not need to worry about one another's memory (which is also desirable for security)
-* Memory that is physically noncontiguous can appear as contiguous addresses to a process
-* When memory is insufficient, swapping to a hard disk or other storage provides a logical address space larger than physical memory
+- Because the OS manages memory, multiple processes do not need to worry about one another's memory (which is also desirable for security)
+- Memory that is physically noncontiguous can appear as contiguous addresses to a process
+- When memory is insufficient, swapping to a hard disk or other storage provides a logical address space larger than physical memory
 
 Note that Windows appears to use the term "virtual memory" for the upper limit of the area swapped to disk, so be careful about the distinction.
 
@@ -61,7 +62,7 @@ Putting it inside a function would give it an address on the stack (which would 
 so it is declared as a global variable. Running this on **Linux** produces something like the following.
 
 ```sh
-$ mpic++ vmem.cpp  
+$ mpic++ vmem.cpp
 $ mpirun -np 4 ./a.out
 rank = 0, address = 611e64
 rank = 1, address = 611e64
@@ -145,11 +146,15 @@ This confirms that it is indeed 2 MB. Large pages can be expected to reduce TLB 
 
 ## Aside: TLB Misses
 
-![Page walk for small pages](/sevendayshpc/en/day6/fig/smallpage.png)
+The TLB is also a type of cache, so just like an ordinary cache, it can suffer from cache misses. When a TLB miss occurs, the CPU must walk through the page tables to find the physical address corresponding to a virtual address.
 
-Because the TLB is also a kind of cache, it suffers cache misses just like an ordinary cache. As address spaces have grown, page tables are now managed in multiple levels. Today's typical machines are 64-bit, so in theory they can represent an address space of 16 exabytes (strictly speaking, EiB, or exbibytes, but let us set that aside). In reality, however, such a vast address space cannot (yet) be implemented, so 48 bits are used to represent 256 terabytes. Current x86 processors divide this 48-bit logical address into five parts. The lowest 12 bits are the offset indicating the location within a page. Twelve bits, or 4,096 bytes, therefore determine the page size. Four sets of nine higher-order bits represent the page's "address." For example, they might correspond to "Tokyo," "Chiyoda Ward," "1-chome," and "block 1." You can imagine the first four parts identifying the building and the final offset giving the room number. Suppose that, given an "address (logical address)," we want to find the coordinates on Earth (physical address) identified by it. First we consult a prefecture lookup table (page table) to find where Tokyo is, then find where Chiyoda Ward is within Tokyo, and so on. Only after four levels of lookup can the logical address be mapped to a physical address. Following the page tables in this way to resolve a physical address is called a **page walk**. When handling large pages, the final nine bits are also used as an offset. The number of bits representing the page size then becomes 12+9=21, giving a page size of 2**21=2097152, or 2 MiB. It is like making the address hierarchy one level "coarser" and turning the final house into a skyscraper to compensate.
+If all 64 bits of an address were used, it would theoretically be possible to represent a virtual address space of $2^{64}$ bytes, or 16 EiB. In practice, however, x86-64 does not use all 64 bits for address translation. Here, let us consider a typical four-level paging scheme that uses the lower 48 bits.
 
-![Page walk for large pages](/sevendayshpc/en/day6/fig/largepage.png)
+These 48 bits are divided into five parts. The lowest 12 bits form an offset specifying a location within a page. Since 12 bits can represent $2^{12}=4096$ bytes, the standard page size is 4 KiB. The remaining 36 bits are divided into four groups of 9 bits, each of which is used to traverse one level of the page-table hierarchy. As an analogy, we can think of these four 9-bit fields as levels of a U.S. address, such as “California,” “San Francisco,” “Market Street,” and “1355.” The final 12 bits then correspond to a room number within the building.
+
+Given a virtual address, the CPU first uses the highest 9 bits to look up an entry in the first address book. That entry tells the CPU where the next address book is located in physical memory. It then uses the next 9 bits to look up an entry in that address book and proceeds to the next one. After repeating this process through four levels, the CPU finally determines the location of the target physical page. This process of traversing page tables to translate a virtual address into a physical address is called a **page walk**.
+
+When a 2 MiB large page is used, on the other hand, the 9 bits that would normally be used to select an entry in the last-level page table are instead used as part of the offset within the page. The offset therefore consists of 12+9=21 bits, giving a page size of $2^{21}=2097152$ bytes, or 2 MiB. In terms of the address analogy, this is like removing one level from the address hierarchy and replacing the final building with an enormous skyscraper. Because a large page allows a single TLB entry to cover a much larger region of memory, it can reduce the number of TLB misses for a TLB of the same size.
 
 In any case, page walks take time, so it is natural to want to cache page table entries once they have been looked up. That is what the TLB does. The CPU contains a hardware TLB just as it contains hardware caches. In general, TLB misses are expensive because they involve a page walk. However, frequent TLB misses mean that the program is touching far more pages than the TLB has entries. That implies poor locality in memory usage, so cache misses are also likely to be occurring. Frequent cache misses completely destroy performance, so ordinarily those are more often the main problem, and fixing them will often reduce TLB misses at the same time (or so it seems). In practice, though, there are occasional cases where cache misses are not much of a problem but TLB misses have a serious impact.
 
@@ -159,8 +164,8 @@ If you are working with a multidimensional array and performance degrades dramat
 Since the TLB is also a cache, thrashing occurs there by exactly the same principle. This is called TLB thrashing. In my own experience, at one site my code performed perfectly well at high parallelism with flat MPI, but when changed to hybrid parallelism, its performance fluctuated at high parallelism despite performing a completely equivalent computation, resulting in substantial degradation. While removing unnecessary routines to hunt for the culprit, I eventually found this situation: **linking an object file containing a function that was never called degraded performance, while omitting it did not**. To repeat, performance varied by nearly 20% depending on whether an object file containing an unused function was linked. This did not happen with flat MPI; it happened only with hybrid parallelism.
 It ultimately turned out to be TLB thrashing, and changing the page size suppressed the performance degradation. Even now, however, I do not really understand why hybrid parallelism caused the TLB thrashing. Kazushige Goto, famous for GotoBLAS, has also pointed out in several papers that the TLB has a major impact on matrix multiplication.
 
-* [On Reducing TLB Misses in Matrix Multiplication (2002) by Kazushige Goto and Robert van de Geijn](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.12.4905)
-* [Anatomy of high-performance matrix multiplication](https://dl.acm.org/citation.cfm?doid=1356052.1356053)
+- [On Reducing TLB Misses in Matrix Multiplication (2002) by Kazushige Goto and Robert van de Geijn](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.12.4905)
+- [Anatomy of high-performance matrix multiplication](https://dl.acm.org/citation.cfm?doid=1356052.1356053)
 
 Apparently, there are also quite a few cases where performance fluctuates during hybrid execution and consequently degrades parallel performance, with TLB misses suspected as the cause. The details seem to depend heavily on implementation: how the hardware handles the TLB, and what it does under multithreading versus multiprocessing. My honest feeling as the author is that I do not really know what is going on there.
 
@@ -210,7 +215,7 @@ Profiling means analyzing the performance of executable code; at its simplest, i
 `perf` is a good tool for performance analysis. Unfortunately, macOS has no equivalent to `perf`, and `gprof`, which is used for similar purposes, does not work properly either.
 The following discussion therefore assumes Linux, where `perf` is available. The execution environment is as follows.
 
-* Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz, 12 cores x 2 sockets
+- Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz, 12 cores x 2 sockets
 
 For our serial code, let us use the Gray-Scott model computation from Day 4. `gs.cpp` removes intermediate file output so that only the computation itself is counted, and also measures the execution time.
 
@@ -354,8 +359,8 @@ OMP_NUM_THREADS=12 ./gs_omp2.out  4.91s user 0.01s system 1185% cpu 0.415 total
 
 Because halving the degree of parallelism barely changes the execution time, the parallel efficiency improves to 51%. This demonstrates that:
 
-* Performance changes completely depending on whether the inner or outer loop of a nested loop is parallelized. Parallelization can even make the code slower.
-* Increasing the number of threads does not necessarily improve performance. Beyond some point, adding threads may instead degrade it.
+- Performance changes completely depending on whether the inner or outer loop of a nested loop is parallelized. Parallelization can even make the code slower.
+- Increasing the number of threads does not necessarily improve performance. Beyond some point, adding threads may instead degrade it.
 
 Now let us see why parallelization made the code slower. First, here is a profile of the code with the directive on the inner loop, run with one thread.
 To make it easier to read, pipe the output of `perf report` to `cat`. By default, `perf report` displays results through a TUI interface (`--tui`),
@@ -542,7 +547,7 @@ According to `perf`, this loop was the "expensive" part.
     a396:       75 20                   jne    a3b8 <gomp_barrier_wait_end+0x68>
     a398:       48 83 c1 01             add    $0x1,%rcx
     a39c:       48 39 f1                cmp    %rsi,%rcx
-    a39f:       f3 90                   pause  
+    a39f:       f3 90                   pause
     a3a1:       75 ed                   jne    a390 <gomp_barrier_wait_end+0x40>
 ```
 
