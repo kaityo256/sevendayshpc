@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
-    "katex": "^0.18.3",
+    "katex": "^0.18.4",
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0",
     "typescript": "^6.0.3"
