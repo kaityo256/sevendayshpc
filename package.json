@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@astrojs/starlight": "0.41.10",
-    "astro": "7.2.2"
+    "astro": "7.2.10"
   },
   "engines": {
     "node": ">=22.12.0"
