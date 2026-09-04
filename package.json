@@ -12,6 +12,7 @@
     "check": "npm run check:astro && npm run build && npm run check:site"
   },
   "dependencies": {
+    "@astrojs/markdown-remark": "7.3.0",
     "@astrojs/starlight": "0.41.10",
     "astro": "7.2.10"
   },
