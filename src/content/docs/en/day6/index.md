@@ -217,7 +217,7 @@ The following discussion therefore assumes Linux, where `perf` is available. The
 
 - Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz, 12 cores x 2 sockets
 
-For our serial code, let us use the Gray-Scott model computation from Day 4. `gs.cpp` removes intermediate file output so that only the computation itself is counted, and also measures the execution time.
+For our serial code, let us use the Gray-Scott model computation from Day 5. `gs.cpp` removes intermediate file output so that only the computation itself is counted, and also measures the execution time.
 
 [https://github.com/kaityo256/sevendayshpc/blob/main/examples/day6/gs.cpp](https://github.com/kaityo256/sevendayshpc/blob/main/examples/day6/gs.cpp)
 
