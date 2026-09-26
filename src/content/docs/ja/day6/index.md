@@ -222,7 +222,7 @@ flat-MPIをやっている場合は、各プロセスごとに独立な論理メ
 
 - Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz 12コア x 2ソケット
 
-まず、シリアルコードとしてDay 4で使ったGray Scottモデルの計算を使おう。純粋に計算のみをカウントするため、途中のファイル出力を削除し、また実行時間を測定するようにしたものが`gs.cpp`である。
+まず、シリアルコードとしてDay 5で使ったGray Scottモデルの計算を使おう。純粋に計算のみをカウントするため、途中のファイル出力を削除し、また実行時間を測定するようにしたものが`gs.cpp`である。
 
 [https://github.com/kaityo256/sevendayshpc/blob/main/examples/day6/gs.cpp](https://github.com/kaityo256/sevendayshpc/blob/main/examples/day6/gs.cpp)
 
